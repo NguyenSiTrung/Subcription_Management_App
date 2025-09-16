@@ -1,0 +1,532 @@
+package com.example.subcriptionmanagementapp.ui.screens.subscriptions
+
+import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.navigation.NavController
+import com.example.subcriptionmanagementapp.R
+import com.example.subcriptionmanagementapp.data.local.entity.PaymentHistory
+import com.example.subcriptionmanagementapp.data.local.entity.Subscription
+import com.example.subcriptionmanagementapp.ui.components.AppTopBar
+import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
+import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
+import com.example.subcriptionmanagementapp.ui.navigation.Screen
+import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
+import com.example.subcriptionmanagementapp.util.formatCurrency
+import com.example.subcriptionmanagementapp.util.formatDate
+import com.example.subcriptionmanagementapp.util.getDaysUntil
+
+@Composable
+fun SubscriptionDetailScreen(
+    navController: NavController,
+    subscriptionId: Long,
+    viewModel: SubscriptionViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+) {
+    val subscription by viewModel.selectedSubscription.collectAsStateWithLifecycle()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
+    
+    LaunchedEffect(subscriptionId) {
+        viewModel.loadSubscription(subscriptionId)
+    }
+    
+    LaunchedEffect(error) {
+        if (error != null) {
+            viewModel.clearError()
+        }
+    }
+    
+    Scaffold(
+        topBar = {
+            AppTopBar(
+                title = stringResource(R.string.subscription_details),
+                navController = navController,
+                currentRoute = Screen.SubscriptionDetail.route,
+                showBackButton = true,
+                showActions = true
+            )
+        }
+    ) { paddingValues ->
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(paddingValues)
+        ) {
+            when {
+                isLoading -> LoadingIndicator()
+                error != null -> ErrorMessage(message = error!!)
+                subscription == null -> ErrorMessage(message = stringResource(R.string.subscription_not_found))
+                else -> SubscriptionDetailContent(
+                    subscription = subscription,
+                    onEditClick = {
+                        navController.navigate(Screen.AddEditSubscription.createRoute(subscription.id))
+                    },
+                    onDeleteClick = {
+                        viewModel.deleteSubscription(subscription)
+                        navController.popBackStack()
+                    },
+                    onToggleReminder = {
+                        // Toggle reminder
+                    }
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun SubscriptionDetailContent(
+    subscription: Subscription,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit,
+    onToggleReminder: () -> Unit
+) {
+    val daysUntil = getDaysUntil(subscription.nextBillingDate)
+    val isOverdue = daysUntil < 0
+    val isUrgent = daysUntil <= 3
+    
+    LazyColumn(
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        item {
+            SubscriptionInfoCard(
+                subscription = subscription,
+                daysUntil = daysUntil,
+                isOverdue = isOverdue,
+                isUrgent = isUrgent
+            )
+        }
+        
+        item {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Button(
+                    onClick = onEditClick,
+                    modifier = Modifier.weight(1f)
+                ) {
+                    Icon(Icons.Default.Edit, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.edit))
+                }
+                
+                OutlinedButton(
+                    onClick = onDeleteClick,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(
+                        contentColor = MaterialTheme.colorScheme.error
+                    )
+                ) {
+                    Icon(Icons.Default.Delete, contentDescription = null)
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(stringResource(R.string.delete))
+                }
+            }
+        }
+        
+        item {
+            ReminderCard(
+                subscription = subscription,
+                onToggleReminder = onToggleReminder
+            )
+        }
+        
+        item {
+            PaymentHistoryCard(
+                paymentHistory = emptyList() // Will be populated from repository
+            )
+        }
+        
+        item {
+            NotesCard(
+                notes = subscription.notes ?: ""
+            )
+        }
+    }
+}
+
+@Composable
+fun SubscriptionInfoCard(
+    subscription: Subscription,
+    daysUntil: Long,
+    isOverdue: Boolean,
+    isUrgent: Boolean
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(
+            containerColor = if (!subscription.isActive) {
+                MaterialTheme.colorScheme.surfaceVariant
+            } else if (isUrgent) {
+                WarningColor.copy(alpha = 0.2f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+        ),
+        border = if (isUrgent || !subscription.isActive) {
+            CardDefaults.outlinedCardBorder().copy(
+                width = 1.dp,
+                color = if (!subscription.isActive) {
+                    MaterialTheme.colorScheme.outline
+                } else {
+                    WarningColor
+                }
+            )
+        } else {
+            CardDefaults.outlinedCardBorder()
+        }
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = subscription.name,
+                    style = MaterialTheme.typography.headlineSmall,
+                    fontWeight = FontWeight.Bold,
+                    color = if (!subscription.isActive) {
+                        MaterialTheme.colorScheme.onSurfaceVariant
+                    } else {
+                        MaterialTheme.colorScheme.onSurface
+                    }
+                )
+                
+                if (!subscription.isActive) {
+                    Text(
+                        text = stringResource(R.string.inactive),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.price),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Text(
+                        text = formatCurrency(subscription.price),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (!subscription.isActive) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                }
+                
+                Column(
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Text(
+                        text = stringResource(R.string.billing_cycle),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Text(
+                        text = when (subscription.billingCycle) {
+                            BillingCycle.DAILY -> stringResource(R.string.daily)
+                            BillingCycle.WEEKLY -> stringResource(R.string.weekly)
+                            BillingCycle.MONTHLY -> stringResource(R.string.monthly)
+                            BillingCycle.YEARLY -> stringResource(R.string.yearly)
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (!subscription.isActive) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+            
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Column {
+                    Text(
+                        text = stringResource(R.string.next_billing_date),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Text(
+                        text = formatDate(subscription.nextBillingDate),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = if (!subscription.isActive) {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        } else {
+                            MaterialTheme.colorScheme.onSurface
+                        }
+                    )
+                }
+                
+                Column(
+                    horizontalAlignment = Alignment.End
+                ) {
+                    Text(
+                        text = stringResource(R.string.status),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    
+                    Text(
+                        text = when {
+                            !subscription.isActive -> stringResource(R.string.inactive)
+                            isOverdue -> stringResource(R.string.overdue)
+                            daysUntil == 0 -> stringResource(R.string.due_today)
+                            daysUntil == 1 -> stringResource(R.string.due_tomorrow)
+                            else -> stringResource(R.string.due_in_days, daysUntil)
+                        },
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = when {
+                            !subscription.isActive -> MaterialTheme.colorScheme.onSurfaceVariant
+                            isOverdue -> ErrorColor
+                            daysUntil <= 3 -> WarningColor
+                            else -> SuccessColor
+                        }
+                    )
+                }
+            }
+            
+            if (subscription.websiteUrl != null || subscription.appPackageName != null) {
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = stringResource(R.string.access),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    if (subscription.websiteUrl != null) {
+                        OutlinedButton(
+                            onClick = { /* Open website */ },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(stringResource(R.string.open_website))
+                        }
+                    }
+                    
+                    if (subscription.appPackageName != null) {
+                        OutlinedButton(
+                            onClick = { /* Open app */ },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            Text(stringResource(R.string.open_app))
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun ReminderCard(
+    subscription: Subscription,
+    onToggleReminder: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Notifications,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.primary
+                    )
+                    
+                    Spacer(modifier = Modifier.width(8.dp))
+                    
+                    Text(
+                        text = stringResource(R.string.reminder),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+                
+                Switch(
+                    checked = subscription.reminderDays > 0,
+                    onCheckedChange = { onToggleReminder() }
+                )
+            }
+            
+            if (subscription.reminderDays > 0) {
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = stringResource(R.string.reminder_days_before, subscription.reminderDays),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun PaymentHistoryCard(
+    paymentHistory: List<PaymentHistory>
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.payment_history),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            
+            if (paymentHistory.isEmpty()) {
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                Text(
+                    text = stringResource(R.string.no_payment_history),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                Spacer(modifier = Modifier.height(8.dp))
+                
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    items(paymentHistory) { payment ->
+                        PaymentHistoryItem(payment = payment)
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun PaymentHistoryItem(
+    payment: PaymentHistory
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Column {
+            Text(
+                text = formatDate(payment.paymentDate),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
+            )
+            
+            if (payment.notes != null) {
+                Text(
+                    text = payment.notes,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        
+        Text(
+            text = formatCurrency(payment.amount),
+            style = MaterialTheme.typography.bodyMedium,
+            fontWeight = FontWeight.Bold
+        )
+    }
+}
+
+@Composable
+fun NotesCard(
+    notes: String
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth()
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = stringResource(R.string.notes),
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.Bold
+            )
+            
+            Spacer(modifier = Modifier.height(8.dp))
+            
+            if (notes.isEmpty()) {
+                Text(
+                    text = stringResource(R.string.no_notes),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            } else {
+                Text(
+                    text = notes,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurface
+                )
+            }
+        }
+    }
+}
