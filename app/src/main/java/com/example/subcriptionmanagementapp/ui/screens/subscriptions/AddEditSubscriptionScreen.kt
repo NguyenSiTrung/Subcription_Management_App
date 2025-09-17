@@ -1,9 +1,12 @@
 package com.example.subcriptionmanagementapp.ui.screens.subscriptions
 
+import android.app.DatePickerDialog
 import android.widget.Toast
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.hilt.navigation.compose.hiltViewModel
@@ -25,6 +28,7 @@ import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
 import com.example.subcriptionmanagementapp.ui.viewmodel.CategoryViewModel
 import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
+import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -253,6 +257,27 @@ fun AddEditSubscriptionContent(
     val scrollState = rememberScrollState()
     var billingCycleExpanded by remember { mutableStateOf(false) }
     var categoryExpanded by remember { mutableStateOf(false) }
+    val context = LocalContext.current
+    val calendar = Calendar.getInstance()
+    
+    // Initialize calendar with the current nextBillingDate
+    calendar.timeInMillis = nextBillingDate
+    
+    val datePickerDialog = DatePickerDialog(
+        context,
+        { _, year, month, dayOfMonth ->
+            // Update the calendar with the selected date
+            calendar.set(Calendar.YEAR, year)
+            calendar.set(Calendar.MONTH, month)
+            calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+            
+            // Update the nextBillingDate state
+            onNextBillingDateChange(calendar.timeInMillis)
+        },
+        calendar.get(Calendar.YEAR),
+        calendar.get(Calendar.MONTH),
+        calendar.get(Calendar.DAY_OF_MONTH)
+    )
 
     Column(
             modifier = Modifier.fillMaxSize().verticalScroll(scrollState).padding(16.dp),
@@ -366,15 +391,18 @@ fun AddEditSubscriptionContent(
         // Next billing date
         OutlinedTextField(
                 value =
-                        java.text.SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
+                        SimpleDateFormat("MM/dd/yyyy", Locale.getDefault())
                                 .format(Date(nextBillingDate)),
                 onValueChange = {},
                 readOnly = true,
                 label = { Text(stringResource(R.string.next_billing_date)) },
                 modifier = Modifier.fillMaxWidth(),
                 trailingIcon = {
-                    IconButton(onClick = { /* Show date picker */}) {
-                        // Icon for date picker
+                    IconButton(onClick = { datePickerDialog.show() }) {
+                        Icon(
+                            imageVector = Icons.Default.DateRange,
+                            contentDescription = "Select date"
+                        )
                     }
                 }
         )
