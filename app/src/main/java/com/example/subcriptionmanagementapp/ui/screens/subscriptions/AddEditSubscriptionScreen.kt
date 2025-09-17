@@ -251,6 +251,8 @@ fun AddEditSubscriptionContent(
         onSaveClick: () -> Unit
 ) {
     val scrollState = rememberScrollState()
+    var billingCycleExpanded by remember { mutableStateOf(false) }
+    var categoryExpanded by remember { mutableStateOf(false) }
 
     Column(
             modifier = Modifier.fillMaxSize().verticalScroll(scrollState).padding(16.dp),
@@ -288,23 +290,24 @@ fun AddEditSubscriptionContent(
         )
 
         // Billing cycle dropdown
-        ExposedDropdownMenuBox(expanded = false, onExpandedChange = {}) {
+        ExposedDropdownMenuBox(expanded = billingCycleExpanded, onExpandedChange = { billingCycleExpanded = !billingCycleExpanded }) {
+            val billingCycleLabel = when (billingCycle) {
+                BillingCycle.DAILY -> stringResource(R.string.daily)
+                BillingCycle.WEEKLY -> stringResource(R.string.weekly)
+                BillingCycle.MONTHLY -> stringResource(R.string.monthly)
+                BillingCycle.YEARLY -> stringResource(R.string.yearly)
+            }
             OutlinedTextField(
-                    value =
-                            when (billingCycle) {
-                                BillingCycle.DAILY -> stringResource(R.string.daily)
-                                BillingCycle.WEEKLY -> stringResource(R.string.weekly)
-                                BillingCycle.MONTHLY -> stringResource(R.string.monthly)
-                                BillingCycle.YEARLY -> stringResource(R.string.yearly)
-                            },
+                    value = billingCycleLabel,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text(stringResource(R.string.billing_cycle)) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = false) }
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = billingCycleExpanded) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
             )
 
-            DropdownMenu(expanded = false, onDismissRequest = {}) {
+            ExposedDropdownMenu(expanded = billingCycleExpanded, onDismissRequest = { billingCycleExpanded = false }) {
                 BillingCycle.values().forEach { cycle ->
                     DropdownMenuItem(
                             text = {
@@ -317,33 +320,44 @@ fun AddEditSubscriptionContent(
                                         }
                                 )
                             },
-                            onClick = { onBillingCycleChange(cycle) }
+                            onClick = {
+                                onBillingCycleChange(cycle)
+                                billingCycleExpanded = false
+                            }
                     )
                 }
             }
         }
 
         // Category dropdown
-        ExposedDropdownMenuBox(expanded = false, onExpandedChange = {}) {
+        ExposedDropdownMenuBox(expanded = categoryExpanded, onExpandedChange = { categoryExpanded = !categoryExpanded }) {
+            val categoryLabel = selectedCategory?.name ?: stringResource(R.string.no_category)
             OutlinedTextField(
-                    value = selectedCategory?.name ?: "",
+                    value = categoryLabel,
                     onValueChange = {},
                     readOnly = true,
                     label = { Text(stringResource(R.string.category)) },
                     modifier = Modifier.fillMaxWidth().menuAnchor(),
-                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = false) }
+                    trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = categoryExpanded) },
+                    colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
             )
 
-            DropdownMenu(expanded = false, onDismissRequest = {}) {
+            ExposedDropdownMenu(expanded = categoryExpanded, onDismissRequest = { categoryExpanded = false }) {
                 DropdownMenuItem(
                         text = { Text(stringResource(R.string.no_category)) },
-                        onClick = { onCategoryChange(null) }
+                        onClick = {
+                            onCategoryChange(null)
+                            categoryExpanded = false
+                        }
                 )
 
                 categories.forEach { category ->
                     DropdownMenuItem(
                             text = { Text(category.name) },
-                            onClick = { onCategoryChange(category) }
+                            onClick = {
+                                onCategoryChange(category)
+                                categoryExpanded = false
+                            }
                     )
                 }
             }
