@@ -1,8 +1,8 @@
 package com.example.subcriptionmanagementapp.ui.components
 
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.List
 import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Star
@@ -48,7 +48,7 @@ val bottomNavItems =
                 ),
                 BottomNavItem(
                         screen = Screen.SubscriptionList,
-                        icon = Icons.Default.List,
+                        icon = Icons.AutoMirrored.Filled.List,
                         labelResId = R.string.subscriptions
                 ),
                 BottomNavItem(

@@ -5,21 +5,24 @@ import androidx.lifecycle.viewModelScope
 import com.example.subcriptionmanagementapp.data.local.entity.PaymentHistory
 import com.example.subcriptionmanagementapp.domain.usecase.payment.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
-class PaymentHistoryViewModel @Inject constructor(
-    private val addPaymentHistoryUseCase: AddPaymentHistoryUseCase,
-    private val getPaymentHistoryUseCase: GetPaymentHistoryUseCase,
-    private val getPaymentHistoryBySubscriptionIdUseCase: GetPaymentHistoryBySubscriptionIdUseCase,
-    private val getPaymentHistoryByDateRangeUseCase: GetPaymentHistoryByDateRangeUseCase,
-    private val updatePaymentHistoryUseCase: UpdatePaymentHistoryUseCase,
-    private val deletePaymentHistoryUseCase: DeletePaymentHistoryUseCase
+class PaymentHistoryViewModel
+@Inject
+constructor(
+        private val addPaymentHistoryUseCase: AddPaymentHistoryUseCase,
+        private val getPaymentHistoryUseCase: GetPaymentHistoryUseCase,
+        private val getPaymentHistoryBySubscriptionIdUseCase:
+                GetPaymentHistoryBySubscriptionIdUseCase,
+        private val getPaymentHistoryByDateRangeUseCase: GetPaymentHistoryByDateRangeUseCase,
+        private val updatePaymentHistoryUseCase: UpdatePaymentHistoryUseCase,
+        private val deletePaymentHistoryUseCase: DeletePaymentHistoryUseCase
 ) : ViewModel() {
 
     private val _paymentHistory = MutableStateFlow<List<PaymentHistory>>(emptyList())
@@ -38,10 +41,10 @@ class PaymentHistoryViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                getPaymentHistoryBySubscriptionIdUseCase(subscriptionId)
-                    .collectLatest { paymentHistoryList: List<PaymentHistory> ->
-                        _paymentHistory.value = paymentHistoryList
-                    }
+                getPaymentHistoryBySubscriptionIdUseCase(subscriptionId).collectLatest {
+                        paymentHistoryList: List<PaymentHistory> ->
+                    _paymentHistory.value = paymentHistoryList
+                }
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to load payment history"
             } finally {
@@ -68,10 +71,9 @@ class PaymentHistoryViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                getPaymentHistoryUseCase(id)
-                    .collectLatest { paymentHistory: PaymentHistory? ->
-                        _selectedPaymentHistory.value = paymentHistory
-                    }
+                getPaymentHistoryUseCase(id).collectLatest { paymentHistory: PaymentHistory? ->
+                    _selectedPaymentHistory.value = paymentHistory
+                }
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to load payment history"
             } finally {
@@ -86,9 +88,7 @@ class PaymentHistoryViewModel @Inject constructor(
             try {
                 addPaymentHistoryUseCase(paymentHistory)
                 // Reload payment history after adding
-                if (paymentHistory.subscriptionId != null) {
-                    loadPaymentHistoryBySubscriptionId(paymentHistory.subscriptionId)
-                }
+                loadPaymentHistoryBySubscriptionId(paymentHistory.subscriptionId)
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to add payment history"
             } finally {
@@ -103,9 +103,7 @@ class PaymentHistoryViewModel @Inject constructor(
             try {
                 updatePaymentHistoryUseCase(paymentHistory)
                 // Reload payment history after updating
-                if (paymentHistory.subscriptionId != null) {
-                    loadPaymentHistoryBySubscriptionId(paymentHistory.subscriptionId)
-                }
+                loadPaymentHistoryBySubscriptionId(paymentHistory.subscriptionId)
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to update payment history"
             } finally {
@@ -120,9 +118,7 @@ class PaymentHistoryViewModel @Inject constructor(
             try {
                 deletePaymentHistoryUseCase(paymentHistory)
                 // Reload payment history after deleting
-                if (paymentHistory.subscriptionId != null) {
-                    loadPaymentHistoryBySubscriptionId(paymentHistory.subscriptionId)
-                }
+                loadPaymentHistoryBySubscriptionId(paymentHistory.subscriptionId)
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to delete payment history"
             } finally {
