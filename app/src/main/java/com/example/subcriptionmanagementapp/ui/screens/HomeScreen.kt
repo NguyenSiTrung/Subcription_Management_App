@@ -48,8 +48,7 @@ fun HomeScreen(
                 AppTopBar(
                         title = stringResource(R.string.app_name),
                         navController = navController,
-                        currentRoute = Screen.Home.route,
-                        showActions = false
+                        currentRoute = Screen.Home.route
                 )
             }
     ) { paddingValues ->

@@ -1,6 +1,9 @@
 package com.example.subcriptionmanagementapp.ui.components
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -9,11 +12,15 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
@@ -21,12 +28,10 @@ import androidx.compose.material.icons.outlined.Info
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.MenuDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
@@ -44,6 +49,7 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -178,44 +184,51 @@ fun AppTopBar(
 
                             DropdownMenu(
                                 expanded = showMenu,
-                                onDismissRequest = { showMenu = false },
-                                tonalElevation = 8.dp,
-                                shadowElevation = 12.dp
+                                onDismissRequest = { showMenu = false }
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.settings)) },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Settings,
-                                            contentDescription = null
+                                Surface(
+                                    shape = RoundedCornerShape(24.dp),
+                                    color = colorScheme.surface,
+                                    tonalElevation = 0.dp,
+                                    shadowElevation = 18.dp,
+                                    border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.08f))
+                                ) {
+                                    Column(
+                                        modifier =
+                                            Modifier
+                                                .widthIn(min = 220.dp)
+                                                .padding(vertical = 12.dp)
+                                    ) {
+                                        Text(
+                                            text = stringResource(R.string.menu_quick_actions),
+                                            style = typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
+                                            color = colorScheme.primary,
+                                            modifier = Modifier.padding(horizontal = 20.dp)
                                         )
-                                    },
-                                    onClick = {
-                                        showMenu = false
-                                        navController.navigate(Screen.Settings.route)
-                                    },
-                                    colors = MenuDefaults.itemColors(
-                                        textColor = colorScheme.onSurface,
-                                        leadingIconColor = colorScheme.primary
-                                    )
-                                )
-                                DropdownMenuItem(
-                                    text = { Text(stringResource(R.string.about)) },
-                                    leadingIcon = {
-                                        Icon(
-                                            imageVector = Icons.Outlined.Info,
-                                            contentDescription = null
-                                        )
-                                    },
-                                    onClick = {
-                                        showMenu = false
-                                        // Navigate to about screen
-                                    },
-                                    colors = MenuDefaults.itemColors(
-                                        textColor = colorScheme.onSurfaceVariant,
-                                        leadingIconColor = colorScheme.secondary
-                                    )
-                                )
+
+                                        Spacer(modifier = Modifier.height(8.dp))
+
+                                        OverflowMenuItem(
+                                            title = stringResource(R.string.settings),
+                                            subtitle = stringResource(R.string.settings_menu_subtitle),
+                                            icon = Icons.Outlined.Settings,
+                                            accentColor = colorScheme.primary
+                                        ) {
+                                            showMenu = false
+                                            navController.navigate(Screen.Settings.route)
+                                        }
+
+                                        OverflowMenuItem(
+                                            title = stringResource(R.string.about),
+                                            subtitle = stringResource(R.string.about_menu_subtitle),
+                                            icon = Icons.Outlined.Info,
+                                            accentColor = colorScheme.secondary
+                                        ) {
+                                            showMenu = false
+                                            // Navigate to about screen
+                                        }
+                                    }
+                                }
                             }
                         }
                     }
@@ -229,6 +242,87 @@ fun AppTopBar(
                 actionIconContentColor = colorScheme.onPrimary
             )
         )
+    }
+}
+
+@Composable
+private fun OverflowMenuItem(
+    title: String,
+    subtitle: String,
+    icon: ImageVector,
+    accentColor: Color,
+    onClick: () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    val typography = MaterialTheme.typography
+    val containerShape = RoundedCornerShape(18.dp)
+    val interactionSource = remember { MutableInteractionSource() }
+
+    Surface(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 4.dp),
+        shape = containerShape,
+        tonalElevation = 3.dp,
+        shadowElevation = 0.dp,
+        color = colorScheme.surface,
+        border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.1f))
+    ) {
+        Row(
+            modifier =
+                Modifier
+                    .fillMaxWidth()
+                    .clip(containerShape)
+                    .clickable(
+                        interactionSource = interactionSource,
+                        indication = null,
+                        role = Role.Button,
+                        onClick = onClick
+                    )
+                    .padding(horizontal = 16.dp, vertical = 14.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier =
+                    Modifier
+                        .size(42.dp)
+                        .clip(RoundedCornerShape(14.dp))
+                        .background(accentColor.copy(alpha = 0.12f)),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = icon,
+                    contentDescription = null,
+                    tint = accentColor
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = title,
+                    style = typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
+                    color = colorScheme.onSurface
+                )
+                Spacer(modifier = Modifier.height(2.dp))
+                Text(
+                    text = subtitle,
+                    style = typography.bodySmall,
+                    color = colorScheme.onSurfaceVariant,
+                    maxLines = 2,
+                    overflow = TextOverflow.Ellipsis
+                )
+            }
+
+            Spacer(modifier = Modifier.width(12.dp))
+
+            Icon(
+                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                contentDescription = null,
+                tint = colorScheme.outline
+            )
+        }
     }
 }
 

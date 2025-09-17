@@ -8,6 +8,11 @@
     <string name="statistics">Statistics</string>
     <string name="settings">Settings</string>
 
+    <!-- Overflow menu -->
+    <string name="menu_quick_actions">Quick actions</string>
+    <string name="settings_menu_subtitle">Tune preferences, sync, and data</string>
+    <string name="about_menu_subtitle">Version info, policies, and credits</string>
+
     <!-- Top bar subtitles -->
     <string name="home_top_bar_subtitle">Stay on top of your recurring spending</string>
     <string name="subscriptions_top_bar_subtitle">All your plans at a glance</string>
