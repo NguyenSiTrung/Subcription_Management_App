@@ -18,6 +18,13 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.platform.LocalView
+import androidx.compose.ui.unit.IntOffset
+import androidx.compose.ui.window.Popup
+import androidx.compose.ui.window.PopupProperties
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
@@ -35,7 +42,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -182,9 +188,9 @@ fun AppTopBar(
                                 contentDescription = stringResource(R.string.more_options)
                             )
 
-                            DropdownMenu(
+                            ModalDropdownLayer(
                                 expanded = showMenu,
-                                onDismissRequest = { showMenu = false }
+                                onDismiss = { showMenu = false }
                             ) {
                                 Surface(
                                     shape = RoundedCornerShape(24.dp),
@@ -322,6 +328,50 @@ private fun OverflowMenuItem(
                 contentDescription = null,
                 tint = colorScheme.outline
             )
+        }
+    }
+}
+
+@Composable
+private fun ModalDropdownLayer(
+    expanded: Boolean,
+    onDismiss: () -> Unit,
+    dropdownContent: @Composable () -> Unit
+) {
+    val colorScheme = MaterialTheme.colorScheme
+    
+    if (expanded) {
+        Popup(
+            onDismissRequest = onDismiss,
+            properties = PopupProperties(
+                dismissOnBackPress = true,
+                dismissOnClickOutside = true,
+                focusable = true
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(colorScheme.scrim.copy(alpha = 0.32f))
+                    .clickable(
+                        indication = null,
+                        interactionSource = remember { MutableInteractionSource() },
+                        onClick = onDismiss
+                    )
+            ) {
+                Box(
+                    modifier = Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.TopEnd
+                ) {
+                    Column(
+                        modifier = Modifier
+                            .padding(top = 80.dp, end = 16.dp)
+                            .widthIn(max = 300.dp)
+                    ) {
+                        dropdownContent()
+                    }
+                }
+            }
         }
     }
 }
