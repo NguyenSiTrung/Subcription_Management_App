@@ -55,6 +55,8 @@ fun AddEditSubscriptionScreen(
     var websiteUrl by remember { mutableStateOf("") }
     var appPackageName by remember { mutableStateOf("") }
     var notes by remember { mutableStateOf("") }
+    var initialCategoryId by remember(subscriptionId) { mutableStateOf<Long?>(null) }
+    var hasAppliedInitialCategory by remember(subscriptionId) { mutableStateOf(false) }
 
     LaunchedEffect(subscriptionId) {
         if (subscriptionId != null) {
@@ -63,21 +65,46 @@ fun AddEditSubscriptionScreen(
     }
 
     LaunchedEffect(subscription) {
-        subscription?.let {
-            name = it.name
-            description = it.description ?: ""
-            price = it.price.toString()
-            billingCycle = it.billingCycle
-            nextBillingDate = it.nextBillingDate
-            isActive = it.isActive
-            reminderDays = it.reminderDays
-            websiteUrl = it.websiteUrl ?: ""
-            appPackageName = it.appPackageName ?: ""
-            notes = it.notes ?: ""
+        subscription?.let { currentSubscription ->
+            name = currentSubscription.name
+            description = currentSubscription.description ?: ""
+            price = currentSubscription.price.toString()
+            billingCycle = currentSubscription.billingCycle
+            nextBillingDate = currentSubscription.nextBillingDate
+            isActive = currentSubscription.isActive
+            reminderDays = currentSubscription.reminderDays
+            websiteUrl = currentSubscription.websiteUrl ?: ""
+            appPackageName = currentSubscription.appPackageName ?: ""
+            notes = currentSubscription.notes ?: ""
+            initialCategoryId = currentSubscription.categoryId
+            hasAppliedInitialCategory = false
+        } ?: run {
+            initialCategoryId = null
+            hasAppliedInitialCategory = true
+            selectedCategory = null
+        }
+    }
+
+    LaunchedEffect(categories, initialCategoryId, hasAppliedInitialCategory) {
+        if (!hasAppliedInitialCategory) {
+            val targetCategoryId = initialCategoryId
+            if (targetCategoryId == null) {
+                selectedCategory = null
+                hasAppliedInitialCategory = true
+            } else if (categories.isNotEmpty()) {
+                selectedCategory = categories.find { it.id == targetCategoryId }
+                hasAppliedInitialCategory = true
+            }
         }
     }
 
     LaunchedEffect(Unit) { categoryViewModel.loadCategories() }
+
+    LaunchedEffect(Unit) {
+        subscriptionViewModel.subscriptionSaved.collect {
+            navController.popBackStack()
+        }
+    }
 
     LaunchedEffect(errorCategories) {
         if (errorCategories != null) {
@@ -141,7 +168,9 @@ fun AddEditSubscriptionScreen(
                                 onNotesChange = { notes = it },
                                 onSaveClick = {
                                     if (validateInputs(name, price)) {
-                                        val subscription =
+                                        val existingSubscription = subscription
+
+                                        val subscriptionToPersist =
                                                 Subscription(
                                                         id = subscriptionId ?: 0,
                                                         name = name,
@@ -149,30 +178,35 @@ fun AddEditSubscriptionScreen(
                                                         price = price.toDouble(),
                                                         currency = "USD",
                                                         billingCycle = billingCycle,
-                                                        startDate = System.currentTimeMillis(),
+                                                        startDate =
+                                                                existingSubscription?.startDate
+                                                                        ?: System.currentTimeMillis(),
                                                         nextBillingDate = nextBillingDate,
                                                         endDate = null,
                                                         reminderDays = reminderDays,
                                                         isActive = isActive,
-                                                        categoryId = selectedCategory?.id ?: 0L,
+                                                        categoryId =
+                                                                selectedCategory?.id
+                                                                        ?: existingSubscription?.categoryId,
                                                         websiteUrl = websiteUrl.ifBlank { null },
                                                         appPackageName =
                                                                 appPackageName.ifBlank { null },
                                                         notes = notes.ifBlank { null },
                                                         createdAt =
-                                                                if (subscriptionId != null)
-                                                                        subscription!!.createdAt
-                                                                else System.currentTimeMillis(),
+                                                                existingSubscription?.createdAt
+                                                                        ?: System.currentTimeMillis(),
                                                         updatedAt = System.currentTimeMillis()
                                                 )
 
                                         if (subscriptionId != null) {
-                                            subscriptionViewModel.updateSubscription(subscription)
+                                            subscriptionViewModel.updateSubscription(
+                                                    subscriptionToPersist
+                                            )
                                         } else {
-                                            subscriptionViewModel.addSubscription(subscription)
+                                            subscriptionViewModel.addSubscription(
+                                                    subscriptionToPersist
+                                            )
                                         }
-
-                                        navController.popBackStack()
                                     } else {
                                         Toast.makeText(
                                                         context,

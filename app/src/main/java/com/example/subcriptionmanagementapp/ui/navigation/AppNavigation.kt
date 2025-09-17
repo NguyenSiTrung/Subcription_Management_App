@@ -2,8 +2,10 @@ package com.example.subcriptionmanagementapp.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.navigation.NavHostController
+import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
+import androidx.navigation.navArgument
 import com.example.subcriptionmanagementapp.ui.screens.HomeScreen
 import com.example.subcriptionmanagementapp.ui.screens.subscriptions.SubscriptionListScreen
 import com.example.subcriptionmanagementapp.ui.screens.subscriptions.SubscriptionDetailScreen
@@ -24,7 +26,12 @@ fun AppNavigation(navController: NavHostController) {
         composable(Screen.SubscriptionList.route) {
             SubscriptionListScreen(navController = navController)
         }
-        composable(Screen.SubscriptionDetail.route) { backStackEntry ->
+        composable(
+            route = Screen.SubscriptionDetail.route,
+            arguments = listOf(
+                navArgument("subscriptionId") { type = NavType.LongType }
+            )
+        ) { backStackEntry ->
             val subscriptionId = backStackEntry.arguments?.getLong("subscriptionId")
             subscriptionId?.let {
                 SubscriptionDetailScreen(
@@ -33,19 +40,22 @@ fun AppNavigation(navController: NavHostController) {
                 )
             }
         }
-        composable(Screen.AddEditSubscription.route) { backStackEntry ->
-            val subscriptionId = backStackEntry.arguments?.getLong("subscriptionId")
-            if (subscriptionId != null && subscriptionId != -1L) {
-                AddEditSubscriptionScreen(
-                    navController = navController,
-                    subscriptionId = subscriptionId
-                )
-            } else {
-                AddEditSubscriptionScreen(
-                    navController = navController,
-                    subscriptionId = null
-                )
-            }
+        composable(
+            route = Screen.AddEditSubscription.route,
+            arguments = listOf(
+                navArgument("subscriptionId") {
+                    type = NavType.LongType
+                    defaultValue = -1L
+                }
+            )
+        ) { backStackEntry ->
+            val subscriptionId =
+                backStackEntry.arguments?.getLong("subscriptionId")?.takeIf { it != -1L }
+
+            AddEditSubscriptionScreen(
+                navController = navController,
+                subscriptionId = subscriptionId
+            )
         }
         composable(Screen.CategoryList.route) {
             CategoryListScreen(navController = navController)

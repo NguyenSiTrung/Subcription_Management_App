@@ -34,7 +34,7 @@ data class Subscription(
     @ColumnInfo(name = "end_date") val endDate: Long?,
     @ColumnInfo(name = "reminder_days") val reminderDays: Int,
     @ColumnInfo(name = "is_active") val isActive: Boolean,
-    @ColumnInfo(name = "category_id") val categoryId: Long,
+    @ColumnInfo(name = "category_id") val categoryId: Long?,
     @ColumnInfo(name = "website_url") val websiteUrl: String?,
     @ColumnInfo(name = "app_package_name") val appPackageName: String?,
     @ColumnInfo(name = "notes") val notes: String?,

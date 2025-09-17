@@ -73,6 +73,9 @@ fun HomeScreen(
                                     navController.navigate(
                                             Screen.AddEditSubscription.createRoute(-1)
                                     )
+                                },
+                                onViewAllSubscriptions = {
+                                    navController.navigate(Screen.SubscriptionList.route)
                                 }
                         )
             }
@@ -84,7 +87,8 @@ fun HomeScreen(
 fun HomeContent(
         subscriptions: List<Subscription>,
         onSubscriptionClick: (Long) -> Unit,
-        onAddSubscription: () -> Unit
+        onAddSubscription: () -> Unit,
+        onViewAllSubscriptions: () -> Unit
 ) {
     val upcomingSubscriptions =
             subscriptions
@@ -109,11 +113,21 @@ fun HomeContent(
         }
 
         item {
-            Text(
-                    text = stringResource(R.string.upcoming_renewals),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold
-            )
+            Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                        text = stringResource(R.string.upcoming_renewals),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold
+                )
+
+                TextButton(onClick = onViewAllSubscriptions) {
+                    Text(text = stringResource(R.string.view_all_subscriptions))
+                }
+            }
         }
 
         if (upcomingSubscriptions.isEmpty()) {

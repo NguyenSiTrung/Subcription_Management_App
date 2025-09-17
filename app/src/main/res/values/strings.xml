@@ -41,6 +41,7 @@
     <string name="no_subscriptions_description">You haven\'t added any subscriptions yet. Tap the + button to get started.</string>
     <string name="active_subscriptions">Active Subscriptions</string>
     <string name="upcoming_renewals">Upcoming Renewals</string>
+    <string name="view_all_subscriptions">View All</string>
     <string name="no_upcoming_renewals">No upcoming renewals</string>
     <string name="next_billing_date">Next Billing Date</string>
     <string name="active">Active</string>

@@ -37,6 +37,9 @@ class SubscriptionViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private val _subscriptionSaved = MutableSharedFlow<Unit>()
+    val subscriptionSaved: SharedFlow<Unit> = _subscriptionSaved.asSharedFlow()
+
     private var allSubscriptionsJob: Job? = null
     private var activeSubscriptionsJob: Job? = null
     private var subscriptionJob: Job? = null
@@ -105,6 +108,7 @@ class SubscriptionViewModel @Inject constructor(
                 addSubscriptionUseCase(subscription)
                 loadAllSubscriptions()
                 loadActiveSubscriptions()
+                _subscriptionSaved.emit(Unit)
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to add subscription"
             } finally {
@@ -120,6 +124,7 @@ class SubscriptionViewModel @Inject constructor(
                 updateSubscriptionUseCase(subscription)
                 loadAllSubscriptions()
                 loadActiveSubscriptions()
+                _subscriptionSaved.emit(Unit)
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to update subscription"
             } finally {
