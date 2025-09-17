@@ -231,7 +231,7 @@ fun AppTopBar(
                                             accentColor = colorScheme.secondary
                                         ) {
                                             showMenu = false
-                                            // Navigate to about screen
+                                            navController.navigate(Screen.About.route)
                                         }
                                     }
                                 }

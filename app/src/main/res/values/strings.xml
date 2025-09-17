@@ -147,6 +147,16 @@
     <string name="app_version">App Version</string>
     <string name="privacy_policy">Privacy Policy</string>
     <string name="terms_of_service">Terms of Service</string>
+    
+    <!-- About Screen -->
+    <string name="about_top_bar_subtitle">App information and credits</string>
+    <string name="about_app_version">Version</string>
+    <string name="about_developer">Developer</string>
+    <string name="about_description">Subscription Management App helps you track and manage all your subscriptions in one place. Never miss a payment again!</string>
+    <string name="about_contact">Contact Us</string>
+    <string name="about_rate_app">Rate This App</string>
+    <string name="about_open_source">Open Source Libraries</string>
+    <string name="about_thank_you">Thank you for using our app!</string>
 
     <!-- Reminders -->
     <string name="reminder">Reminder</string>

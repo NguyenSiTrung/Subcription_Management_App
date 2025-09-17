@@ -13,6 +13,7 @@ import com.example.subcriptionmanagementapp.ui.screens.subscriptions.AddEditSubs
 import com.example.subcriptionmanagementapp.ui.screens.categories.CategoryListScreen
 import com.example.subcriptionmanagementapp.ui.screens.statistics.StatisticsScreen
 import com.example.subcriptionmanagementapp.ui.screens.settings.SettingsScreen
+import com.example.subcriptionmanagementapp.ui.screens.about.AboutScreen
 
 @Composable
 fun AppNavigation(navController: NavHostController) {
@@ -66,6 +67,9 @@ fun AppNavigation(navController: NavHostController) {
         composable(Screen.Settings.route) {
             SettingsScreen(navController = navController)
         }
+        composable(Screen.About.route) {
+            AboutScreen(navController = navController)
+        }
     }
 }
 
@@ -81,4 +85,5 @@ sealed class Screen(val route: String) {
     object CategoryList : Screen("category_list")
     object Statistics : Screen("statistics")
     object Settings : Screen("settings")
+    object About : Screen("about")
 }
