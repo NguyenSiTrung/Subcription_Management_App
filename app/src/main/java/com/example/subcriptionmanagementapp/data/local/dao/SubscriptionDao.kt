@@ -18,18 +18,23 @@ interface SubscriptionDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertSubscription(subscription: Subscription): Long
 
-    @Update
-    suspend fun updateSubscription(subscription: Subscription)
+    @Update suspend fun updateSubscription(subscription: Subscription)
 
-    @Delete
-    suspend fun deleteSubscription(subscription: Subscription)
+    @Delete suspend fun deleteSubscription(subscription: Subscription)
 
     @Query("SELECT * FROM subscriptions WHERE category_id = :categoryId")
     fun getSubscriptionsByCategory(categoryId: Long): Flow<List<Subscription>>
 
     @Query("SELECT * FROM subscriptions WHERE next_billing_date BETWEEN :startDate AND :endDate")
-    suspend fun getSubscriptionsByBillingDateRange(startDate: Long, endDate: Long): List<Subscription>
+    suspend fun getSubscriptionsByBillingDateRange(
+            startDate: Long,
+            endDate: Long
+    ): List<Subscription>
 
-    @Query("SELECT * FROM subscriptions WHERE name LIKE '%' || :searchQuery || '%' OR description LIKE '%' || :searchQuery || '%'")
+    @Query(
+            "SELECT * FROM subscriptions WHERE name LIKE '%' || :searchQuery || '%' OR description LIKE '%' || :searchQuery || '%'"
+    )
     suspend fun searchSubscriptions(searchQuery: String): List<Subscription>
+
+    @Query("DELETE FROM subscriptions") suspend fun clearAllSubscriptions()
 }

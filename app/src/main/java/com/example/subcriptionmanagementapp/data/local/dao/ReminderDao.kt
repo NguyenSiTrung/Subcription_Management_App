@@ -15,11 +15,9 @@ interface ReminderDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertReminder(reminder: Reminder): Long
 
-    @Update
-    suspend fun updateReminder(reminder: Reminder)
+    @Update suspend fun updateReminder(reminder: Reminder)
 
-    @Delete
-    suspend fun deleteReminder(reminder: Reminder)
+    @Delete suspend fun deleteReminder(reminder: Reminder)
 
     @Query("SELECT * FROM reminders WHERE subscription_id = :subscriptionId")
     fun getRemindersBySubscriptionId(subscriptionId: Long): Flow<List<Reminder>>
@@ -29,4 +27,6 @@ interface ReminderDao {
 
     @Query("UPDATE reminders SET is_notified = 1 WHERE id = :reminderId")
     suspend fun markReminderAsNotified(reminderId: Long)
+
+    @Query("DELETE FROM reminders") suspend fun clearAllReminders()
 }

@@ -12,4 +12,5 @@ interface PaymentHistoryRepository {
     fun getPaymentHistoryBySubscriptionId(subscriptionId: Long): Flow<List<PaymentHistory>>
     suspend fun getPaymentHistoryByDateRange(startDate: Long, endDate: Long): List<PaymentHistory>
     suspend fun getTotalPaymentByDateRange(startDate: Long, endDate: Long): Double?
+    suspend fun clearAllPaymentHistory()
 }

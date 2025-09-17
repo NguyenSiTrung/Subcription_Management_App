@@ -11,4 +11,5 @@ interface CategoryRepository {
     suspend fun deleteCategory(category: Category)
     fun getPredefinedCategories(): Flow<List<Category>>
     suspend fun getCategoriesByKeyword(keyword: String): List<Category>
+    suspend fun clearAllCategories()
 }

@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -36,57 +37,65 @@ class SubscriptionViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private var allSubscriptionsJob: Job? = null
+    private var activeSubscriptionsJob: Job? = null
+    private var subscriptionJob: Job? = null
+    private var subscriptionsByCategoryJob: Job? = null
+
     init {
         loadAllSubscriptions()
         loadActiveSubscriptions()
     }
 
     fun loadAllSubscriptions() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
+        allSubscriptionsJob?.cancel()
+        allSubscriptionsJob =
+            viewModelScope.launch {
                 getAllSubscriptionsUseCase()
-                    .collect { subscriptionList ->
-                        _subscriptions.value = subscriptionList
+                    .onStart { _isLoading.value = true }
+                    .catch { e ->
+                        _error.value = e.message ?: "Failed to load subscriptions"
+                        _isLoading.value = false
                     }
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Failed to load subscriptions"
-            } finally {
-                _isLoading.value = false
+                    .collectLatest { subscriptionList ->
+                        _subscriptions.value = subscriptionList
+                        _isLoading.value = false
+                    }
             }
-        }
     }
 
     fun loadActiveSubscriptions() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
+        activeSubscriptionsJob?.cancel()
+        activeSubscriptionsJob =
+            viewModelScope.launch {
                 getActiveSubscriptionsUseCase()
-                    .collect { subscriptionList ->
-                        _activeSubscriptions.value = subscriptionList
+                    .onStart { _isLoading.value = true }
+                    .catch { e ->
+                        _error.value = e.message ?: "Failed to load active subscriptions"
+                        _isLoading.value = false
                     }
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Failed to load active subscriptions"
-            } finally {
-                _isLoading.value = false
+                    .collectLatest { subscriptionList ->
+                        _activeSubscriptions.value = subscriptionList
+                        _isLoading.value = false
+                    }
             }
-        }
     }
 
     fun loadSubscription(id: Long) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
+        subscriptionJob?.cancel()
+        subscriptionJob =
+            viewModelScope.launch {
                 getSubscriptionUseCase(id)
-                    .collect { subscription ->
-                        _selectedSubscription.value = subscription
+                    .onStart { _isLoading.value = true }
+                    .catch { e ->
+                        _error.value = e.message ?: "Failed to load subscription"
+                        _isLoading.value = false
                     }
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Failed to load subscription"
-            } finally {
-                _isLoading.value = false
+                    .collectLatest { subscription ->
+                        _selectedSubscription.value = subscription
+                        _isLoading.value = false
+                    }
             }
-        }
     }
 
     fun addSubscription(subscription: Subscription) {
@@ -135,19 +144,20 @@ class SubscriptionViewModel @Inject constructor(
     }
 
     fun loadSubscriptionsByCategory(categoryId: Long) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
+        subscriptionsByCategoryJob?.cancel()
+        subscriptionsByCategoryJob =
+            viewModelScope.launch {
                 getSubscriptionsByCategoryUseCase(categoryId)
-                    .collect { subscriptionList ->
-                        _subscriptions.value = subscriptionList
+                    .onStart { _isLoading.value = true }
+                    .catch { e ->
+                        _error.value = e.message ?: "Failed to load subscriptions by category"
+                        _isLoading.value = false
                     }
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Failed to load subscriptions by category"
-            } finally {
-                _isLoading.value = false
+                    .collectLatest { subscriptionList ->
+                        _subscriptions.value = subscriptionList
+                        _isLoading.value = false
+                    }
             }
-        }
     }
 
     fun searchSubscriptions(query: String) {

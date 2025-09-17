@@ -3,10 +3,12 @@ package com.example.subcriptionmanagementapp.data.repository
 import com.example.subcriptionmanagementapp.data.local.dao.CategoryDao
 import com.example.subcriptionmanagementapp.data.local.entity.Category
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class CategoryRepositoryImpl(
-    private val categoryDao: CategoryDao
-) : CategoryRepository {
+@Singleton
+class CategoryRepositoryImpl @Inject constructor(private val categoryDao: CategoryDao) :
+        CategoryRepository {
 
     override fun getAllCategories(): Flow<List<Category>> {
         return categoryDao.getAllCategories()
@@ -34,5 +36,9 @@ class CategoryRepositoryImpl(
 
     override suspend fun getCategoriesByKeyword(keyword: String): List<Category> {
         return categoryDao.getCategoriesByKeyword(keyword)
+    }
+
+    override suspend fun clearAllCategories() {
+        categoryDao.clearAllCategories()
     }
 }

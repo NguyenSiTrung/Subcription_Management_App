@@ -15,11 +15,9 @@ interface PaymentHistoryDao {
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPaymentHistory(paymentHistory: PaymentHistory): Long
 
-    @Update
-    suspend fun updatePaymentHistory(paymentHistory: PaymentHistory)
+    @Update suspend fun updatePaymentHistory(paymentHistory: PaymentHistory)
 
-    @Delete
-    suspend fun deletePaymentHistory(paymentHistory: PaymentHistory)
+    @Delete suspend fun deletePaymentHistory(paymentHistory: PaymentHistory)
 
     @Query("SELECT * FROM payment_history WHERE subscription_id = :subscriptionId")
     fun getPaymentHistoryBySubscriptionId(subscriptionId: Long): Flow<List<PaymentHistory>>
@@ -27,6 +25,10 @@ interface PaymentHistoryDao {
     @Query("SELECT * FROM payment_history WHERE payment_date BETWEEN :startDate AND :endDate")
     suspend fun getPaymentHistoryByDateRange(startDate: Long, endDate: Long): List<PaymentHistory>
 
-    @Query("SELECT SUM(amount) FROM payment_history WHERE payment_date BETWEEN :startDate AND :endDate")
+    @Query(
+            "SELECT SUM(amount) FROM payment_history WHERE payment_date BETWEEN :startDate AND :endDate"
+    )
     suspend fun getTotalPaymentByDateRange(startDate: Long, endDate: Long): Double?
+
+    @Query("DELETE FROM payment_history") suspend fun clearAllPaymentHistory()
 }

@@ -3,10 +3,12 @@ package com.example.subcriptionmanagementapp.data.repository
 import com.example.subcriptionmanagementapp.data.local.dao.ReminderDao
 import com.example.subcriptionmanagementapp.data.local.entity.Reminder
 import kotlinx.coroutines.flow.Flow
+import javax.inject.Inject
+import javax.inject.Singleton
 
-class ReminderRepositoryImpl(
-    private val reminderDao: ReminderDao
-) : ReminderRepository {
+@Singleton
+class ReminderRepositoryImpl @Inject constructor(private val reminderDao: ReminderDao) :
+        ReminderRepository {
 
     override fun getAllReminders(): Flow<List<Reminder>> {
         return reminderDao.getAllReminders()
@@ -38,5 +40,9 @@ class ReminderRepositoryImpl(
 
     override suspend fun markReminderAsNotified(reminderId: Long) {
         reminderDao.markReminderAsNotified(reminderId)
+    }
+
+    override suspend fun clearAllReminders() {
+        reminderDao.clearAllReminders()
     }
 }

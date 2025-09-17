@@ -1,14 +1,13 @@
 package com.example.subcriptionmanagementapp.domain.usecase.statistics
 
 import com.example.subcriptionmanagementapp.data.repository.PaymentHistoryRepository
-import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.map
 import java.util.*
 import javax.inject.Inject
+import kotlinx.coroutines.flow.Flow
 
-class GetYearlySpendingUseCase @Inject constructor(
-    private val paymentHistoryRepository: PaymentHistoryRepository
-) {
+class GetYearlySpendingUseCase
+@Inject
+constructor(private val paymentHistoryRepository: PaymentHistoryRepository) {
     operator fun invoke(year: Int): Flow<Double> {
         val calendar = Calendar.getInstance()
         calendar.set(Calendar.YEAR, year)
@@ -18,17 +17,19 @@ class GetYearlySpendingUseCase @Inject constructor(
         calendar.set(Calendar.MINUTE, 0)
         calendar.set(Calendar.SECOND, 0)
         calendar.set(Calendar.MILLISECOND, 0)
-        
+
         val startDate = calendar.timeInMillis
-        
+
         calendar.add(Calendar.YEAR, 1)
         calendar.add(Calendar.MILLISECOND, -1)
-        
+
         val endDate = calendar.timeInMillis
-        
-        return paymentHistoryRepository.getPaymentHistoryByDateRange(startDate, endDate)
-            .map { paymentHistoryList ->
-                paymentHistoryList.sumOf { it.amount }
-            }
+
+        return kotlinx.coroutines.flow.flow {
+            val paymentHistoryList =
+                    paymentHistoryRepository.getPaymentHistoryByDateRange(startDate, endDate)
+            val totalSpending = paymentHistoryList.sumOf { it.amount }
+            emit(totalSpending)
+        }
     }
 }

@@ -1,15 +1,16 @@
 package com.example.subcriptionmanagementapp.ui.screens.subscriptions
 
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -18,12 +19,16 @@ import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.R
+import com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
 import com.example.subcriptionmanagementapp.data.local.entity.PaymentHistory
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.ui.components.AppTopBar
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
+import com.example.subcriptionmanagementapp.ui.theme.ErrorColor
+import com.example.subcriptionmanagementapp.ui.theme.SuccessColor
+import com.example.subcriptionmanagementapp.ui.theme.WarningColor
 import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import com.example.subcriptionmanagementapp.util.formatCurrency
 import com.example.subcriptionmanagementapp.util.formatDate
@@ -33,22 +38,24 @@ import com.example.subcriptionmanagementapp.util.getDaysUntil
 fun SubscriptionDetailScreen(
     navController: NavController,
     subscriptionId: Long,
-    viewModel: SubscriptionViewModel = androidx.lifecycle.viewmodel.compose.viewModel()
+    viewModel: SubscriptionViewModel = hiltViewModel()
 ) {
-    val subscription by viewModel.selectedSubscription.collectAsStateWithLifecycle()
+    val subscriptionState by viewModel.selectedSubscription.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
-    
+
     LaunchedEffect(subscriptionId) {
         viewModel.loadSubscription(subscriptionId)
     }
-    
+
     LaunchedEffect(error) {
         if (error != null) {
             viewModel.clearError()
         }
     }
-    
+
+    val currentSubscription = subscriptionState
+
     Scaffold(
         topBar = {
             AppTopBar(
@@ -68,14 +75,16 @@ fun SubscriptionDetailScreen(
             when {
                 isLoading -> LoadingIndicator()
                 error != null -> ErrorMessage(message = error!!)
-                subscription == null -> ErrorMessage(message = stringResource(R.string.subscription_not_found))
+                currentSubscription == null -> ErrorMessage(message = stringResource(R.string.subscription_not_found))
                 else -> SubscriptionDetailContent(
-                    subscription = subscription,
+                    subscription = currentSubscription,
                     onEditClick = {
-                        navController.navigate(Screen.AddEditSubscription.createRoute(subscription.id))
+                        navController.navigate(
+                            Screen.AddEditSubscription.createRoute(currentSubscription.id)
+                        )
                     },
                     onDeleteClick = {
-                        viewModel.deleteSubscription(subscription)
+                        viewModel.deleteSubscription(currentSubscription)
                         navController.popBackStack()
                     },
                     onToggleReminder = {
@@ -94,10 +103,10 @@ fun SubscriptionDetailContent(
     onDeleteClick: () -> Unit,
     onToggleReminder: () -> Unit
 ) {
-    val daysUntil = getDaysUntil(subscription.nextBillingDate)
-    val isOverdue = daysUntil < 0
-    val isUrgent = daysUntil <= 3
-    
+    val daysUntil = subscription.nextBillingDate.getDaysUntil()
+    val isOverdue = daysUntil < 0L
+    val isUrgent = daysUntil <= 3L
+
     LazyColumn(
         modifier = Modifier.fillMaxSize(),
         contentPadding = PaddingValues(16.dp),
@@ -180,7 +189,7 @@ fun SubscriptionInfoCard(
             }
         ),
         border = if (isUrgent || !subscription.isActive) {
-            CardDefaults.outlinedCardBorder().copy(
+            BorderStroke(
                 width = 1.dp,
                 color = if (!subscription.isActive) {
                     MaterialTheme.colorScheme.outline
@@ -189,7 +198,7 @@ fun SubscriptionInfoCard(
                 }
             )
         } else {
-            CardDefaults.outlinedCardBorder()
+            null
         }
     ) {
         Column(
@@ -237,7 +246,7 @@ fun SubscriptionInfoCard(
                     )
                     
                     Text(
-                        text = formatCurrency(subscription.price),
+                        text = subscription.price.formatCurrency(),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = if (!subscription.isActive) {
@@ -289,7 +298,7 @@ fun SubscriptionInfoCard(
                     )
                     
                     Text(
-                        text = formatDate(subscription.nextBillingDate),
+                        text = subscription.nextBillingDate.formatDate(),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = if (!subscription.isActive) {
@@ -313,16 +322,16 @@ fun SubscriptionInfoCard(
                         text = when {
                             !subscription.isActive -> stringResource(R.string.inactive)
                             isOverdue -> stringResource(R.string.overdue)
-                            daysUntil == 0 -> stringResource(R.string.due_today)
-                            daysUntil == 1 -> stringResource(R.string.due_tomorrow)
-                            else -> stringResource(R.string.due_in_days, daysUntil)
+                            daysUntil == 0L -> stringResource(R.string.due_today)
+                            daysUntil == 1L -> stringResource(R.string.due_tomorrow)
+                            else -> stringResource(R.string.due_in_days, daysUntil.toInt())
                         },
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = when {
                             !subscription.isActive -> MaterialTheme.colorScheme.onSurfaceVariant
                             isOverdue -> ErrorColor
-                            daysUntil <= 3 -> WarningColor
+                            daysUntil <= 3L -> WarningColor
                             else -> SuccessColor
                         }
                     )
@@ -472,7 +481,7 @@ fun PaymentHistoryItem(
     ) {
         Column {
             Text(
-                text = formatDate(payment.paymentDate),
+                text = payment.paymentDate.formatDate(),
                 style = MaterialTheme.typography.bodyMedium,
                 fontWeight = FontWeight.Bold
             )
@@ -487,7 +496,7 @@ fun PaymentHistoryItem(
         }
         
         Text(
-            text = formatCurrency(payment.amount),
+            text = payment.amount.formatCurrency(),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold
         )

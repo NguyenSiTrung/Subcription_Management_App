@@ -1,3 +1,140 @@
 <resources>
     <string name="app_name">Subcription Management App</string>
+
+    <!-- Navigation -->
+    <string name="home">Home</string>
+    <string name="subscriptions">Subscriptions</string>
+    <string name="categories">Categories</string>
+    <string name="statistics">Statistics</string>
+    <string name="settings">Settings</string>
+
+    <!-- Top bar subtitles -->
+    <string name="home_top_bar_subtitle">Stay on top of your recurring spending</string>
+    <string name="subscriptions_top_bar_subtitle">All your plans at a glance</string>
+    <string name="subscription_detail_top_bar_subtitle">Review subscription insights and activity</string>
+    <string name="add_subscription_top_bar_subtitle">Create or update your subscription details</string>
+    <string name="categories_top_bar_subtitle">Organize services into smart groups</string>
+    <string name="statistics_top_bar_subtitle">Visualize how your spending evolves</string>
+    <string name="settings_top_bar_subtitle">Tailor the app to match your workflow</string>
+
+    <!-- Actions -->
+    <string name="back">Back</string>
+    <string name="search">Search</string>
+    <string name="add">Add</string>
+    <string name="more_options">More Options</string>
+    <string name="about">About</string>
+    <string name="save">Save</string>
+    <string name="edit">Edit</string>
+    <string name="delete">Delete</string>
+    <string name="retry">Retry</string>
+    <string name="backup">Backup</string>
+    <string name="restore">Restore</string>
+    <string name="clear">Clear</string>
+    <string name="show">Show</string>
+
+    <!-- Subscription related -->
+    <string name="add_subscription">Add Subscription</string>
+    <string name="edit_subscription">Edit Subscription</string>
+    <string name="subscription_details">Subscription Details</string>
+    <string name="subscription_not_found">Subscription not found</string>
+    <string name="no_subscriptions">No Subscriptions</string>
+    <string name="no_subscriptions_description">You haven\'t added any subscriptions yet. Tap the + button to get started.</string>
+    <string name="active_subscriptions">Active Subscriptions</string>
+    <string name="upcoming_renewals">Upcoming Renewals</string>
+    <string name="no_upcoming_renewals">No upcoming renewals</string>
+    <string name="next_billing_date">Next Billing Date</string>
+    <string name="active">Active</string>
+    <string name="inactive">Inactive</string>
+    <string name="status">Status</string>
+    <string name="access">Access</string>
+    <string name="open_website">Open Website</string>
+    <string name="open_app">Open App</string>
+
+    <!-- Categories -->
+    <string name="add_category">Add Category</string>
+    <string name="no_categories">No Categories</string>
+    <string name="no_categories_description">No categories available. Add some categories to organize your subscriptions.</string>
+    <string name="category">Category</string>
+    <string name="no_category">No Category</string>
+    <string name="predefined">Predefined</string>
+
+    <!-- Form fields -->
+    <string name="name">Name</string>
+    <string name="description">Description</string>
+    <string name="price">Price</string>
+    <string name="billing_cycle">Billing Cycle</string>
+    <string name="website_url">Website URL</string>
+    <string name="app_package_name">App Package Name</string>
+    <string name="notes">Notes</string>
+    <string name="no_notes">No notes</string>
+    <string name="reminder_days_before">Reminder Days Before</string>
+    <string name="please_fill_required_fields">Please fill all required fields</string>
+
+    <!-- Billing cycles -->
+    <string name="daily">Daily</string>
+    <string name="weekly">Weekly</string>
+    <string name="monthly">Monthly</string>
+    <string name="yearly">Yearly</string>
+
+    <!-- Due status -->
+    <string name="overdue">Overdue</string>
+    <string name="due_today">Due Today</string>
+    <string name="due_tomorrow">Due Tomorrow</string>
+    <string name="due_in_days">Due in %1$d days</string>
+
+    <!-- Notifications -->
+    <string name="subscription_reminder">Subscription Reminder</string>
+    <string name="subscription_reminder_message">%1$s is due for renewal</string>
+    <string name="ic_notification">Notification Icon</string>
+
+    <!-- Statistics -->
+    <string name="monthly_summary">Monthly Summary</string>
+    <string name="total_monthly_cost">Total Monthly Cost</string>
+    <string name="payment_history">Payment History</string>
+    <string name="no_payment_history">No payment history</string>
+    <string name="total_spent">Total Spent</string>
+    <string name="payment_count">Payment Count</string>
+    <string name="average_payment">Average Payment</string>
+
+    <!-- Months -->
+    <string name="january">January</string>
+    <string name="february">February</string>
+    <string name="march">March</string>
+    <string name="april">April</string>
+    <string name="may">May</string>
+    <string name="june">June</string>
+    <string name="july">July</string>
+    <string name="august">August</string>
+    <string name="september">September</string>
+    <string name="october">October</string>
+    <string name="november">November</string>
+    <string name="december">December</string>
+
+    <!-- Settings -->
+    <string name="general">General</string>
+    <string name="dark_mode">Dark Mode</string>
+    <string name="dark_mode_description">Switch between light and dark themes</string>
+    <string name="currency">Currency</string>
+    <string name="currency_description">Select your preferred currency</string>
+    <string name="notifications">Notifications</string>
+    <string name="enable_notifications">Enable Notifications</string>
+    <string name="enable_notifications_description">Get notified about upcoming renewals</string>
+    <string name="reminder_time">Reminder Time</string>
+    <string name="reminder_time_description">Set when to receive reminder notifications</string>
+    <string name="data">Data</string>
+    <string name="backup_data">Backup Data</string>
+    <string name="backup_data_description">Export your data to a file</string>
+    <string name="restore_data">Restore Data</string>
+    <string name="restore_data_description">Import data from a backup file</string>
+    <string name="clear_data">Clear Data</string>
+    <string name="clear_data_description">Delete all app data (cannot be undone)</string>
+    <string name="app_version">App Version</string>
+    <string name="privacy_policy">Privacy Policy</string>
+    <string name="terms_of_service">Terms of Service</string>
+
+    <!-- Reminders -->
+    <string name="reminder">Reminder</string>
+
+    <!-- Errors -->
+    <string name="error_occurred">An error occurred</string>
 </resources>

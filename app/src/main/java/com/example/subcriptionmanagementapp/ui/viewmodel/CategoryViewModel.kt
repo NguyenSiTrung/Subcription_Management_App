@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.example.subcriptionmanagementapp.data.local.entity.Category
 import com.example.subcriptionmanagementapp.domain.usecase.category.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -30,40 +31,45 @@ class CategoryViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private var categoriesJob: Job? = null
+    private var categoryJob: Job? = null
+
     init {
         loadCategories()
     }
 
     fun loadCategories() {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
+        categoriesJob?.cancel()
+        categoriesJob =
+            viewModelScope.launch {
                 getAllCategoriesUseCase()
-                    .collect { categoryList ->
-                        _categories.value = categoryList
+                    .onStart { _isLoading.value = true }
+                    .catch { e ->
+                        _error.value = e.message ?: "Failed to load categories"
+                        _isLoading.value = false
                     }
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Failed to load categories"
-            } finally {
-                _isLoading.value = false
+                    .collectLatest { categoryList ->
+                        _categories.value = categoryList
+                        _isLoading.value = false
+                    }
             }
-        }
     }
 
     fun loadCategory(id: Long) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
+        categoryJob?.cancel()
+        categoryJob =
+            viewModelScope.launch {
                 getCategoryUseCase(id)
-                    .collect { category ->
-                        _selectedCategory.value = category
+                    .onStart { _isLoading.value = true }
+                    .catch { e ->
+                        _error.value = e.message ?: "Failed to load category"
+                        _isLoading.value = false
                     }
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Failed to load category"
-            } finally {
-                _isLoading.value = false
+                    .collectLatest { category ->
+                        _selectedCategory.value = category
+                        _isLoading.value = false
+                    }
             }
-        }
     }
 
     fun addCategory(category: Category) {

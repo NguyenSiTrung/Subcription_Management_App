@@ -12,4 +12,5 @@ interface ReminderRepository {
     fun getRemindersBySubscriptionId(subscriptionId: Long): Flow<List<Reminder>>
     suspend fun getPendingReminders(currentDate: Long): List<Reminder>
     suspend fun markReminderAsNotified(reminderId: Long)
+    suspend fun clearAllReminders()
 }

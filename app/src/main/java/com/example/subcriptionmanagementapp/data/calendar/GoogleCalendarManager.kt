@@ -10,6 +10,7 @@ import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.gson.GsonFactory
 import com.google.api.services.calendar.Calendar
 import com.google.api.services.calendar.CalendarScopes
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.tasks.await
 import java.util.*
 import javax.inject.Inject
@@ -17,7 +18,7 @@ import javax.inject.Singleton
 
 @Singleton
 class GoogleCalendarManager @Inject constructor(
-    private val context: Context
+    @ApplicationContext private val context: Context
 ) {
     private val HTTP_TRANSPORT = NetHttpTransport()
     private val JSON_FACTORY = GsonFactory.getDefaultInstance()

@@ -5,10 +5,8 @@ import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.data.notification.ReminderManager
 import javax.inject.Inject
 
-class ScheduleReminderUseCase @Inject constructor(
-    private val reminderManager: ReminderManager
-) {
+class ScheduleReminderUseCase @Inject constructor(private val reminderManager: ReminderManager) {
     suspend operator fun invoke(subscription: Subscription, reminder: Reminder) {
-        reminderManager.scheduleReminderForSubscription(subscription.id)
+        reminderManager.scheduleRemindersForSubscription(subscription.id)
     }
 }

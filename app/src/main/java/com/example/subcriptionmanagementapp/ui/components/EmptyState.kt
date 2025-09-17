@@ -12,65 +12,56 @@ import com.example.subcriptionmanagementapp.R
 
 @Composable
 fun EmptyState(
-    title: String,
-    description: String,
-    modifier: Modifier = Modifier,
-    actionText: String? = null,
-    onAction: (() -> Unit)? = null
+        title: String,
+        description: String,
+        modifier: Modifier = Modifier,
+        actionText: String? = null,
+        onAction: (() -> Unit)? = null
 ) {
     Column(
-        modifier = modifier.fillMaxSize(),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center,
-        padding = 16.dp
+            modifier = modifier.fillMaxSize().padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
     ) {
         Text(
-            text = title,
-            style = MaterialTheme.typography.titleLarge,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontWeight = FontWeight.Bold
+                text = title,
+                style = MaterialTheme.typography.titleLarge,
+                color = MaterialTheme.colorScheme.onSurface,
+                fontWeight = FontWeight.Bold
         )
-        
+
         Spacer(modifier = Modifier.height(8.dp))
-        
+
         Text(
-            text = description,
-            style = MaterialTheme.typography.bodyMedium,
-            color = MaterialTheme.colorScheme.onSurfaceVariant
+                text = description,
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
         )
-        
+
         if (actionText != null && onAction != null) {
             Spacer(modifier = Modifier.height(16.dp))
-            
-            Button(
-                onClick = onAction
-            ) {
-                Text(actionText)
-            }
+
+            Button(onClick = onAction) { Text(actionText) }
         }
     }
 }
 
 @Composable
-fun NoSubscriptionsEmptyState(
-    onAddSubscription: () -> Unit
-) {
+fun NoSubscriptionsEmptyState(onAddSubscription: () -> Unit) {
     EmptyState(
-        title = stringResource(R.string.no_subscriptions),
-        description = stringResource(R.string.no_subscriptions_description),
-        actionText = stringResource(R.string.add_subscription),
-        onAction = onAddSubscription
+            title = stringResource(R.string.no_subscriptions),
+            description = stringResource(R.string.no_subscriptions_description),
+            actionText = stringResource(R.string.add_subscription),
+            onAction = onAddSubscription
     )
 }
 
 @Composable
-fun NoCategoriesEmptyState(
-    onAddCategory: () -> Unit
-) {
+fun NoCategoriesEmptyState(onAddCategory: () -> Unit) {
     EmptyState(
-        title = stringResource(R.string.no_categories),
-        description = stringResource(R.string.no_categories_description),
-        actionText = stringResource(R.string.add_category),
-        onAction = onAddCategory
+            title = stringResource(R.string.no_categories),
+            description = stringResource(R.string.no_categories_description),
+            actionText = stringResource(R.string.add_category),
+            onAction = onAddCategory
     )
 }

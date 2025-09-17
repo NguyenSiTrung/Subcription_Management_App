@@ -5,17 +5,20 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.subcriptionmanagementapp.domain.usecase.backup.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
-class BackupViewModel @Inject constructor(
-    private val createBackupUseCase: CreateBackupUseCase,
-    private val restoreBackupUseCase: RestoreBackupUseCase,
-    private val getBackupFilePickerIntentUseCase: GetBackupFilePickerIntentUseCase,
-    private val getShareBackupIntentUseCase: GetShareBackupIntentUseCase
+class BackupViewModel
+@Inject
+constructor(
+        private val createBackupUseCase: CreateBackupUseCase,
+        private val restoreBackupUseCase: RestoreBackupUseCase,
+        private val getBackupFilePickerIntentUseCase: GetBackupFilePickerIntentUseCase,
+        private val getShareBackupIntentUseCase: GetShareBackupIntentUseCase
 ) : ViewModel() {
 
     private val _backupUri = MutableStateFlow<Uri?>(null)

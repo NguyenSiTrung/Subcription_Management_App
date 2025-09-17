@@ -6,17 +6,20 @@ import androidx.lifecycle.viewModelScope
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.domain.usecase.calendar.*
 import dagger.hilt.android.lifecycle.HiltViewModel
+import javax.inject.Inject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
 @HiltViewModel
-class GoogleCalendarViewModel @Inject constructor(
-    private val addSubscriptionToCalendarUseCase: AddSubscriptionToCalendarUseCase,
-    private val updateSubscriptionInCalendarUseCase: UpdateSubscriptionInCalendarUseCase,
-    private val removeSubscriptionFromCalendarUseCase: RemoveSubscriptionFromCalendarUseCase,
-    private val checkGoogleSignInStatusUseCase: CheckGoogleSignInStatusUseCase
+class GoogleCalendarViewModel
+@Inject
+constructor(
+        private val addSubscriptionToCalendarUseCase: AddSubscriptionToCalendarUseCase,
+        private val updateSubscriptionInCalendarUseCase: UpdateSubscriptionInCalendarUseCase,
+        private val removeSubscriptionFromCalendarUseCase: RemoveSubscriptionFromCalendarUseCase,
+        private val checkGoogleSignInStatusUseCase: CheckGoogleSignInStatusUseCase
 ) : ViewModel() {
 
     private val _isSignedIn = MutableStateFlow(false)

@@ -13,4 +13,5 @@ interface SubscriptionRepository {
     fun getSubscriptionsByCategory(categoryId: Long): Flow<List<Subscription>>
     suspend fun getSubscriptionsByBillingDateRange(startDate: Long, endDate: Long): List<Subscription>
     suspend fun searchSubscriptions(searchQuery: String): List<Subscription>
+    suspend fun clearAllSubscriptions()
 }

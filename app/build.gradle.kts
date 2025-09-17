@@ -24,8 +24,8 @@ android {
         release {
             isMinifyEnabled = false
             proguardFiles(
-                getDefaultProguardFile("proguard-android-optimize.txt"),
-                "proguard-rules.pro"
+                    getDefaultProguardFile("proguard-android-optimize.txt"),
+                    "proguard-rules.pro"
             )
         }
     }
@@ -33,18 +33,13 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
-    }
-    buildFeatures {
-        compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
-    }
+    kotlinOptions { jvmTarget = "11" }
+    buildFeatures { compose = true }
+    composeOptions { kotlinCompilerExtensionVersion = "1.5.1" }
     packaging {
         resources {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/DEPENDENCIES"
         }
     }
 }
@@ -102,6 +97,9 @@ dependencies {
     // SQLCipher for encryption
     implementation(libs.zetetic.sqlcipher.android)
     implementation(libs.androidx.sqlite.ktx)
+    
+    // Security Crypto
+    implementation(libs.androidx.security.crypto)
 
     // Testing
     testImplementation(libs.junit)

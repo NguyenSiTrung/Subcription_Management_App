@@ -5,7 +5,10 @@ import androidx.lifecycle.viewModelScope
 import com.example.subcriptionmanagementapp.data.local.entity.PaymentHistory
 import com.example.subcriptionmanagementapp.domain.usecase.payment.*
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -36,7 +39,7 @@ class PaymentHistoryViewModel @Inject constructor(
             _isLoading.value = true
             try {
                 getPaymentHistoryBySubscriptionIdUseCase(subscriptionId)
-                    .collect { paymentHistoryList ->
+                    .collectLatest { paymentHistoryList: List<PaymentHistory> ->
                         _paymentHistory.value = paymentHistoryList
                     }
             } catch (e: Exception) {
@@ -51,10 +54,8 @@ class PaymentHistoryViewModel @Inject constructor(
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                getPaymentHistoryByDateRangeUseCase(startDate, endDate)
-                    .collect { paymentHistoryList ->
-                        _paymentHistory.value = paymentHistoryList
-                    }
+                val paymentHistoryList = getPaymentHistoryByDateRangeUseCase(startDate, endDate)
+                _paymentHistory.value = paymentHistoryList
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to load payment history"
             } finally {
@@ -68,7 +69,7 @@ class PaymentHistoryViewModel @Inject constructor(
             _isLoading.value = true
             try {
                 getPaymentHistoryUseCase(id)
-                    .collect { paymentHistory ->
+                    .collectLatest { paymentHistory: PaymentHistory? ->
                         _selectedPaymentHistory.value = paymentHistory
                     }
             } catch (e: Exception) {

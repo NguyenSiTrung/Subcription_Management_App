@@ -10,7 +10,13 @@ import com.example.subcriptionmanagementapp.util.getCurrentYear
 import com.example.subcriptionmanagementapp.util.getFirstDayOfMonth
 import com.example.subcriptionmanagementapp.util.getLastDayOfMonth
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.*
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.catch
+import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.onStart
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -47,6 +53,11 @@ class StatisticsViewModel @Inject constructor(
     private val _error = MutableStateFlow<String?>(null)
     val error: StateFlow<String?> = _error.asStateFlow()
 
+    private var monthlySpendingJob: Job? = null
+    private var spendingByCategoryJob: Job? = null
+    private var yearlySpendingJob: Job? = null
+    private var monthlyTrendJob: Job? = null
+
     init {
         loadCurrentMonthStatistics()
     }
@@ -60,57 +71,75 @@ class StatisticsViewModel @Inject constructor(
     fun loadMonthlyStatistics(year: Int, month: Int) {
         val startDate = getFirstDayOfMonth(month, year)
         val endDate = getLastDayOfMonth(month, year)
-        
+
+        monthlySpendingJob?.cancel()
+        spendingByCategoryJob?.cancel()
+
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                // Load payment history
-                getPaymentHistoryByDateRangeUseCase(startDate, endDate)
-                    .collect { paymentHistoryList ->
-                        _paymentHistory.value = paymentHistoryList
-                        _totalPayment.value = paymentHistoryList.sumOf { it.amount }
-                    }
-                
-                // Load monthly spending
-                getMonthlySpendingUseCase(year, month)
-                    .collect { amount ->
-                        _monthlySpending.value = amount
-                    }
-                
-                // Load spending by category
-                getSpendingByCategoryUseCase(startDate, endDate)
-                    .collect { categorySpendingList ->
-                        _spendingByCategory.value = categorySpendingList
-                    }
+                val paymentHistoryList =
+                    getPaymentHistoryByDateRangeUseCase(startDate, endDate)
+                _paymentHistory.value = paymentHistoryList
+                _totalPayment.value = paymentHistoryList.sumOf { payment -> payment.amount }
             } catch (e: Exception) {
                 _error.value = e.message ?: "Failed to load statistics"
             } finally {
                 _isLoading.value = false
             }
         }
+
+        monthlySpendingJob =
+            viewModelScope.launch {
+                getMonthlySpendingUseCase(year, month)
+                    .catch { e ->
+                        _error.value = e.message ?: "Failed to load statistics"
+                    }
+                    .collectLatest { amount: Double ->
+                        _monthlySpending.value = amount
+                    }
+            }
+
+        spendingByCategoryJob =
+            viewModelScope.launch {
+                getSpendingByCategoryUseCase(startDate, endDate)
+                    .catch { e ->
+                        _error.value = e.message ?: "Failed to load statistics"
+                    }
+                    .collectLatest { categorySpendingList: List<CategorySpending> ->
+                        _spendingByCategory.value = categorySpendingList
+                    }
+            }
     }
 
     fun loadYearlyStatistics(year: Int) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                // Load yearly spending
+        yearlySpendingJob?.cancel()
+        monthlyTrendJob?.cancel()
+
+        yearlySpendingJob =
+            viewModelScope.launch {
                 getYearlySpendingUseCase(year)
-                    .collect { amount ->
-                        _yearlySpending.value = amount
+                    .onStart { _isLoading.value = true }
+                    .catch { e ->
+                        _error.value = e.message ?: "Failed to load statistics"
+                        _isLoading.value = false
                     }
-                
-                // Load monthly spending trend
+                    .collectLatest { amount: Double ->
+                        _yearlySpending.value = amount
+                        _isLoading.value = false
+                    }
+            }
+
+        monthlyTrendJob =
+            viewModelScope.launch {
                 getMonthlySpendingTrendUseCase(year)
-                    .collect { monthlySpendingList ->
+                    .catch { e ->
+                        _error.value = e.message ?: "Failed to load statistics"
+                    }
+                    .collectLatest { monthlySpendingList: List<MonthlySpending> ->
                         _monthlySpendingTrend.value = monthlySpendingList
                     }
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Failed to load statistics"
-            } finally {
-                _isLoading.value = false
             }
-        }
     }
 
     fun clearError() {

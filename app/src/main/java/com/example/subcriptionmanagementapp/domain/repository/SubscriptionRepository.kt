@@ -1,0 +1,3 @@
+package com.example.subcriptionmanagementapp.domain.repository
+
+typealias SubscriptionRepository = com.example.subcriptionmanagementapp.data.repository.SubscriptionRepository
