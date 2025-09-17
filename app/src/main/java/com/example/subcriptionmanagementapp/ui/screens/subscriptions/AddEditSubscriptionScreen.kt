@@ -14,6 +14,7 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -372,12 +373,30 @@ fun AddEditSubscriptionContent(
     }
 
     Box(modifier = Modifier.fillMaxSize()) {
-        LazyColumn(
+        BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
+            // Limit the form width on large screens so the hero card remains readable
+            val maxContentWidth = 640.dp
+            val contentWidth = maxWidth.coerceAtMost(maxContentWidth)
+            val shouldCenterContent = maxWidth > maxContentWidth
+
+            val listModifier = if (shouldCenterContent) {
+                Modifier
+                        .width(contentWidth)
+                        .align(Alignment.TopCenter)
+                        .fillMaxHeight()
+            } else {
+                Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.TopCenter)
+                        .fillMaxHeight()
+            }
+
+            LazyColumn(
                 state = listState,
                 contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 140.dp),
                 verticalArrangement = Arrangement.spacedBy(20.dp),
-                modifier = Modifier.fillMaxSize()
-        ) {
+                modifier = listModifier
+            ) {
             item {
                 ElevatedCard(
                         shape = RoundedCornerShape(28.dp),
@@ -385,6 +404,7 @@ fun AddEditSubscriptionContent(
                 ) {
                     Box(
                             modifier = Modifier
+                                    .fillMaxWidth()
                                     .background(
                                             brush = Brush.linearGradient(
                                                     colors = listOf(
@@ -760,32 +780,41 @@ fun AddEditSubscriptionContent(
             item { Spacer(modifier = Modifier.height(4.dp)) }
         }
 
-        Surface(
-                color = MaterialTheme.colorScheme.surface,
-                tonalElevation = 8.dp,
-                shadowElevation = 12.dp,
-                modifier = Modifier
+            val bottomBarModifier = if (shouldCenterContent) {
+                Modifier
+                        .width(contentWidth)
                         .align(Alignment.BottomCenter)
+            } else {
+                Modifier
                         .fillMaxWidth()
-        ) {
-            Column(
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                        .align(Alignment.BottomCenter)
+            }
+
+            Surface(
+                    color = MaterialTheme.colorScheme.surface,
+                    tonalElevation = 8.dp,
+                    shadowElevation = 12.dp,
+                    modifier = bottomBarModifier
             ) {
-                if (!isSaveEnabled) {
-                    Text(
-                            text = stringResource(R.string.please_fill_required_fields),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                    )
-                }
-                Button(
-                        onClick = onSaveClick,
-                        enabled = isSaveEnabled,
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(16.dp)
+                Column(
+                        modifier = Modifier.padding(horizontal = 20.dp, vertical = 16.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
-                    Text(text = stringResource(R.string.save))
+                    if (!isSaveEnabled) {
+                        Text(
+                                text = stringResource(R.string.please_fill_required_fields),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                    Button(
+                            onClick = onSaveClick,
+                            enabled = isSaveEnabled,
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Text(text = stringResource(R.string.save))
+                    }
                 }
             }
         }
