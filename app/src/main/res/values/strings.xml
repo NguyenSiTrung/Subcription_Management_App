@@ -63,7 +63,13 @@
     <string name="name">Name</string>
     <string name="description">Description</string>
     <string name="price">Price</string>
+    <string name="subscription_name_placeholder">e.g. Spotify Premium</string>
+    <string name="subscription_description_placeholder">Add context or plan highlights (optional)</string>
+    <string name="subscription_price_placeholder">9.99</string>
+    <string name="price_field_hint">Enter the amount per billing cycle to unlock spend insights.</string>
     <string name="billing_cycle">Billing Cycle</string>
+    <string name="estimated_monthly_cost">Est. monthly</string>
+    <string name="estimated_yearly_cost">Est. yearly</string>
     <string name="website_url">Website URL</string>
     <string name="app_package_name">App Package Name</string>
     <string name="notes">Notes</string>
@@ -76,6 +82,10 @@
     <string name="weekly">Weekly</string>
     <string name="monthly">Monthly</string>
     <string name="yearly">Yearly</string>
+    <string name="billing_cycle_daily_hint">Charged every day</string>
+    <string name="billing_cycle_weekly_hint">Charged every week</string>
+    <string name="billing_cycle_monthly_hint">Charged every month</string>
+    <string name="billing_cycle_yearly_hint">Charged once a year</string>
 
     <!-- Due status -->
     <string name="overdue">Overdue</string>
