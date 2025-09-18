@@ -1,11 +1,20 @@
 package com.example.subcriptionmanagementapp.ui.screens.settings
 
+import android.app.Activity
+import android.content.Intent
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -15,17 +24,84 @@ import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.R
 import com.example.subcriptionmanagementapp.ui.components.AppTopBar
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
+import com.example.subcriptionmanagementapp.ui.viewmodel.BackupUiEvent
+import com.example.subcriptionmanagementapp.ui.viewmodel.BackupViewModel
 import com.example.subcriptionmanagementapp.ui.viewmodel.SettingsViewModel
+import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
     navController: NavController,
-    viewModel: SettingsViewModel = hiltViewModel()
+    viewModel: SettingsViewModel = hiltViewModel(),
+    backupViewModel: BackupViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+    val isBackupLoading by backupViewModel.isLoading.collectAsStateWithLifecycle()
     var notificationsEnabled by remember { mutableStateOf(true) }
     var currency by remember { mutableStateOf("USD") }
     val snackbarHostState = remember { SnackbarHostState() }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var isBackupMenuExpanded by remember { mutableStateOf(false) }
+
+    val restoreLauncher =
+            rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.StartActivityForResult()
+            ) { result ->
+                if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+                val uri = result.data?.data ?: return@rememberLauncherForActivityResult
+                backupViewModel.restoreBackup(uri)
+            }
+
+    val exportLauncher =
+            rememberLauncherForActivityResult(
+                    contract = ActivityResultContracts.CreateDocument("application/json")
+            ) { uri ->
+                if (uri != null) {
+                    backupViewModel.exportBackup(uri)
+                } else {
+                    coroutineScope.launch {
+                        snackbarHostState.showSnackbar(
+                                context.getString(R.string.backup_save_cancelled)
+                        )
+                    }
+                }
+            }
+
+    LaunchedEffect(backupViewModel) {
+        backupViewModel.events.collect { event ->
+            when (event) {
+                is BackupUiEvent.ShareBackup -> {
+                    val shareIntent =
+                            Intent.createChooser(
+                                    backupViewModel.getShareBackupIntent(event.uri),
+                                    context.getString(R.string.backup_share_title)
+                            )
+                    val result = runCatching { context.startActivity(shareIntent) }
+                    if (result.isFailure) {
+                        snackbarHostState.showSnackbar(
+                                context.getString(R.string.backup_share_unavailable)
+                        )
+                    }
+                }
+                is BackupUiEvent.RequestExport -> exportLauncher.launch(event.suggestedFileName)
+                is BackupUiEvent.Success ->
+                        snackbarHostState.showSnackbar(
+                                context.getString(event.messageResId)
+                        )
+                is BackupUiEvent.Error ->
+                        snackbarHostState.showSnackbar(
+                                context.getString(event.messageResId)
+                        )
+            }
+        }
+    }
+
+    LaunchedEffect(isBackupLoading) {
+        if (isBackupLoading) {
+            isBackupMenuExpanded = false
+        }
+    }
 
     LaunchedEffect(uiState.errorMessage) {
         val message = uiState.errorMessage ?: return@LaunchedEffect
@@ -236,8 +312,40 @@ fun SettingsScreen(
                                 )
                             }
 
-                            Button(onClick = { /* Backup data */}) {
-                                Text(stringResource(R.string.backup))
+                            Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
+                                IconButton(
+                                        onClick = { isBackupMenuExpanded = true },
+                                        enabled = !isBackupLoading
+                                ) {
+                                    Icon(
+                                            imageVector = Icons.Filled.MoreVert,
+                                            contentDescription = stringResource(R.string.backup_options)
+                                    )
+                                }
+
+                                DropdownMenu(
+                                        expanded = isBackupMenuExpanded,
+                                        onDismissRequest = { isBackupMenuExpanded = false }
+                                ) {
+                                    DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.backup_share)) },
+                                            leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                                            enabled = !isBackupLoading,
+                                            onClick = {
+                                                isBackupMenuExpanded = false
+                                                backupViewModel.onShareBackupClicked()
+                                            }
+                                    )
+                                    DropdownMenuItem(
+                                            text = { Text(stringResource(R.string.backup_save_to_device)) },
+                                            leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) },
+                                            enabled = !isBackupLoading,
+                                            onClick = {
+                                                isBackupMenuExpanded = false
+                                                backupViewModel.onSaveBackupClicked()
+                                            }
+                                    )
+                                }
                             }
                         }
 
@@ -263,12 +371,30 @@ fun SettingsScreen(
                                 )
                             }
 
-                            OutlinedButton(onClick = { /* Restore data */}) {
+                            OutlinedButton(
+                                    onClick = {
+                                        val intent = backupViewModel.getBackupFilePickerIntent()
+                                        if (intent.resolveActivity(context.packageManager) != null) {
+                                            restoreLauncher.launch(intent)
+                                        } else {
+                                            coroutineScope.launch {
+                                                snackbarHostState.showSnackbar(
+                                                        context.getString(R.string.backup_picker_unavailable)
+                                                )
+                                            }
+                                        }
+                                    },
+                                    enabled = !isBackupLoading
+                            ) {
                                 Text(stringResource(R.string.restore))
                             }
                         }
 
                         HorizontalDivider()
+
+                        if (isBackupLoading) {
+                            LinearProgressIndicator(modifier = Modifier.fillMaxWidth())
+                        }
 
                         // Clear data setting
                         Row(
@@ -293,6 +419,7 @@ fun SettingsScreen(
 
                             OutlinedButton(
                                     onClick = { /* Clear data */},
+                                    enabled = !isBackupLoading,
                                     colors =
                                             ButtonDefaults.outlinedButtonColors(
                                                     contentColor = MaterialTheme.colorScheme.error

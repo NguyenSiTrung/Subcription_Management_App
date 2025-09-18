@@ -1,8 +1,10 @@
 package com.example.subcriptionmanagementapp.data.backup
 
+import android.content.ClipData
 import android.content.Context
 import android.content.Intent
 import android.net.Uri
+import androidx.core.content.FileProvider
 import com.example.subcriptionmanagementapp.data.local.entity.*
 import com.example.subcriptionmanagementapp.domain.repository.CategoryRepository
 import com.example.subcriptionmanagementapp.domain.repository.PaymentHistoryRepository
@@ -36,6 +38,8 @@ constructor(
         private const val BACKUP_MIME_TYPE = "application/json"
     }
 
+    private val backupAuthority = "${context.packageName}.fileprovider"
+
     data class BackupData(
             val subscriptions: List<Subscription>,
             val categories: List<Category>,
@@ -49,34 +53,36 @@ constructor(
 
     suspend fun createBackup(): Uri? =
             withContext(Dispatchers.IO) {
-                try {
-                    // Get all data from repositories
-                    val subscriptions = subscriptionRepository.getAllSubscriptions().first()
-                    val categories = categoryRepository.getAllCategories().first()
-                    val reminders = reminderRepository.getAllReminders().first()
-                    val paymentHistory = paymentHistoryRepository.getAllPaymentHistory().first()
-
-                    // Create backup data object
-                    val backupData =
-                            BackupData(
-                                    subscriptions = subscriptions,
-                                    categories = categories,
-                                    reminders = reminders,
-                                    paymentHistory = paymentHistory
-                            )
-
-                    // Convert to JSON
+                runCatching {
+                    val backupData = fetchBackupData()
                     val json = gson.toJson(backupData)
 
-                    // Save to file
                     val file = File(context.filesDir, BACKUP_FILE_NAME)
                     file.writeText(json)
 
-                    // Return URI for the file
-                    Uri.fromFile(file)
+                    FileProvider.getUriForFile(context, backupAuthority, file)
+                }
+                        .onFailure { it.printStackTrace() }
+                        .getOrNull()
+            }
+
+    suspend fun exportBackup(destination: Uri): Boolean =
+            withContext(Dispatchers.IO) {
+                try {
+                    val backupData = fetchBackupData()
+                    val json = gson.toJson(backupData)
+                    val wroteSuccessfully =
+                            context.contentResolver.openOutputStream(destination, "w")?.use { output ->
+                                OutputStreamWriter(output).use { writer ->
+                                    writer.write(json)
+                                    writer.flush()
+                                }
+                                true
+                            }
+                    wroteSuccessfully ?: false
                 } catch (e: Exception) {
                     e.printStackTrace()
-                    null
+                    false
                 }
             }
 
@@ -141,8 +147,23 @@ constructor(
         return Intent(Intent.ACTION_SEND).apply {
             type = BACKUP_MIME_TYPE
             putExtra(Intent.EXTRA_STREAM, uri)
+            clipData = ClipData.newUri(context.contentResolver, BACKUP_FILE_NAME, uri)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
+    }
+
+    private suspend fun fetchBackupData(): BackupData {
+        val subscriptions = subscriptionRepository.getAllSubscriptions().first()
+        val categories = categoryRepository.getAllCategories().first()
+        val reminders = reminderRepository.getAllReminders().first()
+        val paymentHistory = paymentHistoryRepository.getAllPaymentHistory().first()
+
+        return BackupData(
+                subscriptions = subscriptions,
+                categories = categories,
+                reminders = reminders,
+                paymentHistory = paymentHistory
+        )
     }
 
     private class DateTypeAdapter :
