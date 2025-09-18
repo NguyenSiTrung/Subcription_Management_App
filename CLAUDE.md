@@ -1,726 +1,484 @@
-# 🚀 Claude Code Assistant - Ultimate Instructions Guide
+# AGENTS.md — Quy tắc & Hướng dẫn dành cho Codex CLI
 
-## 📋 Table of Contents
-- [Philosophy & Principles](#philosophy--principles)
-- [Quick Start](#quick-start)
-- [Core Tools](#core-tools)
-- [Project Setup Standards](#project-setup-standards)
-- [Essential Workflows](#essential-workflows)
-- [Code Operations](#code-operations)
-- [AI Pair Programming Guidelines](#ai-pair-programming-guidelines)
-- [Testing & Quality](#testing--quality)
-- [Documentation Standards](#documentation-standards)
-- [Version Control](#version-control)
-- [Performance & Optimization](#performance--optimization)
-- [Troubleshooting](#troubleshooting)
-- [Command Reference](#command-reference)
+> **Mục tiêu**: Giúp Codex CLI (và các agent tương tự) hiểu đúng kiến trúc, quy ước, lệnh build/test/lint và cách triển khai thay đổi **an toàn** trong repo này. File này đóng vai trò như *README dành cho agent*.
+
+Repo: Ứng dụng **Quản Lý Đăng Ký** (subscriptions) xây bằng **Kotlin + Jetpack Compose (Material 3)**, kiến trúc **MVVM + Clean Architecture (UI → Domain → Data)**, DI bằng **Hilt**, lưu trữ **Room** (DB **version = 2**, đã có migration 1→2 để `categoryId` nullable). Dòng dữ liệu dùng **Coroutines + Flow**.
 
 ---
 
-## 🎨 Philosophy & Principles
+## 0) Nguyên tắc vàng khi tác động mã nguồn
 
-### Core Values
-```markdown
-1. **Clarity Over Cleverness** - Write code that's easy to understand
-2. **Test-Driven Development** - Test first, code second
-3. **Incremental Progress** - Small, verified changes
-4. **Documentation as Code** - Keep docs in sync with implementation
-5. **Fail Fast, Learn Faster** - Quick feedback loops
-```
+1. **Tôn trọng phân tầng Clean Architecture**
+   UI (Compose + ViewModel) ↔ **Use Case** ↔ **Repository** ↔ **DAO/Manager**.
 
-### Working with Claude Code
-```markdown
-✨ Claude Code is your pair programmer who:
-- Understands context and intent
-- Provides up-to-date solutions (via Context7)
-- Navigates code semantically (via Serena)
-- Maintains consistency across sessions (via memories)
-- Executes and verifies changes
-```
+   * Logic nghiệp vụ đặt ở **Use Case**.
+   * **ViewModel** chỉ điều phối state (expose `StateFlow<UiState>` và `SharedFlow<Event>`).
+   * **Repository** ánh xạ Domain ↔ Data (Room/Manager).
+2. **DI bằng Hilt**
 
----
+   * Sử dụng `@HiltViewModel` cho ViewModel, `@Inject` constructor.
+   * Cấu hình Modules trong `di/` (DatabaseModule/RepositoryModule/ManagerModule).
+3. **Room & Migration**
 
-## 🎯 Quick Start
+   * **Không** đổi schema nếu **chưa có Migration** (v2→v3, …) **+ test migration**.
+   * DAO trả về `Flow<T>` cho stream, hoặc `suspend` cho thao tác đơn.
+4. **Compose-first UI**
 
-### Initial Setup (Run at Session Start)
-```bash
-# 1. Initialize Serena
-/mcp__serena__initial_instructions
+   * Composable **không chứa** logic domain; nhận `UiState` + `onEvent`.
+   * Chuẩn hoá trạng thái: `Loading | Success | Empty | Error`.
+5. **Luồng & Hiệu năng**
 
-# 2. Activate your project
-Activate the project /path/to/project
+   * I/O ở `Dispatchers.IO`; sử dụng `viewModelScope`.
+   * Debounce tìm kiếm 250–300ms.
+6. **Quyền hạn & An toàn**
 
-# 3. Get project overview
-get_symbols_overview
-
-# 4. Check project health
-execute_shell_command "npm test"
-execute_shell_command "git status"
-```
-
-### Essential Commands for Common Tasks
-```markdown
-📚 Need latest docs? → Add "use context7" to prompt
-🔍 Exploring code? → Use find_symbol or search_for_pattern
-✏️ Making changes? → Check find_referencing_symbols first
-✅ Testing changes? → Run execute_shell_command for tests
-💾 Saving progress? → Use write_memory for important info
-```
+   * Android 13+: xin `POST_NOTIFICATIONS`; cân nhắc Exact Alarm.
+   * SQLCipher chỉ bật khi có key quản lý qua Android Keystore (SecurityManager).
+7. **Thay đổi tối thiểu, có thể hoàn nguyên**; mọi thay đổi đều cần lint + test pass.
 
 ---
 
-## 🛠️ Core Tools
+## 0.1) Sử dụng Context7 MCP hiệu quả
 
-### Context7 MCP Server
-**Purpose:** Real-time documentation and examples
+> **Mục tiêu**: Tận dụng Context7 MCP server để truy cập tài liệu mới nhất, best practices và ví dụ thực tế cho các thư viện và framework được sử dụng trong dự án.
 
-**When to Use:**
-```markdown
-✅ External libraries (React, Vue, Next.js, etc.)
-✅ Latest API changes and features
-✅ Framework-specific best practices
-✅ Security updates and deprecations
+### Khi nào nên sử dụng Context7
+
+✅ **External Libraries & Frameworks:**
+- Kotlin & Jetpack Compose (Material 3) - API mới nhất, best practices
+- Android Development - Android 13+ features, permissions, architecture
+- Hilt/DI - Dependency injection patterns, module configuration
+- Room Database - Migration patterns, query optimization
+- Coroutines & Flow - Latest concurrency patterns
+- Testing frameworks - JUnit, Turbine, Mockito, Compose testing
+
+✅ **Cập nhật & Security:**
+- Android security updates and deprecations
+- Library version updates and breaking changes
+- Performance optimization techniques
+- Memory management best practices
+
+✅ **Code Patterns & Examples:**
+- MVVM + Clean Architecture implementation patterns
+- Compose UI patterns and performance
+- Database design and optimization
+- Testing strategies and patterns
+
+### Cách sử dụng Context7 hiệu quả
+
+**1. Research Phase (Trước khi implement):**
+```
+"How to implement [feature] in Kotlin + Jetpack Compose 2025. use context7"
+"Room database migration best practices Android. use context7"
+"Hilt dependency injection patterns in MVVM architecture. use context7"
+"Android 13 notification permissions POST_NOTIFICATIONS. use context7"
 ```
 
-**Usage Examples:**
+**2. Problem Solving (Khi gặp vấn đề):**
 ```
-"Implement Auth0 in Next.js 15 with app router. use context7"
-"Latest React 19 performance optimizations. use context7"
-"Prisma ORM best practices 2025. use context7"
-```
-
-### Serena MCP Server
-**Purpose:** Intelligent code analysis and editing
-
-**Core Capabilities:**
-```markdown
-🔍 Semantic Search - Understanding code meaning
-🎯 Symbol Navigation - Jump to definitions
-🔗 Dependency Analysis - Track relationships
-✂️ Smart Refactoring - Context-aware changes
-📊 Project Intelligence - Holistic understanding
+"Kotlin Flow performance optimization in Android. use context7"
+"Compose state hoisting best practices 2025. use context7"
+"SQLite vs Room performance comparison. use context7"
+"Android biometric authentication implementation. use context7"
 ```
 
-**Dashboard:** http://localhost:24282/dashboard
+**3. Learning New Features (Khi cần implement tính năng mới):**
+```
+"Jetpack Compose Material 3 theming guide. use context7"
+"Google Calendar API integration Android 2025. use context7"
+"SQLCipher encryption setup with Room Android. use context7"
+"MPAndroidChart integration with Compose. use context7"
+```
+
+### Quy trình làm việc với Context7
+
+**Step 1: Research & Planning**
+- Sử dụng Context7 để tìm hiểu best practices trước khi implement
+- So sánh các approach khác nhau
+- Lấy ví dụ code thực tế
+
+**Step 2: Implementation**
+- Áp dụng patterns từ Context7 vào project
+- Tùy chỉnh cho phù hợp với kiến trúc hiện tại
+- Giữ nguyên coding conventions của project
+
+**Step 3: Verification**
+- Kiểm tra compatibility với dependencies hiện tại
+- Run test suite để đảm bảo không break existing functionality
+- Review code against project standards
+
+### Best Practices khi sử dụng Context7
+
+**1. Luôn chỉ định ngữ cảnh rõ ràng:**
+```
+✅ "Kotlin Coroutines Flow in Android MVVM architecture. use context7"
+❌ "How to use Flow. use context7"
+```
+
+**2. Kết hợp với kiến thức về project:**
+- Context7 cung cấp best practices chung
+- Codebase analysis cung cấp context project-specific
+- Kết hợp cả hai để có solution tối ưu
+
+**3. Validate thông tin:**
+- Cross-reference với documentation chính thức
+- Test với actual code
+- Kiểm tra compatibility với dependencies hiện tại
+
+**4. Document lessons learned:**
+- Update AGENTS.md với patterns mới học được
+- Thêm notes vào code khi sử dụng patterns đặc biệt
+- Create test cases cho complex patterns
+
+### Context7 cho các hạng mục chính (A-G)
+
+**A) Subscription List - Search/Filter:**
+```
+"Room database full-text search implementation Android. use context7"
+"Compose search bar with debouncing best practices. use context7"
+"Kotlin Flow operators for filtering and transformation. use context7"
+```
+
+**B) Category Management:**
+```
+"SQLite FTS (Full Text Search) for category keywords. use context7"
+"Compose ModalBottomSheet implementation patterns. use context7"
+"Room database transaction best practices. use context7"
+```
+
+**C) Reminder & Notification:**
+```
+"Android 13 notification permissions POST_NOTIFICATIONS implementation. use context7"
+"AlarmManager exact alarm considerations Android 12+. use context7"
+"Notification channels best practices 2025. use context7"
+```
+
+**D) Backup/Restore:**
+```
+"JSON serialization/deserialization Kotlin best practices. use context7"
+"Android Storage Access Framework (SAF) implementation. use context7"
+"Room database backup and restore strategies. use context7"
+```
+
+**E) Google Calendar Integration:**
+```
+"Google Calendar API integration Android Kotlin. use context7"
+"OAuth 2.0 authentication flow Android best practices. use context7"
+"Handling Google API credential expiration. use context7"
+```
+
+**F) Security & Biometric:**
+```
+"Android biometric authentication implementation 2025. use context7"
+"SQLCipher integration with Room database Android. use context7"
+"Android Keystore usage best practices. use context7"
+```
+
+**G) Statistics & Charts:**
+```
+"MPAndroidChart integration with Jetpack Compose. use context7"
+"SQL aggregate functions for statistics Room database. use context7"
+"Compose performance for complex UI rendering. use context7"
+```
+
+> **Lưu ý**: Context7 cung cấp kiến thức tổng quát, luôn kết hợp với analysis tools để hiểu codebase hiện tại trước khi apply patterns.
 
 ---
 
-## 📁 Project Setup Standards
+## 1) Cấu trúc thư mục chuẩn (tham chiếu/điều chỉnh theo repo thực)
 
-### Directory Structure Best Practices
-```markdown
-project/
-├── src/               # Source code
-│   ├── components/    # Reusable components
-│   ├── features/      # Feature modules
-│   ├── hooks/         # Custom hooks
-│   ├── utils/         # Utilities
-│   ├── types/         # TypeScript types
-│   └── tests/         # Test files
-├── docs/              # Documentation
-├── scripts/           # Build/deploy scripts
-└── CLAUDE.md          # This file - AI instructions
+```
+app/
+  src/main/java/com/example/subscriptions/
+    ui/                # Compose screens + components
+    viewmodel/         # @HiltViewModel cho từng màn
+    domain/
+      model/           # Domain models (không phụ thuộc Android)
+      usecase/         # Nhóm theo context: subscription, category, reminder, payment, backup, calendar, security
+      repository/      # Interfaces (Domain-facing)
+    data/
+      db/              # Room: AppDatabase, Entities, Dao, Converters, Migrations
+      repo/            # Repository implementations
+      manager/         # NotificationScheduler, ReminderManager, BackupManager, GoogleCalendarManager, SecurityManager
+    di/                # Hilt Modules (Database/Repository/Manager)
+    util/              # Date/time, formatters, Result wrappers, etc.
+  src/androidTest/     # UI/Instrumented tests (Compose, Navigation)
+  src/test/            # Unit tests (JUnit, Turbine, Mockito)
 ```
 
-### Initial Project Analysis
-```markdown
-1. Structure Overview:
-   - list_dir "." recursive
-   - get_symbols_overview on src/
-
-2. Identify Key Files:
-   - find_symbol "App" or "main"
-   - read_file "package.json"
-   - read_file "tsconfig.json" or ".eslintrc"
-
-3. Understand Architecture:
-   - Check for design patterns
-   - Identify state management
-   - Review routing structure
-
-4. Document Findings:
-   - write_memory "project_architecture" "[summary]"
-```
+> Agent: **Giữ nguyên cấu trúc hiện có** nếu repo đã khác đôi chút; mở rộng theo logic trên.
 
 ---
 
-## 📝 Essential Workflows
+## 2) Kiến trúc & thành phần chính
 
-### 1️⃣ Understanding Requirements
-```markdown
-Before coding:
-1. Clarify requirements completely
-2. Break down into smaller tasks
-3. Identify affected components
-4. Plan test scenarios
-5. Consider edge cases
-```
-
-### 2️⃣ Feature Development Workflow
-```markdown
-1. Research Phase:
-   - "How to implement [feature] in [tech]? use context7"
-   - find_symbol for existing similar features
-   - Review project conventions
-
-2. Planning Phase:
-   - switch_modes planning
-   - Design component/module structure
-   - Identify dependencies
-   - write_memory "feature_plan" "[details]"
-
-3. Implementation Phase:
-   - switch_modes editing
-   - Create test file first (TDD)
-   - Implement feature incrementally
-   - Use replace_symbol_body for updates
-
-4. Integration Phase:
-   - Update imports/exports
-   - Wire up with existing code
-   - Update documentation
-
-5. Verification Phase:
-   - Run all tests
-   - Check linting
-   - Review with git diff
-   - Manual testing if needed
-```
-
-### 3️⃣ Bug Fixing Workflow
-```markdown
-1. Reproduce & Understand:
-   - Get error details from user
-   - search_for_pattern with error message
-   - find_symbol for problematic code
-   - find_referencing_code_snippets for context
-
-2. Diagnose:
-   - Read implementation
-   - Check recent changes (git log)
-   - Identify root cause
-   - Consider side effects
-
-3. Fix:
-   - Write failing test first
-   - Apply minimal fix
-   - Verify test passes
-   - Check for regressions
-
-4. Document:
-   - Add comments if complex
-   - Update relevant docs
-   - write_memory about the fix
-```
-
-### 4️⃣ Refactoring Workflow
-```markdown
-1. Preparation:
-   - Ensure all tests pass
-   - Create git branch
-   - Document current behavior
-
-2. Analysis:
-   - find_referencing_symbols
-   - Map all dependencies
-   - Identify test coverage
-
-3. Refactor:
-   - Make incremental changes
-   - Run tests after each change
-   - Preserve public API
-
-4. Cleanup:
-   - Remove dead code
-   - Update documentation
-   - Optimize imports
-```
-
-### 5️⃣ Code Review Workflow
-```markdown
-1. Overview:
-   - git diff for all changes
-   - Check against requirements
-
-2. Deep Review:
-   - Logic correctness
-   - Edge cases handled
-   - Performance implications
-   - Security considerations
-
-3. Style & Standards:
-   - Naming conventions
-   - Code formatting
-   - Documentation completeness
-
-4. Testing:
-   - Test coverage adequate
-   - Tests are meaningful
-   - All tests passing
-```
+* **UI (Compose + Navigation):** `NavHost` trong `MainActivity`; routes: `home`, `subscription_list`, `subscription_detail/{id:Long}`, `add_edit_subscription/{id:Long=-1}`, `category_list`, `statistics`, `settings` (gồm Security/Backup/Calendar).
+* **ViewModel:** Compose-first; expose `StateFlow<UiState>` & `SharedFlow<Event>`; nhận Use Case qua DI.
+* **Domain (Use Case):** forward sang Repository/Manager + gom logic (thống kê, backup).
+* **Data:** Room v2 (migration 1→2 đã cho `categoryId` nullable); DAO có index: `category_id`, `next_billing_date`, `is_active`.
+* **Managers:** `NotificationScheduler` (AlarmManager+Notification), `ReminderManager`, `BackupManager` (JSON), `GoogleCalendarManager`, `SecurityManager` (Android Keystore + Crypto).
 
 ---
 
-## 💻 Code Operations
+## 3) Lệnh thiết lập, build, chạy test & lint
 
-### Search Strategies
-```markdown
-🎯 Precision Search:
-find_symbol "exactName"           # Exact symbol
-find_symbol "partial" fuzzy       # Fuzzy matching
+> Agent: chạy các lệnh này trước khi tạo PR hoặc sau khi chỉnh sửa tự động.
 
-🔍 Pattern Search:
-search_for_pattern "TODO|FIXME"   # Find tasks
-search_for_pattern "console\."    # Find debug code
-search_for_pattern "@deprecated"  # Find deprecated
+* **Build:**
 
-🔗 Dependency Search:
-find_referencing_symbols          # Who uses this?
-find_referencing_code_snippets    # How is it used?
-```
+  * `./gradlew clean build`
+  * `./gradlew :app:assembleDebug`
+* **Cài app:** `./gradlew :app:installDebug`
+* **Unit tests (JVM):** `./gradlew testDebugUnitTest`
+* **Instrumented/UI tests:** (cần emulator/thiết bị) `./gradlew :app:connectedDebugAndroidTest`
+* **Lint:** `./gradlew lint`
+* **Detekt/Ktlint (nếu có):** `./gradlew detekt` / `./gradlew ktlintCheck`
 
-### Edit Strategies
-```markdown
-✏️ Smart Replacements:
-replace_symbol_body               # Full function/class
-replace_lines 10 20              # Specific lines
-
-➕ Smart Insertions:
-insert_before_symbol             # Add imports, decorators
-insert_after_symbol              # Add related functions
-insert_at_line                   # Precise placement
-
-🗑️ Smart Deletions:
-delete_lines 5 10                # Remove blocks
-replace_symbol_body with ""      # Remove symbol
-```
+Khi đụng **DB schema**: sau khi bổ sung Migration + test migration, chạy chuỗi:
+`./gradlew clean testDebugUnitTest :app:connectedDebugAndroidTest lint`
 
 ---
 
-## 🤝 AI Pair Programming Guidelines
+## 4) Chuẩn code & quy ước
 
-### Communication Patterns
-```markdown
-1. Be Specific:
-   ❌ "Make it better"
-   ✅ "Optimize this function for performance, focusing on reducing database calls"
+**Kotlin**
 
-2. Provide Context:
-   ❌ "Fix the bug"
-   ✅ "Users report the login fails when email contains '+'. Check validation in auth module"
+* Theo Kotlin style; `val` mặc định; `data class` cho model immutable.
+* Sử dụng `Result<T>` hoặc sealed class cho luồng lỗi domain.
 
-3. Iterative Refinement:
-   - Start with working solution
-   - Refine incrementally
-   - Test each iteration
-```
+**Compose**
 
-### Effective Prompting
-```markdown
-Structure: [Action] + [Target] + [Context] + [Constraints]
+* Tách state hoisting: `@Composable fun Screen(state: UiState, onEvent: ...)`.
+* Không truy cập repo/dao trực tiếp trong composable.
+* Tài nguyên text/màu qua resource, **không** hardcode.
 
-Examples:
-"Refactor UserService class to use dependency injection, maintaining backward compatibility"
-"Add error handling to all API endpoints, following our existing ErrorHandler pattern"
-"Create React component for data table with sorting, filtering, using our design system"
-```
+**ViewModel**
 
-### Task Delegation
-```markdown
-✅ Good for Claude:
-- Boilerplate generation
-- Pattern implementation
-- Test creation
-- Documentation
-- Refactoring
-- Bug investigation
+* Chỉ expose luồng `StateFlow/SharedFlow`; không dùng LiveData.
+* Sử dụng `stateIn()/shareIn()` khi cần chia sẻ luồng cho UI.
 
-⚠️ Verify Claude's Work:
-- Business logic
-- Security implementations
-- Performance optimizations
-- Database migrations
-- Third-party integrations
+**Repository/Use Case**
 
-❌ Human Decision Required:
-- Architecture decisions
-- Business requirements
-- UX/UI design choices
-- Production deployments
-```
+* Tên chuẩn: `GetXxxUseCase`, `UpdateXxxUseCase`, `SearchXxxUseCase`... mỗi use case **một trách nhiệm**.
+* Repository mapping Domain ↔ Data; DAO chỉ lo CRUD/Query.
+
+**Room**
+
+* Entities, Dao để trong `data/db`; Converters cho Enum.
+* Index quan trọng: `category_id`, `next_billing_date`, `is_active`.
+
+**Logging/Errors**
+
+* Không throw exception lên UI; convert thành Result/UiState.
 
 ---
 
-## 🧪 Testing & Quality
+## 5) Mô hình dữ liệu (Room) — tóm tắt hiện tại
 
-### Test-Driven Development
-```markdown
-1. Write Test First:
-   - Define expected behavior
-   - Cover edge cases
-   - Make it fail
+| Entity           | Ghi chú                                                                                                                            |
+| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------- |
+| `Subscription`   | `categoryId` **nullable**; metadata: `websiteUrl`, `appPackage`, `notes`; indexes `category_id`, `next_billing_date`, `is_active`. |
+| `Category`       | Cờ `isPredefined`, `keywords` (chuỗi) để gợi ý tự động.                                                                            |
+| `Reminder`       | `reminderType`, `reminderDate`, `notificationId`, `isNotified`.                                                                    |
+| `PaymentHistory` | Lịch sử thanh toán; lọc theo khoảng thời gian; tính tổng.                                                                          |
 
-2. Implement Minimum Code:
-   - Just enough to pass
-   - Keep it simple
-   - Avoid over-engineering
+**Migration 1→2:** tái tạo `subscriptions` để `category_id` cho phép `NULL`; chuyển `0 → NULL`; tái tạo index.
 
-3. Refactor:
-   - Improve code quality
-   - Maintain test passing
-   - Optimize if needed
-```
-
-### Testing Checklist
-```markdown
-☐ Unit tests for functions/methods
-☐ Integration tests for features
-☐ Edge cases covered
-☐ Error scenarios tested
-☐ Performance tests for critical paths
-☐ Accessibility tests for UI
-☐ Security tests for sensitive operations
-```
-
-### Code Quality Standards
-```markdown
-execute_shell_command "npm run lint"      # Style check
-execute_shell_command "npm run test"      # Test suite
-execute_shell_command "npm run coverage"  # Coverage report
-execute_shell_command "npm audit"         # Security check
-```
+> Agent: Nếu cần đổi schema → **tăng version** (2→3) + viết Migration + test (mục 8).
 
 ---
 
-## 📚 Documentation Standards
+## 6) Use Cases (nhóm theo domain)
 
-### Code Documentation
-```markdown
-1. Function/Method Docs:
-   - Purpose and behavior
-   - Parameters with types
-   - Return value
-   - Exceptions thrown
-   - Usage examples
-
-2. Complex Logic:
-   - Why, not just what
-   - Business rules
-   - Algorithm explanation
-   - Performance notes
-
-3. Module/Component:
-   - High-level purpose
-   - Public API
-   - Dependencies
-   - Configuration
-```
-
-### Project Documentation
-```markdown
-README.md:
-- Project overview
-- Quick start guide
-- Development setup
-- Architecture overview
-- Contributing guidelines
-
-CLAUDE.md (this file):
-- AI assistant instructions
-- Project-specific patterns
-- Tool configurations
-- Workflow definitions
-```
+* **SubscriptionUseCases**: `Add`, `Get`, `GetAll`, `GetActive`, `Update`, `Delete`, `Search`, `FilterByCategory`, `FilterByBillingRange`.
+* **CategoryUseCases**: `Create`, `Update`, `Delete`, `GetAll`, `GetPredefined`, `FindByKeyword`.
+* **ReminderUseCases**: `Add`, `Update`, `Delete`, `GetPending`, `Schedule`, `Cancel` (qua `ReminderManager` + `NotificationScheduler`).
+* **PaymentUseCases**: `HistoriesBySubscription`, `HistoriesByDateRange`, `TotalSpend`.
+* **StatisticsUseCases**: `MonthlyTotal`, `YearlyTotal`, `ByCategory`, `SpendingTrend` (cơ bản).
+* **CalendarUseCases**: `Add/Update/Remove` event theo billing cycle; kiểm tra đăng nhập Google.
+* **BackupUseCases**: `CreateBackupJson`, `RestoreFromJson`, `ShareBackup`.
+* **SecurityUseCases**: `Encrypt`, `Decrypt`, `CheckBiometric`, `Authenticate`.
 
 ---
 
-## 🔄 Version Control
+## 7) Bản đồ tác vụ ưu tiên (điểm vào & yêu cầu kiểm thử)
 
-### Git Workflow
-```markdown
-1. Before Starting:
-   git status                    # Clean state
-   git pull                      # Latest changes
-   git checkout -b feature/name  # New branch
+> Agent: Khi thực hiện các hạng mục dưới, **cập nhật test** tương ứng.
 
-2. During Development:
-   git add -p                    # Review changes
-   git commit -m "type: message" # Clear commits
-   git push                      # Backup work
+### A) Subscription List — Tìm kiếm/Lọc nâng cao
 
-3. After Completion:
-   git diff main                 # Review all
-   git rebase main              # Clean history
-   Create pull request          # Code review
-```
+* **Điểm vào:** `SubscriptionListScreen`, `SubscriptionViewModel`, `SubscriptionUseCases.search/filter`.
+* **Việc cần làm:** thêm `UiState{ query, selectedCategoryIds, status }`; debounce; query Room đa điều kiện.
+* **Test:** use case (nhiều ràng buộc), UI test (gõ search, chọn filter).
 
-### Commit Message Format
-```markdown
-type(scope): subject
+### B) Category — Thêm/Sửa trực tiếp từ UI
 
-Types:
-- feat: New feature
-- fix: Bug fix
-- docs: Documentation
-- style: Formatting
-- refactor: Code restructuring
-- test: Test changes
-- chore: Maintenance
+* **Điểm vào:** `CategoryListScreen`, `CategoryViewModel`, `CategoryUseCases` + `CategoryRepository`.
+* **Việc cần làm:** màn Add/Edit (sheet/screen); validate trùng tên; hỗ trợ `isPredefined`, `keywords`.
+* **Test:** unit (CRUD), UI test tạo/sửa/hiển thị keywords.
 
-Example:
-"feat(auth): add OAuth2 integration with Google"
-```
+### C) Reminder & Notification (Android 13+)
 
----
+* **Điểm vào:** `ReminderManager`, `NotificationScheduler`, `ReminderDao`.
+* **Việc cần làm:** xin `POST_NOTIFICATIONS`; xem xét Exact Alarm; đồng bộ schedule/cancel khi CRUD Subscription/Reminder.
+* **Test:** unit logic schedule/cancel; (tuỳ chọn) instrumented với AlarmManager mock.
 
-## ⚡ Performance & Optimization
+### D) Backup/Restore — UI Settings
 
-### Code Performance
-```markdown
-1. Measure First:
-   - Profile before optimizing
-   - Identify bottlenecks
-   - Set performance goals
+* **Điểm vào:** `BackupManager`, `BackupViewModel` + màn Settings/Backup.
+* **Việc cần làm:** nút **Tạo backup (JSON)**, **Khôi phục**, **Chia sẻ**; thứ tự restore: Category → Subscription → Reminder → PaymentHistory.
+* **Test:** serialize/deserialize; khôi phục giữ quan hệ.
 
-2. Common Optimizations:
-   - Reduce database queries
-   - Implement caching
-   - Lazy loading
-   - Code splitting
-   - Memoization
+### E) Google Calendar Integration
 
-3. Verify Improvements:
-   - Benchmark changes
-   - Monitor metrics
-   - Test under load
-```
+* **Điểm vào:** `GoogleCalendarManager`, `CalendarUseCases`, Settings/Calendar UI.
+* **Việc cần làm:** đăng nhập Google; chọn calendar; sync recurrence theo billing; xử lý credential hết hạn.
+* **Test:** mock API/tách interface để test offline.
 
-### Claude Performance
-```markdown
-🚀 Speed Tips:
-- Index large projects first
-- Use symbolic navigation
-- Batch related operations
-- Cache findings in memory
-- Minimize file reading
+### F) Bảo mật — Biometric & SQLCipher (tùy chọn)
 
-💾 Memory Management:
-- Write key findings regularly
-- Summarize before context full
-- Use prepare_for_new_conversation
-- Maintain session continuity
-```
+* **Điểm vào:** `SecurityManager`, `SecurityUseCases`, init `AppDatabase`.
+* **Việc cần làm:** tuỳ chọn “Khoá ứng dụng” (biometric trước khi mở); bật SQLCipher qua `SupportFactory` với key từ Keystore.
+* **Test:** unit encrypt/decrypt; khởi tạo DB có key và truy vấn mẫu.
+
+### G) Thống kê nâng cao (kết nối MPAndroidChart)
+
+* **Điểm vào:** `StatisticsViewModel`, `PaymentUseCases`.
+* **Việc cần làm:** map dữ liệu thật cho Bar/Pie/Line; filter theo thời gian/danh mục.
+* **Test:** aggregator; snapshot UI (nếu có).
 
 ---
 
-## 🔧 Troubleshooting
+## 8) Quy tắc thay đổi CSDL & Mẫu Migration
 
-### Common Issues Matrix
+1. **Tăng version DB** (2→3…) khi thay cột/bảng/chỉ mục/nullable/kiểu.
+2. **Viết Migration** tương ứng; có thể dùng bảng tạm để chuyển đổi; bảo toàn dữ liệu.
+3. **Cập nhật Converters/DAO** nếu thêm Enum/kiểu mới.
+4. **Test migration**: tạo DB cũ → migrate → assert schema & dữ liệu.
 
-| Issue | Diagnosis | Solution |
-|-------|-----------|----------|
-| Symbol not found | Outdated index | restart_language_server |
-| Tests failing | Dependencies changed | find_referencing_symbols |
-| Slow performance | Large codebase | Index project first |
-| Context full | Too much in memory | prepare_for_new_conversation |
-| Outdated docs | Old training data | Add "use context7" |
-| Git conflicts | Parallel changes | Rebase and resolve |
-| Build errors | Missing dependencies | npm install / check imports |
+**Mẫu Migration (Kotlin — phác thảo):**
 
-### Debug Protocol
-```markdown
-1. Gather Information:
-   - Error messages
-   - Stack traces
-   - Recent changes
-   - Environment details
+```kotlin
+val MIGRATION_2_3 = object : Migration(2, 3) {
+  override fun migrate(db: SupportSQLiteDatabase) {
+    db.beginTransaction()
+    try {
+      // Ví dụ: thêm cột mới với giá trị mặc định
+      db.execSQL("ALTER TABLE subscriptions ADD COLUMN trial_end INTEGER DEFAULT NULL")
 
-2. Isolate Problem:
-   - Reproduce consistently
-   - Narrow down scope
-   - Check assumptions
+      // Ví dụ phức tạp: tạo bảng tạm + copy dữ liệu
+      // db.execSQL("CREATE TABLE subscriptions_new (...)")
+      // db.execSQL("INSERT INTO subscriptions_new(...) SELECT ... FROM subscriptions")
+      // db.execSQL("DROP TABLE subscriptions")
+      // db.execSQL("ALTER TABLE subscriptions_new RENAME TO subscriptions")
 
-3. Fix & Verify:
-   - Apply minimal fix
-   - Test thoroughly
-   - Document solution
+      // Tái tạo index nếu cần
+      // db.execSQL("CREATE INDEX IF NOT EXISTS index_subscriptions_next_billing_date ON subscriptions(next_billing_date)")
+
+      db.setTransactionSuccessful()
+    } finally {
+      db.endTransaction()
+    }
+  }
+}
 ```
+
+> Agent: **Không merge** thay đổi schema **nếu thiếu Migration + Test**.
 
 ---
 
-## 📊 Command Reference
+## 9) Điều hướng & UI
 
-### Quick Command Matrix
+* **NavHost** trong `MainActivity`; route start = `home`.
+* **AppTopBar**: tiêu đề + subtitle theo route; actions (search/add) — *chưa nối logic search*.
+* **AppBottomBar**: Home, Subscriptions, Categories, Statistics, Settings.
+* **Màn hình đã có**:
 
-| Category | Command | Purpose |
-|----------|---------|---------|
-| **Setup** | /mcp__serena__initial_instructions | Initialize Serena |
-| | Activate the project [path] | Start working on project |
-| **Search** | find_symbol "name" | Find definitions |
-| | search_for_pattern "regex" | Pattern search |
-| | find_referencing_symbols | Find usages |
-| **Read** | read_file "path" | View file content |
-| | get_symbols_overview | Structure overview |
-| | list_dir "path" | Browse files |
-| **Edit** | replace_symbol_body | Replace entire symbol |
-| | insert_at_line N | Insert at line |
-| | replace_lines N M | Replace line range |
-| **Execute** | execute_shell_command "cmd" | Run commands |
-| **Memory** | write_memory "key" "value" | Save information |
-| | read_memory "key" | Retrieve information |
-| | list_memories | View all memories |
-| **Context** | prepare_for_new_conversation | Clean context |
-| | summarize_changes | Create summary |
-| **Mode** | switch_modes [mode] | Change operation mode |
+  1. **Home**: Monthly summary, Upcoming renewals, “View All”.
+  2. **Subscription List**: hiển thị tình trạng (Overdue/Due Soon/Inactive) theo màu.
+  3. **Subscription Detail**: hiển thị chi tiết + action (nhắc nhở, lịch sử).
+  4. **Add/Edit Subscription**: form đầy đủ (price, cycle, category, reminder, notes…).
+  5. **Category List**: liệt kê predefined/custom + `keywords`.
+  6. **Statistics**: tổng chi tiêu, lịch sử thanh toán tháng hiện tại.
+  7. **Settings/Security/Backup**: ViewModel đã có; cần hoàn thiện UI.
 
 ---
 
-## 🎨 Serena Modes
+## 10) Managers & quyền hệ thống
 
-| Mode | Characteristics | Best For |
-|------|----------------|----------|
-| **planning** | Thoughtful, analytical | Architecture, design |
-| **editing** | Focused, precise | Code modifications |
-| **interactive** | Responsive, flexible | Pair programming |
-| **one-shot** | Complete, comprehensive | Single tasks |
+* **NotificationScheduler**: tạo channel, đặt `AlarmManager`, bắn Notification (qua `ReminderBroadcastReceiver`).
+* **ReminderManager**: đồng bộ Reminder ↔ NotificationScheduler (schedule/cancel).
+* **BackupManager**: xuất/nhập JSON; trả `Uri`; khôi phục theo thứ tự phụ thuộc.
+* **GoogleCalendarManager**: sử dụng Google Account Credential; CRUD event/recurrence theo billing.
+* **SecurityManager**: bọc Android Keystore + Crypto; cung cấp API `encrypt/decrypt`; hỗ trợ Biometric.
 
----
+**Quyền liên quan (tham khảo khi đụng code):**
 
-## 💎 Golden Rules of Claude Code
-
-### The 10 Commandments
-```markdown
-1. Always verify before modifying
-2. Test continuously, not eventually  
-3. Document why, not just what
-4. Use Context7 for external, Serena for internal
-5. Commit early, commit often
-6. Refactor mercilessly, but safely
-7. Memory is your friend, use it wisely
-8. Clean code > clever code
-9. Every error is a learning opportunity
-10. When in doubt, ask for clarification
-```
-
-### Success Metrics
-```markdown
-✅ All tests passing
-✅ No linting errors
-✅ Documentation updated
-✅ Code reviewed
-✅ Performance acceptable
-✅ Security checked
-✅ Accessibility verified
-✅ Knowledge transferred (memories)
-```
+* `POST_NOTIFICATIONS` (Android 13+).
+* Exact Alarm (S, T+ — cân nhắc use case).
+* SAF / Storage access cho backup/restore.
+* Google Sign-In / Calendar scope (khi tích hợp Calendar).
 
 ---
 
-## 🚀 Advanced Techniques
+## 11) Testing & Chất lượng
 
-### Multi-Tool Workflows
-```markdown
-Example: Full-Stack Feature
-1. Backend: "REST API best practices 2025. use context7"
-2. Database: find_symbol for existing models
-3. Frontend: "React Query v5 patterns. use context7"
-4. Integration: Test end-to-end flow
-5. Documentation: Update all relevant docs
-```
+* **Unit test**: ViewModel (Turbine + Mockito) — cập nhật theo chữ ký hiện hành (StateFlow/SharedFlow + nhiều use case).
+* **UI test**: Compose/Navi skeleton đã có — cần hoàn thiện.
+* **Khuyến nghị**:
 
-### Complex Refactoring
-```markdown
-1. Create refactoring plan
-2. Set up comprehensive tests
-3. Use git branches for experiments
-4. Refactor in small steps
-5. Verify after each step
-6. Merge when fully complete
-```
-
-### Performance Optimization
-```markdown
-1. Profile with appropriate tools
-2. Identify bottlenecks
-3. Research solutions with Context7
-4. Implement optimizations
-5. Measure improvements
-6. Document changes
-```
+  * Bổ sung test `ReminderManager`/`BackupManager` (nhiều nhánh).
+  * Screenshot test/compose test cho màn chính.
+* **Chuỗi kiểm tra trước PR**: `./gradlew testDebugUnitTest :app:connectedDebugAndroidTest lint`.
 
 ---
 
-## 📈 Continuous Improvement
+## 12) Quy ước commit/PR
 
-### Session Review
-```markdown
-After each session:
-1. What worked well?
-2. What could improve?
-3. Update memories with learnings
-4. Refine workflows
-5. Update this document
-```
-
-### Knowledge Building
-```markdown
-- Save patterns that work
-- Document project quirks
-- Build command shortcuts
-- Create code templates
-- Maintain best practices
-```
+* Mỗi PR giải quyết **một hạng mục** ở mục 7 (A–G).
+* Mô tả PR **phải** nêu rõ thay đổi ở UI/UseCase/Repository/DAO/Migration + hướng dẫn QA.
+* Xoá code chết, `TODO` đã xong, cập nhật tài liệu liên quan.
+* (Khuyến nghị) Dùng Conventional Commits: `feat:`, `fix:`, `refactor:`, `test:`, `chore:`, `docs:`…
 
 ---
 
-## 🔗 Quick Links & Resources
+## 13) Bảo mật & phụ thuộc
 
-### Essential Resources
-```markdown
-- Serena Dashboard: http://localhost:24282/dashboard
-- Context7 Docs: Available via "use context7"
-- Project Repo: [Your repository URL]
-- Team Guidelines: [Your team docs]
-- Design System: [Your design docs]
-```
-
-### Emergency Procedures
-```markdown
-If things go wrong:
-1. git stash - Save current work
-2. git checkout main - Return to stable
-3. restart_language_server - Reset Serena
-4. prepare_for_new_conversation - Clear context
-5. Start fresh with memories
-```
+* **Không** commit secrets/keys.
+* Khi bật **SQLCipher**: dùng `SupportFactory` với key quản lý qua Keystore (SecurityManager).
+* Kiểm tra license & CVE khi thêm dependency; chạy lint/scan nếu đã tích hợp.
 
 ---
 
-## 🎯 Project-Specific Configuration
+## 14) Hướng dẫn dành riêng cho Codex (cách hành động trong repo này)
 
-> 💡 Add your project-specific rules below:
-
-```markdown
-### Project: [Your Project Name]
-
-Tech Stack:
-- Frontend: [e.g., React, Vue, Angular]
-- Backend: [e.g., Node.js, Python, Go]
-- Database: [e.g., PostgreSQL, MongoDB]
-- Testing: [e.g., Jest, Pytest]
-
-Conventions:
-- Code style: [Your style guide]
-- Branch naming: [Your convention]
-- PR process: [Your workflow]
-
-Special Instructions:
-- [Any project-specific rules]
-- [Performance requirements]
-- [Security considerations]
-```
+1. Đọc **AGENTS.md** (file này) trước khi patch.
+2. Xác định hạng mục trong **mục 7 (A–G)** → tạo chi nhánh mới theo tên mô tả (`feature/search-filter-subscriptions`, …).
+3. Tuân thủ phân tầng (mục 0, 2, 4).
+4. Nếu chạm **DB** → mục 8 (Migration + test).
+5. Viết/điều chỉnh **tests** (mục 11).
+6. Chạy lệnh build/test/lint (mục 3) và ghi kết quả vào mô tả PR.
+7. **Không** tự ý thêm quyền Android mà không cập nhật UI xin quyền/flow.
+8. Ưu tiên thay đổi tối thiểu, dễ hoàn nguyên; giữ backward compatibility khi có thể.
 
 ---
 
-*Last Updated: 2025 | Claude Code Assistant*
-*Powered by Context7 & Serena MCP Servers*
+## 15) Ghi chú triển khai/đặc thù còn dang dở
+
+* **Category screen**: chưa hỗ trợ Add/Edit trực tiếp.
+* **SubscriptionList**: còn slot cho search/filter nâng cao.
+* **UI cho Calendar/Backup/Security**: cần nối flow/luồng xin quyền.
+* **Tests**: chưa đồng bộ với ViewModel mới.
+* **SQLCipher & DataStore**: mới dừng ở dependency; cần cấu hình runtime nếu kích hoạt.
+
+> Agent: Khi hoàn tất một hạng mục dang dở, cập nhật lại phần này và/hoặc tạo `CHANGELOG.md`.
+
+---
+
+## 16) Tài liệu nhanh (nhắc lại)
+
+* **Kiến trúc**: Compose UI ↔ ViewModel ↔ UseCase ↔ Repository ↔ Room/Managers.
+* **DB**: version = 2; migration 1→2 đã cho `categoryId` nullable.
+* **Managers**: Reminder/Notification/Backup/GoogleCalendar/Security.
+* **Use Cases**: subscription, category, reminder, payment, statistics, calendar, backup, security.
+* **Mục tiêu ngắn hạn**: A–G ở mục 7.

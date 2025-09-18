@@ -38,6 +38,153 @@ Repo: Ứng dụng **Quản Lý Đăng Ký** (subscriptions) xây bằng **Kotli
 
 ---
 
+## 0.1) Sử dụng Context7 MCP hiệu quả
+
+> **Mục tiêu**: Tận dụng Context7 MCP server để truy cập tài liệu mới nhất, best practices và ví dụ thực tế cho các thư viện và framework được sử dụng trong dự án.
+
+### Khi nào nên sử dụng Context7
+
+✅ **External Libraries & Frameworks:**
+- Kotlin & Jetpack Compose (Material 3) - API mới nhất, best practices
+- Android Development - Android 13+ features, permissions, architecture
+- Hilt/DI - Dependency injection patterns, module configuration
+- Room Database - Migration patterns, query optimization
+- Coroutines & Flow - Latest concurrency patterns
+- Testing frameworks - JUnit, Turbine, Mockito, Compose testing
+
+✅ **Cập nhật & Security:**
+- Android security updates and deprecations
+- Library version updates and breaking changes
+- Performance optimization techniques
+- Memory management best practices
+
+✅ **Code Patterns & Examples:**
+- MVVM + Clean Architecture implementation patterns
+- Compose UI patterns and performance
+- Database design and optimization
+- Testing strategies and patterns
+
+### Cách sử dụng Context7 hiệu quả
+
+**1. Research Phase (Trước khi implement):**
+```
+"How to implement [feature] in Kotlin + Jetpack Compose 2025. use context7"
+"Room database migration best practices Android. use context7"
+"Hilt dependency injection patterns in MVVM architecture. use context7"
+"Android 13 notification permissions POST_NOTIFICATIONS. use context7"
+```
+
+**2. Problem Solving (Khi gặp vấn đề):**
+```
+"Kotlin Flow performance optimization in Android. use context7"
+"Compose state hoisting best practices 2025. use context7"
+"SQLite vs Room performance comparison. use context7"
+"Android biometric authentication implementation. use context7"
+```
+
+**3. Learning New Features (Khi cần implement tính năng mới):**
+```
+"Jetpack Compose Material 3 theming guide. use context7"
+"Google Calendar API integration Android 2025. use context7"
+"SQLCipher encryption setup with Room Android. use context7"
+"MPAndroidChart integration with Compose. use context7"
+```
+
+### Quy trình làm việc với Context7
+
+**Step 1: Research & Planning**
+- Sử dụng Context7 để tìm hiểu best practices trước khi implement
+- So sánh các approach khác nhau
+- Lấy ví dụ code thực tế
+
+**Step 2: Implementation**
+- Áp dụng patterns từ Context7 vào project
+- Tùy chỉnh cho phù hợp với kiến trúc hiện tại
+- Giữ nguyên coding conventions của project
+
+**Step 3: Verification**
+- Kiểm tra compatibility với dependencies hiện tại
+- Run test suite để đảm bảo không break existing functionality
+- Review code against project standards
+
+### Best Practices khi sử dụng Context7
+
+**1. Luôn chỉ định ngữ cảnh rõ ràng:**
+```
+✅ "Kotlin Coroutines Flow in Android MVVM architecture. use context7"
+❌ "How to use Flow. use context7"
+```
+
+**2. Kết hợp với kiến thức về project:**
+- Context7 cung cấp best practices chung
+- Codebase analysis cung cấp context project-specific
+- Kết hợp cả hai để có solution tối ưu
+
+**3. Validate thông tin:**
+- Cross-reference với documentation chính thức
+- Test với actual code
+- Kiểm tra compatibility với dependencies hiện tại
+
+**4. Document lessons learned:**
+- Update AGENTS.md với patterns mới học được
+- Thêm notes vào code khi sử dụng patterns đặc biệt
+- Create test cases cho complex patterns
+
+### Context7 cho các hạng mục chính (A-G)
+
+**A) Subscription List - Search/Filter:**
+```
+"Room database full-text search implementation Android. use context7"
+"Compose search bar with debouncing best practices. use context7"
+"Kotlin Flow operators for filtering and transformation. use context7"
+```
+
+**B) Category Management:**
+```
+"SQLite FTS (Full Text Search) for category keywords. use context7"
+"Compose ModalBottomSheet implementation patterns. use context7"
+"Room database transaction best practices. use context7"
+```
+
+**C) Reminder & Notification:**
+```
+"Android 13 notification permissions POST_NOTIFICATIONS implementation. use context7"
+"AlarmManager exact alarm considerations Android 12+. use context7"
+"Notification channels best practices 2025. use context7"
+```
+
+**D) Backup/Restore:**
+```
+"JSON serialization/deserialization Kotlin best practices. use context7"
+"Android Storage Access Framework (SAF) implementation. use context7"
+"Room database backup and restore strategies. use context7"
+```
+
+**E) Google Calendar Integration:**
+```
+"Google Calendar API integration Android Kotlin. use context7"
+"OAuth 2.0 authentication flow Android best practices. use context7"
+"Handling Google API credential expiration. use context7"
+```
+
+**F) Security & Biometric:**
+```
+"Android biometric authentication implementation 2025. use context7"
+"SQLCipher integration with Room database Android. use context7"
+"Android Keystore usage best practices. use context7"
+```
+
+**G) Statistics & Charts:**
+```
+"MPAndroidChart integration with Jetpack Compose. use context7"
+"SQL aggregate functions for statistics Room database. use context7"
+"Compose performance for complex UI rendering. use context7"
+```
+
+> **Lưu ý**: Context7 cung cấp kiến thức tổng quát, luôn kết hợp với analysis tools để hiểu codebase hiện tại trước khi apply patterns.
+
+---
+
 ## 1) Cấu trúc thư mục chuẩn (tham chiếu/điều chỉnh theo repo thực)
 
 ```
