@@ -129,8 +129,11 @@ fun AddEditSubscriptionScreen(
         }
     }
 
-    LaunchedEffect(viewModel.selectedSubscription.value) {
-        viewModel.selectedSubscription.value?.let { currentSubscription ->
+    val selectedSubscription by viewModel.selectedSubscription.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
+    
+    LaunchedEffect(selectedSubscription) {
+        selectedSubscription?.let { currentSubscription ->
             name = currentSubscription.name
             description = currentSubscription.description ?: ""
             price = currentSubscription.price.toString()
@@ -150,14 +153,14 @@ fun AddEditSubscriptionScreen(
         }
     }
 
-    LaunchedEffect(viewModel.categories.value, initialCategoryId, hasAppliedInitialCategory) {
+    LaunchedEffect(categories, initialCategoryId, hasAppliedInitialCategory) {
         if (!hasAppliedInitialCategory) {
             val targetCategoryId = initialCategoryId
             if (targetCategoryId == null) {
                 selectedCategory = null
                 hasAppliedInitialCategory = true
-            } else if (viewModel.categories.value.isNotEmpty()) {
-                selectedCategory = viewModel.categories.value.find { it.id == targetCategoryId }
+            } else if (categories.isNotEmpty()) {
+                selectedCategory = categories.find { it.id == targetCategoryId }
                 hasAppliedInitialCategory = true
             }
         }
@@ -171,15 +174,15 @@ fun AddEditSubscriptionScreen(
         }
     }
 
-    LaunchedEffect(viewModel.error.value) {
-        if (viewModel.error.value != null) {
-            Toast.makeText(context, viewModel.error.value, Toast.LENGTH_SHORT).show()
+    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+    val error by viewModel.error.collectAsStateWithLifecycle()
+    
+    LaunchedEffect(error) {
+        if (error != null) {
+            Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
             viewModel.clearError()
         }
     }
-
-    val isLoading = viewModel.isLoading.value
-    val error = viewModel.error.value
 
     Scaffold(
             topBar = {
@@ -209,7 +212,7 @@ fun AddEditSubscriptionScreen(
                                 onPriceChange = { price = it },
                                 billingCycle = billingCycle,
                                 onBillingCycleChange = { billingCycle = it },
-                                categories = viewModel.categories.value,
+                                categories = categories,
                                 selectedCategory = selectedCategory,
                                 onCategoryChange = { selectedCategory = it },
                                 nextBillingDate = nextBillingDate,

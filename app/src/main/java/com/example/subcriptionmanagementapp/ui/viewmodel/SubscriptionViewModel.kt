@@ -60,9 +60,6 @@ class SubscriptionViewModel @Inject constructor(
     private var categoriesJob: Job? = null
 
     init {
-        loadAllSubscriptions()
-        loadActiveSubscriptions()
-        loadCategories()
         observeSelectedCurrency()
     }
 
