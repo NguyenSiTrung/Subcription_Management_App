@@ -147,7 +147,7 @@
     <string name="app_version">App Version</string>
     <string name="privacy_policy">Privacy Policy</string>
     <string name="terms_of_service">Terms of Service</string>
-    
+
     <!-- About Screen -->
     <string name="about_top_bar_subtitle">App information and credits</string>
     <string name="about_app_version">Version</string>
@@ -157,6 +157,60 @@
     <string name="about_rate_app">Rate This App</string>
     <string name="about_open_source">Open Source Libraries</string>
     <string name="about_thank_you">Thank you for using our app!</string>
+    <string name="about_tagline">Stay on top of every recurring payment</string>
+    <string name="about_hero_description">Subscription Management App helps you forecast renewals, reduce wasteful spend, and automate reminders.</string>
+    <string name="about_hero_version">Version %1$s</string>
+    <string name="about_hero_cta_rate">Rate on Play Store</string>
+    <string name="about_hero_cta_share">Share feedback</string>
+    <string name="about_metrics_title">Impact at a glance</string>
+    <string name="about_metric_active_reminders_value">Thousands</string>
+    <string name="about_metric_active_reminders_label">Active reminders scheduled</string>
+    <string name="about_metric_active_reminders_caption">Users stay ahead of renewals every month.</string>
+    <string name="about_metric_monthly_savings_value">Significant</string>
+    <string name="about_metric_monthly_savings_label">Average monthly savings</string>
+    <string name="about_metric_monthly_savings_caption">Based on insights from active power users.</string>
+    <string name="about_metric_categories_value">Multiple</string>
+    <string name="about_metric_categories_label">Smart categories</string>
+    <string name="about_metric_categories_caption">Automatic grouping for transparency and control.</string>
+    <string name="about_milestones_title">Our journey</string>
+    <string name="about_milestone_launch_period">2025</string>
+    <string name="about_milestone_launch_title">App launch</string>
+    <string name="about_milestone_launch_summary">Introduced a comprehensive subscription management solution with tracking and reminders.</string>
+    <string name="about_milestone_reminders_period">Future</string>
+    <string name="about_milestone_reminders_title">Enhanced features</string>
+    <string name="about_milestone_reminders_summary">Planned improvements and additional functionality to enhance user experience.</string>
+    <string name="about_milestone_calendar_period">Future</string>
+    <string name="about_milestone_calendar_title">Continued development</string>
+    <string name="about_milestone_calendar_summary">Ongoing development of useful features and continuous improvements.</string>
+    <string name="about_team_title">Product team</string>
+    <string name="about_team_blurb">A distributed crew of designers and engineers obsessed with helping teams reclaim their time and budget.</string>
+    <string name="about_team_member_amy_name">Amy Nguyen</string>
+    <string name="about_team_member_amy_role">Product Lead</string>
+    <string name="about_team_member_amy_focus">Defines roadmap priorities with customer advisory panels.</string>
+    <string name="about_team_member_jamal_name">Jamal Ortiz</string>
+    <string name="about_team_member_jamal_role">Principal Engineer</string>
+    <string name="about_team_member_jamal_focus">Oversees architecture, reliability, and data privacy initiatives.</string>
+    <string name="about_team_member_mai_name">Mai Tran</string>
+    <string name="about_team_member_mai_role">Design Lead</string>
+    <string name="about_team_member_mai_focus">Crafts human-centered journeys and orchestrates brand storytelling.</string>
+    <string name="about_principles_title">What guides the product</string>
+    <string name="about_principle_trust_title">Trust by design</string>
+    <string name="about_principle_trust_summary">Zero-knowledge encryption, biometric access, and transparent controls keep your data safe.</string>
+    <string name="about_principle_clarity_title">Clarity first</string>
+    <string name="about_principle_clarity_summary">Dashboards favor meaningful signals over noise for confident decisions.</string>
+    <string name="about_principle_habits_title">Habits that stick</string>
+    <string name="about_principle_habits_summary">Guided nudges, smart summaries, and multi-device continuity reinforce healthy spending habits.</string>
+    <string name="about_trust_title">Security &amp; reliability</string>
+    <string name="about_trust_encryption">End-to-end encryption with biometric unlock and SQLCipher-backed storage.</string>
+    <string name="about_trust_privacy">No surprise charges: granular reminders, notification controls, and exportable audit trails.</string>
+    <string name="about_trust_support">Premium support with under-24h response times via in-app or email.</string>
+    <string name="about_support_title">Need a hand?</string>
+    <string name="about_support_contact_title">Contact support</string>
+    <string name="about_support_contact_summary">Reach our specialists at support@subscriptionapp.com.</string>
+    <string name="about_support_privacy_title">Privacy center</string>
+    <string name="about_support_privacy_summary">Review policies, data requests, and security documentation.</string>
+    <string name="about_support_community_title">Join the community</string>
+    <string name="about_support_community_summary">Share feature ideas and get release previews with early adopters.</string>
 
     <!-- Reminders -->
     <string name="reminder">Reminder</string>
