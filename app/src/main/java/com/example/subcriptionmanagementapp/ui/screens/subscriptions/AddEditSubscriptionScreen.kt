@@ -15,11 +15,13 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -577,6 +579,19 @@ fun AddEditSubscriptionContent(
                                         Text(stringResource(R.string.price_field_hint))
                                     }
                             )
+                            
+                            // Currency Selector
+                            Text(
+                                    text = stringResource(R.string.currency),
+                                    style = MaterialTheme.typography.labelLarge,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            
+                            CurrencySelector(
+                                    selectedCurrency = selectedCurrencyForSubscription,
+                                    onCurrencySelected = onSelectedCurrencyForSubscriptionChange,
+                                    modifier = Modifier.fillMaxWidth()
+                            )
                         }
                     }
                 }
@@ -886,59 +901,6 @@ fun AddEditSubscriptionContent(
                     }
                 }
 
-                item {
-                    ElevatedCard(
-                            shape = RoundedCornerShape(24.dp),
-                            modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Column(
-                                modifier = Modifier.fillMaxWidth().padding(20.dp),
-                                verticalArrangement = Arrangement.spacedBy(16.dp)
-                        ) {
-                            SectionHeader(
-                                    icon = Icons.Outlined.Language,
-                                    title = stringResource(R.string.currency),
-                                    subtitle = stringResource(R.string.currency_description)
-                            )
-
-                            var currencyExpanded by remember { mutableStateOf(false) }
-                            val currencyOptions = listOf("USD", "VND")
-
-                            Box {
-                                OutlinedButton(
-                                        onClick = { currencyExpanded = true },
-                                        modifier = Modifier.fillMaxWidth()
-                                ) {
-                                    Text(
-                                            text = selectedCurrencyForSubscription,
-                                            style = MaterialTheme.typography.bodyMedium
-                                    )
-                                    Icon(
-                                            imageVector = Icons.Filled.ArrowDropDown,
-                                            contentDescription = "Select currency"
-                                    )
-                                }
-
-                                DropdownMenu(
-                                        expanded = currencyExpanded,
-                                        onDismissRequest = { currencyExpanded = false }
-                                ) {
-                                    currencyOptions.forEach { currency ->
-                                        DropdownMenuItem(
-                                                text = { Text(currency) },
-                                                onClick = {
-                                                    onSelectedCurrencyForSubscriptionChange(
-                                                            currency
-                                                    )
-                                                    currencyExpanded = false
-                                                }
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
 
                 item { Spacer(modifier = Modifier.height(4.dp)) }
             }
@@ -1170,6 +1132,185 @@ private fun SectionHeader(
         }
     }
 }
+
+@Composable
+private fun CurrencySelector(
+        selectedCurrency: String,
+        onCurrencySelected: (String) -> Unit,
+        modifier: Modifier = Modifier
+) {
+    var expanded by remember { mutableStateOf(false) }
+    
+    val currencyOptions = listOf(
+            CurrencyOption(
+                    code = "USD",
+                    name = "US Dollar",
+                    symbol = "$",
+                    flag = "🇺🇸"
+            ),
+            CurrencyOption(
+                    code = "VND",
+                    name = "Vietnamese Dong",
+                    symbol = "₫",
+                    flag = "🇻🇳"
+            )
+    )
+    
+    val selectedOption = currencyOptions.find { it.code == selectedCurrency }
+    
+    BoxWithConstraints(modifier = modifier) {
+        val cardWidth = maxWidth
+        Surface(
+                onClick = { expanded = true },
+                shape = RoundedCornerShape(16.dp),
+                tonalElevation = 2.dp,
+                modifier = Modifier.fillMaxWidth()
+        ) {
+            Row(
+                    modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    // Currency Flag/Symbol
+                    Surface(
+                            shape = CircleShape,
+                            color = MaterialTheme.colorScheme.primaryContainer,
+                            modifier = Modifier.size(40.dp)
+                    ) {
+                        Box(
+                                contentAlignment = Alignment.Center,
+                                modifier = Modifier.fillMaxSize()
+                        ) {
+                            Text(
+                                    text = selectedOption?.symbol ?: "$",
+                                    style = MaterialTheme.typography.titleMedium,
+                                    fontWeight = FontWeight.Bold,
+                                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
+                    }
+                    
+                    Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                        Text(
+                                text = selectedOption?.code ?: selectedCurrency,
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold,
+                                color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                                text = selectedOption?.name ?: "Select Currency",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                
+                Icon(
+                        imageVector = Icons.Filled.ArrowDropDown,
+                        contentDescription = "Select currency",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+        }
+        
+        DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+                modifier = Modifier
+                        .width(cardWidth)
+                        .wrapContentHeight()
+        ) {
+            currencyOptions.forEach { option ->
+                DropdownMenuItem(
+                        text = {
+                            Row(
+                                    verticalAlignment = Alignment.CenterVertically,
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                // Currency Symbol in Circle
+                                Surface(
+                                        shape = CircleShape,
+                                        color = if (option.code == selectedCurrency) {
+                                            MaterialTheme.colorScheme.primary
+                                        } else {
+                                            MaterialTheme.colorScheme.surfaceVariant
+                                        },
+                                        modifier = Modifier.size(32.dp)
+                                ) {
+                                    Box(
+                                            contentAlignment = Alignment.Center,
+                                            modifier = Modifier.fillMaxSize()
+                                    ) {
+                                        Text(
+                                                text = option.symbol,
+                                                style = MaterialTheme.typography.labelLarge,
+                                                fontWeight = FontWeight.Bold,
+                                                color = if (option.code == selectedCurrency) {
+                                                    MaterialTheme.colorScheme.onPrimary
+                                                } else {
+                                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                                }
+                                        )
+                                    }
+                                }
+                                
+                                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                                    Row(
+                                            verticalAlignment = Alignment.CenterVertically,
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                                    ) {
+                                        Text(
+                                                text = option.flag,
+                                                style = MaterialTheme.typography.titleMedium
+                                        )
+                                        Text(
+                                                text = option.code,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                    Text(
+                                            text = option.name,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
+                                
+                                Spacer(modifier = Modifier.weight(1f))
+                                
+                                if (option.code == selectedCurrency) {
+                                    Icon(
+                                            imageVector = Icons.Filled.Check,
+                                            contentDescription = "Selected",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(20.dp)
+                                    )
+                                }
+                            }
+                        },
+                        onClick = {
+                            onCurrencySelected(option.code)
+                            expanded = false
+                        }
+                )
+            }
+        }
+    }
+}
+
+data class CurrencyOption(
+        val code: String,
+        val name: String,
+        val symbol: String,
+        val flag: String
+)
 
 private fun validateInputs(name: String, price: String): Boolean {
     return name.isNotBlank() &&
