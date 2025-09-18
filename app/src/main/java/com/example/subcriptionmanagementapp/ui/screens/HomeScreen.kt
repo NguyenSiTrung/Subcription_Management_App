@@ -5,14 +5,16 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.R
@@ -29,15 +31,11 @@ import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import com.example.subcriptionmanagementapp.util.formatCurrency
 import com.example.subcriptionmanagementapp.util.formatDate
 import com.example.subcriptionmanagementapp.util.getDaysUntil
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 
 @Composable
-fun HomeScreen(
-        navController: NavController,
-        viewModel: SubscriptionViewModel = hiltViewModel()
-) {
-    val subscriptions by viewModel.activeSubscriptions.collectAsStateWithLifecycle()
+fun HomeScreen(navController: NavController, viewModel: SubscriptionViewModel = hiltViewModel()) {
+    val subscriptions by viewModel.convertedSubscriptions.collectAsStateWithLifecycle()
+    val monthlySpending by viewModel.monthlySpending.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
@@ -77,7 +75,8 @@ fun HomeScreen(
                                 onViewAllSubscriptions = {
                                     navController.navigate(Screen.SubscriptionList.route)
                                 },
-                                selectedCurrency = selectedCurrency
+                                selectedCurrency = selectedCurrency,
+                                monthlySpending = monthlySpending
                         )
             }
         }
@@ -90,16 +89,14 @@ fun HomeContent(
         onSubscriptionClick: (Long) -> Unit,
         onAddSubscription: () -> Unit,
         onViewAllSubscriptions: () -> Unit,
-        selectedCurrency: String
+        selectedCurrency: String,
+        monthlySpending: Double
 ) {
     val upcomingSubscriptions =
             subscriptions
                     .filter { it.nextBillingDate > System.currentTimeMillis() }
                     .sortedBy { it.nextBillingDate }
                     .take(5)
-
-    val totalMonthlyCost =
-            subscriptions.filter { it.billingCycle == BillingCycle.MONTHLY }.sumOf { it.price }
 
     LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -108,7 +105,7 @@ fun HomeContent(
     ) {
         item {
             SummaryCard(
-                    totalMonthlyCost = totalMonthlyCost,
+                    totalMonthlyCost = monthlySpending,
                     subscriptionCount = subscriptions.size,
                     onAddSubscription = onAddSubscription,
                     selectedCurrency = selectedCurrency
@@ -161,7 +158,12 @@ fun HomeContent(
 }
 
 @Composable
-fun SummaryCard(totalMonthlyCost: Double, subscriptionCount: Int, onAddSubscription: () -> Unit, selectedCurrency: String) {
+fun SummaryCard(
+        totalMonthlyCost: Double,
+        subscriptionCount: Int,
+        onAddSubscription: () -> Unit,
+        selectedCurrency: String
+) {
     val cardContainerColor = MaterialTheme.colorScheme.primaryContainer
     val cardContentColor = MaterialTheme.colorScheme.onPrimaryContainer
 
@@ -170,9 +172,7 @@ fun SummaryCard(totalMonthlyCost: Double, subscriptionCount: Int, onAddSubscript
             colors = CardDefaults.cardColors(containerColor = cardContainerColor)
     ) {
         Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
+                modifier = Modifier.fillMaxWidth().padding(16.dp),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             Row(
@@ -197,10 +197,11 @@ fun SummaryCard(totalMonthlyCost: Double, subscriptionCount: Int, onAddSubscript
 
                 ElevatedButton(
                         onClick = onAddSubscription,
-                        colors = ButtonDefaults.elevatedButtonColors(
-                                containerColor = cardContentColor,
-                                contentColor = cardContainerColor
-                        )
+                        colors =
+                                ButtonDefaults.elevatedButtonColors(
+                                        containerColor = cardContentColor,
+                                        contentColor = cardContainerColor
+                                )
                 ) {
                     Icon(
                             imageVector = Icons.Default.Add,
@@ -234,7 +235,11 @@ fun SummaryCard(totalMonthlyCost: Double, subscriptionCount: Int, onAddSubscript
 }
 
 @Composable
-fun UpcomingSubscriptionCard(subscription: Subscription, onClick: () -> Unit, selectedCurrency: String) {
+fun UpcomingSubscriptionCard(
+        subscription: Subscription,
+        onClick: () -> Unit,
+        selectedCurrency: String
+) {
     val daysUntil = subscription.nextBillingDate.getDaysUntil()
     val isUrgent = daysUntil <= 3
 
