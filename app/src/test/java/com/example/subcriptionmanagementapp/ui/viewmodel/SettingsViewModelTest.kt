@@ -17,10 +17,10 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
+import org.mockito.Mockito.doAnswer
 import org.mockito.junit.MockitoJUnitRunner
 import org.mockito.kotlin.any
-import org.mockito.kotlin.coEvery
-import org.mockito.kotlin.coVerify
+import org.mockito.kotlin.never
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
 
@@ -65,15 +65,13 @@ class SettingsViewModelTest {
 
     @Test
     fun `onDarkModeToggled triggers use case and resets loading`() = runTest {
-        coEvery { updateDarkModeUseCase(true) } returns Unit
-
         darkModeFlow.emit(false)
         advanceUntilIdle()
 
         viewModel.onDarkModeToggled(true)
         advanceUntilIdle()
 
-        coVerify { updateDarkModeUseCase(true) }
+        verify(updateDarkModeUseCase).invoke(true)
         assertTrue(viewModel.uiState.value.isDarkMode)
         assertFalse(viewModel.uiState.value.isLoading)
     }
@@ -86,13 +84,13 @@ class SettingsViewModelTest {
         viewModel.onDarkModeToggled(true)
         advanceUntilIdle()
 
-        coVerify(exactly = 0) { updateDarkModeUseCase.invoke(any()) }
+        verify(updateDarkModeUseCase, org.mockito.kotlin.never()).invoke(any())
     }
 
     @Test
     fun `onDarkModeToggled surfaces error when update fails`() = runTest {
         val exception = IllegalStateException("Update failed")
-        coEvery { updateDarkModeUseCase(true) } throws exception
+        doAnswer { throw exception }.`when`(updateDarkModeUseCase).invoke(true)
 
         darkModeFlow.emit(false)
         advanceUntilIdle()

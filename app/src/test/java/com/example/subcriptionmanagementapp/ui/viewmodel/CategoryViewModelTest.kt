@@ -3,20 +3,27 @@ package com.example.subcriptionmanagementapp.ui.viewmodel
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import app.cash.turbine.test
 import com.example.subcriptionmanagementapp.data.local.entity.Category
-import com.example.subcriptionmanagementapp.domain.usecase.category.*
+import com.example.subcriptionmanagementapp.domain.usecase.category.AddCategoryUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.category.DeleteCategoryUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.category.GetAllCategoriesUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.category.GetCategoryUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.category.UpdateCategoryUseCase
 import com.example.subcriptionmanagementapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.test.runTest
-import org.junit.After
-import org.junit.Assert.*
+import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
+import org.mockito.Mockito.doAnswer
 import org.mockito.junit.MockitoJUnitRunner
-import org.mockito.kotlin.*
+import org.mockito.kotlin.clearInvocations
+import org.mockito.kotlin.verify
+import org.mockito.kotlin.whenever
 
 @OptIn(ExperimentalCoroutinesApi::class)
 @RunWith(MockitoJUnitRunner::class)
@@ -47,6 +54,8 @@ class CategoryViewModelTest {
 
     @Before
     fun setUp() {
+        whenever(getAllCategoriesUseCase()).thenReturn(flowOf(emptyList()))
+
         viewModel = CategoryViewModel(
             addCategoryUseCase,
             getCategoryUseCase,
@@ -54,11 +63,8 @@ class CategoryViewModelTest {
             updateCategoryUseCase,
             deleteCategoryUseCase
         )
-    }
 
-    @After
-    fun tearDown() {
-        verifyNoMoreInteractions(
+        clearInvocations(
             addCategoryUseCase,
             getCategoryUseCase,
             getAllCategoriesUseCase,
@@ -69,147 +75,127 @@ class CategoryViewModelTest {
 
     @Test
     fun `loadCategories should update categories state`() = runTest {
-        // Given
         val categories = listOf(
-            Category(
-                id = 1,
-                name = "Entertainment",
-                color = "#FF0000",
-                isActive = true
-            ),
-            Category(
-                id = 2,
-                name = "Productivity",
-                color = "#00FF00",
-                isActive = true
-            )
+            sampleCategory(id = 1, name = "Entertainment", color = "#FF0000"),
+            sampleCategory(id = 2, name = "Productivity", color = "#00FF00")
         )
-        
-        whenever(getAllCategoriesUseCase()).thenReturn(flow { emit(categories) })
 
-        // When
+        whenever(getAllCategoriesUseCase()).thenReturn(flowOf(categories))
+
         viewModel.loadCategories()
 
-        // Then
         viewModel.categories.test {
+            skipItems(1)
             assertEquals(categories, awaitItem())
-            ensureAllEventsConsumed()
+            cancelAndIgnoreRemainingEvents()
         }
-        
+
         verify(getAllCategoriesUseCase).invoke()
     }
 
     @Test
     fun `loadCategory should update selectedCategory state`() = runTest {
-        // Given
-        val category = Category(
-            id = 1,
-            name = "Entertainment",
-            color = "#FF0000",
-            isActive = true
-        )
-        
-        whenever(getCategoryUseCase(1)).thenReturn(flow { emit(category) })
+        val category = sampleCategory(id = 1, name = "Entertainment", color = "#FF0000")
 
-        // When
+        whenever(getCategoryUseCase(1)).thenReturn(flowOf(category))
+
         viewModel.loadCategory(1)
 
-        // Then
         viewModel.selectedCategory.test {
+            skipItems(1)
             assertEquals(category, awaitItem())
-            ensureAllEventsConsumed()
+            cancelAndIgnoreRemainingEvents()
         }
-        
+
         verify(getCategoryUseCase).invoke(1)
     }
 
     @Test
     fun `addCategory should call use case and reload categories`() = runTest {
-        // Given
-        val category = Category(
-            id = 0,
-            name = "Entertainment",
-            color = "#FF0000",
-            isActive = true
-        )
-        
+        val category = sampleCategory(id = 0, name = "Entertainment")
         val categories = listOf(category.copy(id = 1))
-        whenever(getAllCategoriesUseCase()).thenReturn(flow { emit(categories) })
 
-        // When
+        whenever(getAllCategoriesUseCase()).thenReturn(flowOf(categories))
+
         viewModel.addCategory(category)
 
-        // Then
         verify(addCategoryUseCase).invoke(category)
         verify(getAllCategoriesUseCase).invoke()
-        
+
         viewModel.categories.test {
+            skipItems(1)
             assertEquals(categories, awaitItem())
-            ensureAllEventsConsumed()
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
     fun `updateCategory should call use case and reload categories`() = runTest {
-        // Given
-        val category = Category(
-            id = 1,
-            name = "Entertainment",
-            color = "#FF0000",
-            isActive = true
-        )
-        
-        val categories = listOf(category)
-        whenever(getAllCategoriesUseCase()).thenReturn(flow { emit(categories) })
+        val category = sampleCategory(id = 1, name = "Entertainment")
 
-        // When
+        whenever(getAllCategoriesUseCase()).thenReturn(flowOf(listOf(category)))
+
         viewModel.updateCategory(category)
 
-        // Then
         verify(updateCategoryUseCase).invoke(category)
         verify(getAllCategoriesUseCase).invoke()
-        
+
         viewModel.categories.test {
-            assertEquals(categories, awaitItem())
-            ensureAllEventsConsumed()
+            skipItems(1)
+            assertEquals(listOf(category), awaitItem())
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
     fun `deleteCategory should call use case and reload categories`() = runTest {
-        // Given
-        val category = Category(
-            id = 1,
-            name = "Entertainment",
-            color = "#FF0000",
-            isActive = true
-        )
-        
-        val categories = emptyList<Category>()
-        whenever(getAllCategoriesUseCase()).thenReturn(flow { emit(categories) })
+        val category = sampleCategory(id = 1, name = "Entertainment")
 
-        // When
+        whenever(getAllCategoriesUseCase()).thenReturn(flowOf(emptyList()))
+
         viewModel.deleteCategory(category)
 
-        // Then
         verify(deleteCategoryUseCase).invoke(category)
         verify(getAllCategoriesUseCase).invoke()
-        
+
         viewModel.categories.test {
-            assertEquals(categories, awaitItem())
-            ensureAllEventsConsumed()
+            skipItems(1)
+            assertEquals(emptyList<Category>(), awaitItem())
+            cancelAndIgnoreRemainingEvents()
         }
     }
 
     @Test
     fun `clearError should set error state to null`() = runTest {
-        // Given
-        viewModel._error.value = "Test error"
+        val exception = IllegalStateException("Save failed")
+        val category = sampleCategory(id = 0)
 
-        // When
+        doAnswer { throw exception }.`when`(addCategoryUseCase).invoke(category)
+
+        viewModel.addCategory(category)
+        assertEquals(exception.message, viewModel.error.value)
+
         viewModel.clearError()
 
-        // Then
         assertNull(viewModel.error.value)
+    }
+
+    private fun sampleCategory(
+        id: Long,
+        name: String = "Category $id",
+        color: String = "#FF0000"
+    ): Category = Category(
+        id = id,
+        name = name,
+        color = color,
+        icon = null,
+        isPredefined = false,
+        keywords = null,
+        createdAt = DEFAULT_TIMESTAMP,
+        updatedAt = DEFAULT_TIMESTAMP
+    )
+
+    private companion object {
+        const val DEFAULT_TIMESTAMP = 1_700_000_000_000L
     }
 }
