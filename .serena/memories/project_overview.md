@@ -1,4 +1,0 @@
-- Mobile subscription management app built with Kotlin, Jetpack Compose (Material 3) on Android.
-- Architecture follows Clean Architecture: UI (Compose + ViewModel) → Use Cases (domain) → Repository interfaces → Data layer (Room, Managers).
-- Features span subscriptions, categories, reminders/notifications, payment history, statistics, backup/restore, Google Calendar sync, security/biometrics.
-- Dependency injection via Hilt; asynchronous flows handled with Coroutines + Flow.

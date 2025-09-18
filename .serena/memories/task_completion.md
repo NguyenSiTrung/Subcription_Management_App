@@ -1,5 +1,0 @@
-- Respect Clean Architecture boundaries when modifying features; update associated tests.
-- For database changes, bump Room version, add migration + migration tests before merge.
-- Run lint + unit tests (and instrumented tests when feasible) before delivering changes.
-- Document significant additions (e.g., update AGENTS.md or CHANGELOG when milestones finished).
-- Avoid introducing new Android permissions without user-facing flow updates.

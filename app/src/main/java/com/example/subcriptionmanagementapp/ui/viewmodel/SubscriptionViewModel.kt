@@ -3,7 +3,11 @@ package com.example.subcriptionmanagementapp.ui.viewmodel
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
+import com.example.subcriptionmanagementapp.data.local.entity.Category
+import com.example.subcriptionmanagementapp.data.manager.CurrencyRateManager
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.*
+import com.example.subcriptionmanagementapp.domain.usecase.category.GetAllCategoriesUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.settings.GetSelectedCurrencyUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.flow.*
@@ -19,7 +23,10 @@ class SubscriptionViewModel @Inject constructor(
     private val updateSubscriptionUseCase: UpdateSubscriptionUseCase,
     private val deleteSubscriptionUseCase: DeleteSubscriptionUseCase,
     private val getSubscriptionsByCategoryUseCase: GetSubscriptionsByCategoryUseCase,
-    private val searchSubscriptionsUseCase: SearchSubscriptionsUseCase
+    private val searchSubscriptionsUseCase: SearchSubscriptionsUseCase,
+    private val getAllCategoriesUseCase: GetAllCategoriesUseCase,
+    private val getSelectedCurrencyUseCase: GetSelectedCurrencyUseCase,
+    private val currencyRateManager: CurrencyRateManager
 ) : ViewModel() {
 
     private val _subscriptions = MutableStateFlow<List<Subscription>>(emptyList())
@@ -40,14 +47,31 @@ class SubscriptionViewModel @Inject constructor(
     private val _subscriptionSaved = MutableSharedFlow<Unit>()
     val subscriptionSaved: SharedFlow<Unit> = _subscriptionSaved.asSharedFlow()
 
+    private val _selectedCurrency = MutableStateFlow("USD")
+    val selectedCurrency: StateFlow<String> = _selectedCurrency.asStateFlow()
+
+    private val _categories = MutableStateFlow<List<Category>>(emptyList())
+    val categories: StateFlow<List<Category>> = _categories.asStateFlow()
+
     private var allSubscriptionsJob: Job? = null
     private var activeSubscriptionsJob: Job? = null
     private var subscriptionJob: Job? = null
     private var subscriptionsByCategoryJob: Job? = null
+    private var categoriesJob: Job? = null
 
     init {
         loadAllSubscriptions()
         loadActiveSubscriptions()
+        loadCategories()
+        observeSelectedCurrency()
+    }
+
+    private fun observeSelectedCurrency() {
+        getSelectedCurrencyUseCase()
+            .onEach { currency ->
+                _selectedCurrency.value = currency
+            }
+            .launchIn(viewModelScope)
     }
 
     fun loadAllSubscriptions() {
@@ -177,6 +201,23 @@ class SubscriptionViewModel @Inject constructor(
                 _isLoading.value = false
             }
         }
+    }
+
+    fun loadCategories() {
+        categoriesJob?.cancel()
+        categoriesJob =
+            viewModelScope.launch {
+                getAllCategoriesUseCase()
+                    .onStart { _isLoading.value = true }
+                    .catch { e ->
+                        _error.value = e.message ?: "Failed to load categories"
+                        _isLoading.value = false
+                    }
+                    .collectLatest { categoryList ->
+                        _categories.value = categoryList
+                        _isLoading.value = false
+                    }
+            }
     }
 
     fun clearError() {

@@ -29,6 +29,8 @@ import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import com.example.subcriptionmanagementapp.util.formatCurrency
 import com.example.subcriptionmanagementapp.util.formatDate
 import com.example.subcriptionmanagementapp.util.getDaysUntil
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 
 @Composable
 fun HomeScreen(
@@ -38,6 +40,7 @@ fun HomeScreen(
     val subscriptions by viewModel.activeSubscriptions.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) { viewModel.loadActiveSubscriptions() }
 
@@ -73,7 +76,8 @@ fun HomeScreen(
                                 },
                                 onViewAllSubscriptions = {
                                     navController.navigate(Screen.SubscriptionList.route)
-                                }
+                                },
+                                selectedCurrency = selectedCurrency
                         )
             }
         }
@@ -85,7 +89,8 @@ fun HomeContent(
         subscriptions: List<Subscription>,
         onSubscriptionClick: (Long) -> Unit,
         onAddSubscription: () -> Unit,
-        onViewAllSubscriptions: () -> Unit
+        onViewAllSubscriptions: () -> Unit,
+        selectedCurrency: String
 ) {
     val upcomingSubscriptions =
             subscriptions
@@ -105,7 +110,8 @@ fun HomeContent(
             SummaryCard(
                     totalMonthlyCost = totalMonthlyCost,
                     subscriptionCount = subscriptions.size,
-                    onAddSubscription = onAddSubscription
+                    onAddSubscription = onAddSubscription,
+                    selectedCurrency = selectedCurrency
             )
         }
 
@@ -146,7 +152,8 @@ fun HomeContent(
             items(upcomingSubscriptions) { subscription ->
                 UpcomingSubscriptionCard(
                         subscription = subscription,
-                        onClick = { onSubscriptionClick(subscription.id) }
+                        onClick = { onSubscriptionClick(subscription.id) },
+                        selectedCurrency = selectedCurrency
                 )
             }
         }
@@ -154,7 +161,7 @@ fun HomeContent(
 }
 
 @Composable
-fun SummaryCard(totalMonthlyCost: Double, subscriptionCount: Int, onAddSubscription: () -> Unit) {
+fun SummaryCard(totalMonthlyCost: Double, subscriptionCount: Int, onAddSubscription: () -> Unit, selectedCurrency: String) {
     val cardContainerColor = MaterialTheme.colorScheme.primaryContainer
     val cardContentColor = MaterialTheme.colorScheme.onPrimaryContainer
 
@@ -162,68 +169,72 @@ fun SummaryCard(totalMonthlyCost: Double, subscriptionCount: Int, onAddSubscript
             modifier = Modifier.fillMaxWidth(),
             colors = CardDefaults.cardColors(containerColor = cardContainerColor)
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
-            Text(
-                    text = stringResource(R.string.monthly_summary),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = cardContentColor,
-                    fontWeight = FontWeight.Bold
-            )
-
-            Spacer(modifier = Modifier.height(8.dp))
-
+        Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
             Row(
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
             ) {
                 Column {
                     Text(
-                            text = stringResource(R.string.total_monthly_cost),
+                            text = stringResource(R.string.monthly_spending),
                             style = MaterialTheme.typography.bodyMedium,
                             color = cardContentColor
                     )
 
                     Text(
-                            text = totalMonthlyCost.formatCurrency(),
+                            text = totalMonthlyCost.formatCurrency(selectedCurrency),
                             style = MaterialTheme.typography.titleLarge,
                             color = cardContentColor,
                             fontWeight = FontWeight.Bold
                     )
                 }
 
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                            text = stringResource(R.string.active_subscriptions),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = cardContentColor
+                ElevatedButton(
+                        onClick = onAddSubscription,
+                        colors = ButtonDefaults.elevatedButtonColors(
+                                containerColor = cardContentColor,
+                                contentColor = cardContainerColor
+                        )
+                ) {
+                    Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = stringResource(R.string.add_subscription)
                     )
-
-                    Text(
-                            text = subscriptionCount.toString(),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = cardContentColor,
-                            fontWeight = FontWeight.Bold
-                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = stringResource(R.string.add))
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Button(
-                    onClick = onAddSubscription,
+            Row(
                     modifier = Modifier.fillMaxWidth(),
-                    colors =
-                            ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.primary,
-                                    contentColor = MaterialTheme.colorScheme.onPrimary
-                            )
-            ) { Text(stringResource(R.string.add_subscription)) }
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                        text = stringResource(R.string.active_subscriptions),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = cardContentColor
+                )
+
+                Text(
+                        text = subscriptionCount.toString(),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = cardContentColor,
+                        fontWeight = FontWeight.Bold
+                )
+            }
         }
     }
 }
 
 @Composable
-fun UpcomingSubscriptionCard(subscription: Subscription, onClick: () -> Unit) {
+fun UpcomingSubscriptionCard(subscription: Subscription, onClick: () -> Unit, selectedCurrency: String) {
     val daysUntil = subscription.nextBillingDate.getDaysUntil()
     val isUrgent = daysUntil <= 3
 
@@ -258,7 +269,7 @@ fun UpcomingSubscriptionCard(subscription: Subscription, onClick: () -> Unit) {
 
                 Text(
                         text =
-                                subscription.price.formatCurrency() +
+                                subscription.price.formatCurrency(selectedCurrency) +
                                         "/" +
                                         when (subscription.billingCycle) {
                                             BillingCycle.DAILY -> stringResource(R.string.daily)
@@ -266,7 +277,17 @@ fun UpcomingSubscriptionCard(subscription: Subscription, onClick: () -> Unit) {
                                             BillingCycle.MONTHLY -> stringResource(R.string.monthly)
                                             BillingCycle.YEARLY -> stringResource(R.string.yearly)
                                         },
-                        style = MaterialTheme.typography.bodyMedium
+                        style = MaterialTheme.typography.bodyMedium,
+                        color =
+                                if (!isUrgent) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                } else if (daysUntil <= 3) {
+                                    ErrorColor
+                                } else if (daysUntil <= 7) {
+                                    WarningColor
+                                } else {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                }
                 )
             }
 

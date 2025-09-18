@@ -88,46 +88,49 @@ import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.material.icons.filled.ArrowDropDown
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddEditSubscriptionScreen(
         navController: NavController,
-        subscriptionId: Long?,
-        subscriptionViewModel: SubscriptionViewModel = hiltViewModel(),
-        categoryViewModel: CategoryViewModel = hiltViewModel()
+        viewModel: SubscriptionViewModel = hiltViewModel(),
+        subscriptionId: Long? = null
 ) {
     val context = LocalContext.current
-    val categories by categoryViewModel.categories.collectAsStateWithLifecycle()
-    val isLoadingCategories by categoryViewModel.isLoading.collectAsStateWithLifecycle()
-    val errorCategories by categoryViewModel.error.collectAsStateWithLifecycle()
-
-    val subscription by subscriptionViewModel.selectedSubscription.collectAsStateWithLifecycle()
-    val isLoadingSubscription by subscriptionViewModel.isLoading.collectAsStateWithLifecycle()
-    val errorSubscription by subscriptionViewModel.error.collectAsStateWithLifecycle()
-
+    val coroutineScope = rememberCoroutineScope()
+    
+    val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
+    
+    // Form state
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
     var price by remember { mutableStateOf("") }
+    var selectedCurrencyForSubscription by remember { mutableStateOf("USD") }
     var billingCycle by remember { mutableStateOf(BillingCycle.MONTHLY) }
-    var selectedCategory by remember { mutableStateOf<Category?>(null) }
+    var startDate by remember { mutableStateOf(System.currentTimeMillis()) }
     var nextBillingDate by remember { mutableStateOf(System.currentTimeMillis()) }
-    var isActive by remember { mutableStateOf(true) }
     var reminderDays by remember { mutableStateOf(3) }
+    var isActive by remember { mutableStateOf(true) }
+    var selectedCategory by remember { mutableStateOf<Category?>(null) }
+    var notes by remember { mutableStateOf("") }
     var websiteUrl by remember { mutableStateOf("") }
     var appPackageName by remember { mutableStateOf("") }
-    var notes by remember { mutableStateOf("") }
     var initialCategoryId by remember(subscriptionId) { mutableStateOf<Long?>(null) }
     var hasAppliedInitialCategory by remember(subscriptionId) { mutableStateOf(false) }
 
     LaunchedEffect(subscriptionId) {
         if (subscriptionId != null) {
-            subscriptionViewModel.loadSubscription(subscriptionId)
+            viewModel.loadSubscription(subscriptionId)
         }
     }
 
-    LaunchedEffect(subscription) {
-        subscription?.let { currentSubscription ->
+    LaunchedEffect(viewModel.selectedSubscription.value) {
+        viewModel.selectedSubscription.value?.let { currentSubscription ->
             name = currentSubscription.name
             description = currentSubscription.description ?: ""
             price = currentSubscription.price.toString()
@@ -147,43 +150,36 @@ fun AddEditSubscriptionScreen(
         }
     }
 
-    LaunchedEffect(categories, initialCategoryId, hasAppliedInitialCategory) {
+    LaunchedEffect(viewModel.categories.value, initialCategoryId, hasAppliedInitialCategory) {
         if (!hasAppliedInitialCategory) {
             val targetCategoryId = initialCategoryId
             if (targetCategoryId == null) {
                 selectedCategory = null
                 hasAppliedInitialCategory = true
-            } else if (categories.isNotEmpty()) {
-                selectedCategory = categories.find { it.id == targetCategoryId }
+            } else if (viewModel.categories.value.isNotEmpty()) {
+                selectedCategory = viewModel.categories.value.find { it.id == targetCategoryId }
                 hasAppliedInitialCategory = true
             }
         }
     }
 
-    LaunchedEffect(Unit) { categoryViewModel.loadCategories() }
+    LaunchedEffect(Unit) { viewModel.loadCategories() }
 
     LaunchedEffect(Unit) {
-        subscriptionViewModel.subscriptionSaved.collect {
+        viewModel.subscriptionSaved.collect {
             navController.popBackStack()
         }
     }
 
-    LaunchedEffect(errorCategories) {
-        if (errorCategories != null) {
-            Toast.makeText(context, errorCategories, Toast.LENGTH_SHORT).show()
-            categoryViewModel.clearError()
+    LaunchedEffect(viewModel.error.value) {
+        if (viewModel.error.value != null) {
+            Toast.makeText(context, viewModel.error.value, Toast.LENGTH_SHORT).show()
+            viewModel.clearError()
         }
     }
 
-    LaunchedEffect(errorSubscription) {
-        if (errorSubscription != null) {
-            Toast.makeText(context, errorSubscription, Toast.LENGTH_SHORT).show()
-            subscriptionViewModel.clearError()
-        }
-    }
-
-    val isLoading = isLoadingCategories || isLoadingSubscription
-    val error = errorCategories ?: errorSubscription
+    val isLoading = viewModel.isLoading.value
+    val error = viewModel.error.value
 
     Scaffold(
             topBar = {
@@ -213,7 +209,7 @@ fun AddEditSubscriptionScreen(
                                 onPriceChange = { price = it },
                                 billingCycle = billingCycle,
                                 onBillingCycleChange = { billingCycle = it },
-                                categories = categories,
+                                categories = viewModel.categories.value,
                                 selectedCategory = selectedCategory,
                                 onCategoryChange = { selectedCategory = it },
                                 nextBillingDate = nextBillingDate,
@@ -228,9 +224,11 @@ fun AddEditSubscriptionScreen(
                                 onAppPackageNameChange = { appPackageName = it },
                                 notes = notes,
                                 onNotesChange = { notes = it },
+                                selectedCurrencyForSubscription = selectedCurrencyForSubscription,
+                                onSelectedCurrencyForSubscriptionChange = { selectedCurrencyForSubscription = it },
                                 onSaveClick = {
                                     if (validateInputs(name, price)) {
-                                        val existingSubscription = subscription
+                                        val existingSubscription = viewModel.selectedSubscription.value
 
                                         val subscriptionToPersist =
                                                 Subscription(
@@ -238,7 +236,7 @@ fun AddEditSubscriptionScreen(
                                                         name = name,
                                                         description = description.ifBlank { null },
                                                         price = price.toDouble(),
-                                                        currency = "USD",
+                                                        currency = selectedCurrencyForSubscription,
                                                         billingCycle = billingCycle,
                                                         startDate =
                                                                 existingSubscription?.startDate
@@ -261,11 +259,11 @@ fun AddEditSubscriptionScreen(
                                                 )
 
                                         if (subscriptionId != null) {
-                                            subscriptionViewModel.updateSubscription(
+                                            viewModel.updateSubscription(
                                                     subscriptionToPersist
                                             )
                                         } else {
-                                            subscriptionViewModel.addSubscription(
+                                            viewModel.addSubscription(
                                                     subscriptionToPersist
                                             )
                                         }
@@ -310,6 +308,8 @@ fun AddEditSubscriptionContent(
         onAppPackageNameChange: (String) -> Unit,
         notes: String,
         onNotesChange: (String) -> Unit,
+        selectedCurrencyForSubscription: String,
+        onSelectedCurrencyForSubscriptionChange: (String) -> Unit,
         onSaveClick: () -> Unit
 ) {
     val listState = rememberLazyListState()
@@ -773,6 +773,60 @@ fun AddEditSubscriptionContent(
                                 minLines = 3,
                                 maxLines = 6
                         )
+                    }
+                }
+            }
+
+            item {
+                ElevatedCard(
+                        shape = RoundedCornerShape(24.dp),
+                        modifier = Modifier.fillMaxWidth()
+                ) {
+                    Column(
+                            modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                    ) {
+                        SectionHeader(
+                                icon = Icons.Outlined.Language,
+                                title = stringResource(R.string.currency),
+                                subtitle = stringResource(R.string.currency_description)
+                        )
+                        
+                        var currencyExpanded by remember { mutableStateOf(false) }
+                        val currencyOptions = listOf("USD", "VND")
+                        
+                        Box {
+                            OutlinedButton(
+                                    onClick = { currencyExpanded = true },
+                                    modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Text(
+                                        text = selectedCurrencyForSubscription,
+                                        style = MaterialTheme.typography.bodyMedium
+                                )
+                                Icon(
+                                        imageVector = Icons.Filled.ArrowDropDown,
+                                        contentDescription = "Select currency"
+                                )
+                            }
+                            
+                            DropdownMenu(
+                                    expanded = currencyExpanded,
+                                    onDismissRequest = { currencyExpanded = false }
+                            ) {
+                                currencyOptions.forEach { currency ->
+                                    DropdownMenuItem(
+                                            text = { Text(currency) },
+                                            onClick = {
+                                                onSelectedCurrencyForSubscriptionChange(currency)
+                                                currencyExpanded = false
+                                            }
+                                    )
+                                }
+                            }
+                        }
                     }
                 }
             }

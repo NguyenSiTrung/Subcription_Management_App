@@ -15,4 +15,10 @@ class SettingsRepositoryImpl @Inject constructor(
     override suspend fun setDarkMode(enabled: Boolean) {
         preferencesDataSource.setDarkMode(enabled)
     }
+
+    override fun observeCurrency(): Flow<String> = preferencesDataSource.currencyFlow
+
+    override suspend fun setCurrency(currency: String) {
+        preferencesDataSource.setCurrency(currency)
+    }
 }

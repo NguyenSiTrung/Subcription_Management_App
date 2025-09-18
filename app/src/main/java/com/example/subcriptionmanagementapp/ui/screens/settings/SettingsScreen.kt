@@ -7,6 +7,7 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -187,11 +188,40 @@ fun SettingsScreen(
                                 )
                             }
 
-                            Text(
-                                    text = currency,
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    fontWeight = FontWeight.Bold
-                            )
+                            var expanded by remember { mutableStateOf(false) }
+                            val currencyOptions = listOf("USD", "VND")
+                            
+                            Box {
+                                OutlinedButton(
+                                        onClick = { expanded = true },
+                                        enabled = !uiState.isLoading
+                                ) {
+                                    Text(
+                                            text = uiState.currency,
+                                            style = MaterialTheme.typography.bodyMedium,
+                                            fontWeight = FontWeight.Bold
+                                    )
+                                    Icon(
+                                            imageVector = Icons.Default.ArrowDropDown,
+                                            contentDescription = "Select currency"
+                                    )
+                                }
+                                
+                                DropdownMenu(
+                                        expanded = expanded,
+                                        onDismissRequest = { expanded = false }
+                                ) {
+                                    currencyOptions.forEach { currency ->
+                                        DropdownMenuItem(
+                                                text = { Text(currency) },
+                                                onClick = {
+                                                    viewModel.onCurrencyChanged(currency)
+                                                    expanded = false
+                                                }
+                                        )
+                                    }
+                                }
+                            }
                         }
                     }
                 }

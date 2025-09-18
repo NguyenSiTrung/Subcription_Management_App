@@ -106,6 +106,7 @@
 
     <!-- Statistics -->
     <string name="monthly_summary">Monthly Summary</string>
+    <string name="monthly_spending">Monthly Spending</string>
     <string name="total_monthly_cost">Total Monthly Cost</string>
     <string name="payment_history">Payment History</string>
     <string name="no_payment_history">No payment history</string>

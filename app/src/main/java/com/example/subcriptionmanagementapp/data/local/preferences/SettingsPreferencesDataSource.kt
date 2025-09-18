@@ -4,6 +4,7 @@ import android.content.Context
 import androidx.datastore.core.DataStore
 import androidx.datastore.preferences.core.Preferences
 import androidx.datastore.preferences.core.booleanPreferencesKey
+import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -25,6 +26,7 @@ class SettingsPreferencesDataSource @Inject constructor(
 
     private object Keys {
         val DARK_MODE = booleanPreferencesKey("dark_mode_enabled")
+        val CURRENCY = stringPreferencesKey("currency")
     }
 
     val darkModeFlow: Flow<Boolean> =
@@ -32,9 +34,20 @@ class SettingsPreferencesDataSource @Inject constructor(
             preferences[Keys.DARK_MODE] ?: false
         }
 
+    val currencyFlow: Flow<String> =
+        context.settingsDataStore.data.map { preferences ->
+            preferences[Keys.CURRENCY] ?: "USD"
+        }
+
     suspend fun setDarkMode(enabled: Boolean) {
         context.settingsDataStore.edit { preferences ->
             preferences[Keys.DARK_MODE] = enabled
+        }
+    }
+
+    suspend fun setCurrency(currency: String) {
+        context.settingsDataStore.edit { preferences ->
+            preferences[Keys.CURRENCY] = currency
         }
     }
 }

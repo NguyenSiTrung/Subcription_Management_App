@@ -2,7 +2,9 @@ package com.example.subcriptionmanagementapp.ui.viewmodel
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.subcriptionmanagementapp.domain.usecase.settings.ObserveCurrencyUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.settings.ObserveDarkModeUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.settings.UpdateCurrencyUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.settings.UpdateDarkModeUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
@@ -18,7 +20,9 @@ import kotlinx.coroutines.launch
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val observeDarkModeUseCase: ObserveDarkModeUseCase,
-    private val updateDarkModeUseCase: UpdateDarkModeUseCase
+    private val updateDarkModeUseCase: UpdateDarkModeUseCase,
+    private val observeCurrencyUseCase: ObserveCurrencyUseCase,
+    private val updateCurrencyUseCase: UpdateCurrencyUseCase
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(SettingsUiState())
@@ -26,6 +30,7 @@ class SettingsViewModel @Inject constructor(
 
     init {
         observeDarkModeChanges()
+        observeCurrencyChanges()
     }
 
     private fun observeDarkModeChanges() {
@@ -33,6 +38,21 @@ class SettingsViewModel @Inject constructor(
             .onEach { isDarkMode ->
                 _uiState.update { current ->
                     current.copy(isDarkMode = isDarkMode)
+                }
+            }
+            .catch { throwable ->
+                _uiState.update { current ->
+                    current.copy(errorMessage = throwable.message)
+                }
+            }
+            .launchIn(viewModelScope)
+    }
+
+    private fun observeCurrencyChanges() {
+        observeCurrencyUseCase()
+            .onEach { currency ->
+                _uiState.update { current ->
+                    current.copy(currency = currency)
                 }
             }
             .catch { throwable ->
@@ -73,6 +93,36 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
+    fun onCurrencyChanged(currency: String) {
+        val currentState = _uiState.value
+        if (!currentState.isLoading && currentState.currency == currency) {
+            return
+        }
+
+        viewModelScope.launch {
+            val previousCurrency = currentState.currency
+            _uiState.update { current ->
+                current.copy(
+                    currency = currency,
+                    isLoading = true,
+                    errorMessage = null
+                )
+            }
+
+            runCatching { updateCurrencyUseCase(currency) }
+                .onFailure { exception ->
+                    _uiState.update { current ->
+                        current.copy(
+                            currency = previousCurrency,
+                            errorMessage = exception.message ?: "Unable to update currency"
+                        )
+                    }
+                }
+
+            _uiState.update { current -> current.copy(isLoading = false) }
+        }
+    }
+
     fun clearError() {
         _uiState.update { current -> current.copy(errorMessage = null) }
     }
@@ -80,6 +130,7 @@ class SettingsViewModel @Inject constructor(
 
 data class SettingsUiState(
     val isDarkMode: Boolean = false,
+    val currency: String = "USD",
     val isLoading: Boolean = false,
     val errorMessage: String? = null
 )

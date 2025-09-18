@@ -43,6 +43,7 @@ fun SubscriptionDetailScreen(
     val subscriptionState by viewModel.selectedSubscription.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
 
     LaunchedEffect(subscriptionId) {
         viewModel.loadSubscription(subscriptionId)
@@ -78,6 +79,7 @@ fun SubscriptionDetailScreen(
                 currentSubscription == null -> ErrorMessage(message = stringResource(R.string.subscription_not_found))
                 else -> SubscriptionDetailContent(
                     subscription = currentSubscription,
+                    selectedCurrency = selectedCurrency,
                     onEditClick = {
                         navController.navigate(
                             Screen.AddEditSubscription.createRoute(currentSubscription.id)
@@ -99,6 +101,7 @@ fun SubscriptionDetailScreen(
 @Composable
 fun SubscriptionDetailContent(
     subscription: Subscription,
+    selectedCurrency: String,
     onEditClick: () -> Unit,
     onDeleteClick: () -> Unit,
     onToggleReminder: () -> Unit
@@ -117,7 +120,8 @@ fun SubscriptionDetailContent(
                 subscription = subscription,
                 daysUntil = daysUntil,
                 isOverdue = isOverdue,
-                isUrgent = isUrgent
+                isUrgent = isUrgent,
+                selectedCurrency = selectedCurrency
             )
         }
         
@@ -158,7 +162,8 @@ fun SubscriptionDetailContent(
         
         item {
             PaymentHistoryCard(
-                paymentHistory = emptyList() // Will be populated from repository
+                paymentHistory = emptyList(), // Will be populated from repository
+                selectedCurrency = selectedCurrency
             )
         }
         
@@ -175,7 +180,8 @@ fun SubscriptionInfoCard(
     subscription: Subscription,
     daysUntil: Long,
     isOverdue: Boolean,
-    isUrgent: Boolean
+    isUrgent: Boolean,
+    selectedCurrency: String
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -246,7 +252,7 @@ fun SubscriptionInfoCard(
                     )
                     
                     Text(
-                        text = subscription.price.formatCurrency(),
+                        text = subscription.price.formatCurrency(selectedCurrency),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.Bold,
                         color = if (!subscription.isActive) {
@@ -431,7 +437,8 @@ fun ReminderCard(
 
 @Composable
 fun PaymentHistoryCard(
-    paymentHistory: List<PaymentHistory>
+    paymentHistory: List<PaymentHistory>,
+    selectedCurrency: String
 ) {
     Card(
         modifier = Modifier.fillMaxWidth()
@@ -462,7 +469,10 @@ fun PaymentHistoryCard(
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     items(paymentHistory) { payment ->
-                        PaymentHistoryItem(payment = payment)
+                        PaymentHistoryItem(
+                            payment = payment,
+                            selectedCurrency = selectedCurrency
+                        )
                     }
                 }
             }
@@ -472,7 +482,8 @@ fun PaymentHistoryCard(
 
 @Composable
 fun PaymentHistoryItem(
-    payment: PaymentHistory
+    payment: PaymentHistory,
+    selectedCurrency: String
 ) {
     Row(
         modifier = Modifier.fillMaxWidth(),
@@ -496,7 +507,7 @@ fun PaymentHistoryItem(
         }
         
         Text(
-            text = payment.amount.formatCurrency(),
+            text = payment.amount.formatCurrency(selectedCurrency),
             style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold
         )

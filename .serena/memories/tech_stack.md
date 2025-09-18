@@ -1,7 +1,0 @@
-- Language: Kotlin.
-- UI: Jetpack Compose Material 3 + Navigation.
-- DI: Hilt.
-- Persistence: Room (DB version 2, migrations required for schema changes).
-- Async: Coroutines + Flow.
-- Managers for platform capabilities (notifications, backup, Google Calendar, security).
-- Testing: JUnit, Turbine, Mockito, Compose UI tests.

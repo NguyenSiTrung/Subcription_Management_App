@@ -1,8 +1,12 @@
 package com.example.subcriptionmanagementapp.util
 
+import com.example.subcriptionmanagementapp.data.manager.CurrencyRateManager
 import java.text.NumberFormat
 import java.util.*
+import javax.inject.Inject
+import javax.inject.Singleton
 
+@Singleton
 object CurrencyUtils {
     private const val DEFAULT_CURRENCY = "USD"
     
@@ -36,6 +40,20 @@ object CurrencyUtils {
             format.parse(amountString)?.toDouble()
         } catch (e: Exception) {
             null
+        }
+    }
+    
+    suspend fun formatCurrencyWithConversion(
+        amount: Double, 
+        fromCurrency: String, 
+        toCurrency: String,
+        currencyRateManager: CurrencyRateManager
+    ): String {
+        return if (fromCurrency == toCurrency) {
+            formatCurrency(amount, toCurrency)
+        } else {
+            val convertedAmount = currencyRateManager.convertCurrency(amount, fromCurrency, toCurrency)
+            convertedAmount?.let { formatCurrency(it, toCurrency) } ?: formatCurrency(amount, toCurrency)
         }
     }
 }

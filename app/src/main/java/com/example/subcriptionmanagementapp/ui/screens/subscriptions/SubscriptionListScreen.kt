@@ -29,6 +29,7 @@ import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import com.example.subcriptionmanagementapp.util.formatCurrency
 import com.example.subcriptionmanagementapp.util.formatDate
 import com.example.subcriptionmanagementapp.util.getDaysUntil
+import kotlinx.coroutines.launch
 
 @Composable
 fun SubscriptionListScreen(
@@ -38,6 +39,8 @@ fun SubscriptionListScreen(
     val subscriptions by viewModel.subscriptions.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) { viewModel.loadAllSubscriptions() }
 
@@ -68,6 +71,7 @@ fun SubscriptionListScreen(
                 else ->
                         SubscriptionListContent(
                                 subscriptions = subscriptions,
+                                selectedCurrency = selectedCurrency,
                                 onSubscriptionClick = { subscriptionId ->
                                     navController.navigate(
                                             Screen.SubscriptionDetail.createRoute(subscriptionId)
@@ -82,6 +86,7 @@ fun SubscriptionListScreen(
 @Composable
 fun SubscriptionListContent(
         subscriptions: List<Subscription>,
+        selectedCurrency: String,
         onSubscriptionClick: (Long) -> Unit
 ) {
     LazyColumn(
@@ -92,6 +97,7 @@ fun SubscriptionListContent(
         items(subscriptions) { subscription ->
             SubscriptionListItem(
                     subscription = subscription,
+                    selectedCurrency = selectedCurrency,
                     onClick = { onSubscriptionClick(subscription.id) }
             )
         }
@@ -99,7 +105,7 @@ fun SubscriptionListContent(
 }
 
 @Composable
-fun SubscriptionListItem(subscription: Subscription, onClick: () -> Unit) {
+fun SubscriptionListItem(subscription: Subscription, selectedCurrency: String, onClick: () -> Unit) {
     val daysUntil = subscription.nextBillingDate.getDaysUntil()
     val isUrgent = daysUntil <= 3L
     val isOverdue = daysUntil < 0L
@@ -154,7 +160,7 @@ fun SubscriptionListItem(subscription: Subscription, onClick: () -> Unit) {
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                        text = "${subscription.price.formatCurrency()}/" +
+                        text = "${subscription.price.formatCurrency(selectedCurrency)}/" +
                                 when (subscription.billingCycle) {
                                     BillingCycle.DAILY -> stringResource(R.string.daily)
                                     BillingCycle.WEEKLY -> stringResource(R.string.weekly)
@@ -165,8 +171,12 @@ fun SubscriptionListItem(subscription: Subscription, onClick: () -> Unit) {
                         color =
                                 if (!isActive) {
                                     MaterialTheme.colorScheme.onSurfaceVariant
+                                } else if (daysUntil <= 3) {
+                                    ErrorColor
+                                } else if (daysUntil <= 7) {
+                                    WarningColor
                                 } else {
-                                    MaterialTheme.colorScheme.onSurface
+                                    MaterialTheme.colorScheme.onSurfaceVariant
                                 }
                 )
             }

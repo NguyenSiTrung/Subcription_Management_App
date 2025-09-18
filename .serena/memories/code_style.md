@@ -1,6 +1,0 @@
-- Maintain clear separation per Clean Architecture guidelines; business logic resides in use cases, ViewModels manage state exposure via StateFlow/SharedFlow.
-- Compose screens should be state-hoisted, stateless UI functions receiving UiState and callbacks.
-- Repositories map between domain models and data entities; DAOs stay pure for Room CRUD/queries.
-- Follow Kotlin style (prefer val, data classes for immutable models), handle errors via Result/sealed classes rather than throwing to UI.
-- Ensure DI annotations (@HiltViewModel, @Inject) and modules under di/ stay consistent.
-- Room schema changes must include migrations plus tests before merge.
