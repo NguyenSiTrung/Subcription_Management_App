@@ -32,6 +32,7 @@
     <string name="edit">Edit</string>
     <string name="delete">Delete</string>
     <string name="retry">Retry</string>
+    <string name="cancel">Cancel</string>
     <string name="backup">Backup</string>
     <string name="restore">Restore</string>
     <string name="clear">Clear</string>
@@ -142,6 +143,7 @@
     <string name="backup_data_description">Export your data to a file</string>
     <string name="restore_data">Restore Data</string>
     <string name="restore_data_description">Import data from a backup file</string>
+    <string name="restore_data_warning">This will replace all existing data with the backup. This action cannot be undone.</string>
     <string name="backup_share">Share backup</string>
     <string name="backup_save_to_device">Save to device</string>
     <string name="backup_options">Backup actions</string>

@@ -42,6 +42,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
     var isBackupMenuExpanded by remember { mutableStateOf(false) }
+    var showRestoreConfirmation by remember { mutableStateOf(false) }
 
     val restoreLauncher =
             rememberLauncherForActivityResult(
@@ -375,19 +376,7 @@ fun SettingsScreen(
 
                             OutlinedButton(
                                     onClick = {
-                                        val intent = backupViewModel.getBackupFilePickerIntent()
-                                        if (intent.resolveActivity(context.packageManager) != null
-                                        ) {
-                                            restoreLauncher.launch(intent)
-                                        } else {
-                                            coroutineScope.launch {
-                                                snackbarHostState.showSnackbar(
-                                                        context.getString(
-                                                                R.string.backup_picker_unavailable
-                                                        )
-                                                )
-                                            }
-                                        }
+                                        showRestoreConfirmation = true
                                     },
                                     enabled = !isBackupLoading
                             ) { Text(stringResource(R.string.restore)) }
@@ -511,5 +500,50 @@ fun SettingsScreen(
                 }
             }
         }
+    }
+
+    // Restore confirmation dialog
+    if (showRestoreConfirmation) {
+        AlertDialog(
+            onDismissRequest = { showRestoreConfirmation = false },
+            title = { Text(stringResource(R.string.restore_data)) },
+            text = {
+                Column {
+                    Text(stringResource(R.string.restore_data_description))
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = stringResource(R.string.restore_data_warning),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        showRestoreConfirmation = false
+                        val intent = backupViewModel.getBackupFilePickerIntent()
+                        if (intent.resolveActivity(context.packageManager) != null) {
+                            restoreLauncher.launch(intent)
+                        } else {
+                            coroutineScope.launch {
+                                snackbarHostState.showSnackbar(
+                                    context.getString(R.string.backup_picker_unavailable)
+                                )
+                            }
+                        }
+                    }
+                ) {
+                    Text(stringResource(R.string.restore))
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showRestoreConfirmation = false }
+                ) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 }
