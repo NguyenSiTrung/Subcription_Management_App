@@ -8,7 +8,6 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Download
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,9 +30,9 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun SettingsScreen(
-    navController: NavController,
-    viewModel: SettingsViewModel = hiltViewModel(),
-    backupViewModel: BackupViewModel = hiltViewModel()
+        navController: NavController,
+        viewModel: SettingsViewModel = hiltViewModel(),
+        backupViewModel: BackupViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val isBackupLoading by backupViewModel.isLoading.collectAsStateWithLifecycle()
@@ -48,7 +47,8 @@ fun SettingsScreen(
             rememberLauncherForActivityResult(
                     contract = ActivityResultContracts.StartActivityForResult()
             ) { result ->
-                if (result.resultCode != Activity.RESULT_OK) return@rememberLauncherForActivityResult
+                if (result.resultCode != Activity.RESULT_OK)
+                        return@rememberLauncherForActivityResult
                 val uri = result.data?.data ?: return@rememberLauncherForActivityResult
                 backupViewModel.restoreBackup(uri)
             }
@@ -86,13 +86,9 @@ fun SettingsScreen(
                 }
                 is BackupUiEvent.RequestExport -> exportLauncher.launch(event.suggestedFileName)
                 is BackupUiEvent.Success ->
-                        snackbarHostState.showSnackbar(
-                                context.getString(event.messageResId)
-                        )
+                        snackbarHostState.showSnackbar(context.getString(event.messageResId))
                 is BackupUiEvent.Error ->
-                        snackbarHostState.showSnackbar(
-                                context.getString(event.messageResId)
-                        )
+                        snackbarHostState.showSnackbar(context.getString(event.messageResId))
             }
         }
     }
@@ -161,7 +157,9 @@ fun SettingsScreen(
 
                             Switch(
                                     checked = uiState.isDarkMode,
-                                    onCheckedChange = { isChecked -> viewModel.onDarkModeToggled(isChecked) },
+                                    onCheckedChange = { isChecked ->
+                                        viewModel.onDarkModeToggled(isChecked)
+                                    },
                                     enabled = !uiState.isLoading
                             )
                         }
@@ -313,15 +311,10 @@ fun SettingsScreen(
                             }
 
                             Box(modifier = Modifier.wrapContentSize(Alignment.TopEnd)) {
-                                IconButton(
+                                Button(
                                         onClick = { isBackupMenuExpanded = true },
                                         enabled = !isBackupLoading
-                                ) {
-                                    Icon(
-                                            imageVector = Icons.Filled.MoreVert,
-                                            contentDescription = stringResource(R.string.backup_options)
-                                    )
-                                }
+                                ) { Text(stringResource(R.string.backup)) }
 
                                 DropdownMenu(
                                         expanded = isBackupMenuExpanded,
@@ -329,7 +322,9 @@ fun SettingsScreen(
                                 ) {
                                     DropdownMenuItem(
                                             text = { Text(stringResource(R.string.backup_share)) },
-                                            leadingIcon = { Icon(Icons.Filled.Share, contentDescription = null) },
+                                            leadingIcon = {
+                                                Icon(Icons.Filled.Share, contentDescription = null)
+                                            },
                                             enabled = !isBackupLoading,
                                             onClick = {
                                                 isBackupMenuExpanded = false
@@ -337,8 +332,15 @@ fun SettingsScreen(
                                             }
                                     )
                                     DropdownMenuItem(
-                                            text = { Text(stringResource(R.string.backup_save_to_device)) },
-                                            leadingIcon = { Icon(Icons.Filled.Download, contentDescription = null) },
+                                            text = {
+                                                Text(stringResource(R.string.backup_save_to_device))
+                                            },
+                                            leadingIcon = {
+                                                Icon(
+                                                        Icons.Filled.Download,
+                                                        contentDescription = null
+                                                )
+                                            },
                                             enabled = !isBackupLoading,
                                             onClick = {
                                                 isBackupMenuExpanded = false
@@ -374,20 +376,21 @@ fun SettingsScreen(
                             OutlinedButton(
                                     onClick = {
                                         val intent = backupViewModel.getBackupFilePickerIntent()
-                                        if (intent.resolveActivity(context.packageManager) != null) {
+                                        if (intent.resolveActivity(context.packageManager) != null
+                                        ) {
                                             restoreLauncher.launch(intent)
                                         } else {
                                             coroutineScope.launch {
                                                 snackbarHostState.showSnackbar(
-                                                        context.getString(R.string.backup_picker_unavailable)
+                                                        context.getString(
+                                                                R.string.backup_picker_unavailable
+                                                        )
                                                 )
                                             }
                                         }
                                     },
                                     enabled = !isBackupLoading
-                            ) {
-                                Text(stringResource(R.string.restore))
-                            }
+                            ) { Text(stringResource(R.string.restore)) }
                         }
 
                         HorizontalDivider()
