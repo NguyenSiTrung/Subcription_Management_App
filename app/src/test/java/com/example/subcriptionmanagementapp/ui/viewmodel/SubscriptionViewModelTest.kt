@@ -33,35 +33,25 @@ import org.mockito.kotlin.whenever
 @RunWith(MockitoJUnitRunner::class)
 class SubscriptionViewModelTest {
 
-    @get:Rule
-    val instantExecutorRule = InstantTaskExecutorRule()
+    @get:Rule val instantExecutorRule = InstantTaskExecutorRule()
 
-    @get:Rule
-    val mainDispatcherRule = MainDispatcherRule()
+    @get:Rule val mainDispatcherRule = MainDispatcherRule()
 
-    @Mock
-    private lateinit var addSubscriptionUseCase: AddSubscriptionUseCase
+    @Mock private lateinit var addSubscriptionUseCase: AddSubscriptionUseCase
 
-    @Mock
-    private lateinit var getSubscriptionUseCase: GetSubscriptionUseCase
+    @Mock private lateinit var getSubscriptionUseCase: GetSubscriptionUseCase
 
-    @Mock
-    private lateinit var getAllSubscriptionsUseCase: GetAllSubscriptionsUseCase
+    @Mock private lateinit var getAllSubscriptionsUseCase: GetAllSubscriptionsUseCase
 
-    @Mock
-    private lateinit var getActiveSubscriptionsUseCase: GetActiveSubscriptionsUseCase
+    @Mock private lateinit var getActiveSubscriptionsUseCase: GetActiveSubscriptionsUseCase
 
-    @Mock
-    private lateinit var updateSubscriptionUseCase: UpdateSubscriptionUseCase
+    @Mock private lateinit var updateSubscriptionUseCase: UpdateSubscriptionUseCase
 
-    @Mock
-    private lateinit var deleteSubscriptionUseCase: DeleteSubscriptionUseCase
+    @Mock private lateinit var deleteSubscriptionUseCase: DeleteSubscriptionUseCase
 
-    @Mock
-    private lateinit var getSubscriptionsByCategoryUseCase: GetSubscriptionsByCategoryUseCase
+    @Mock private lateinit var getSubscriptionsByCategoryUseCase: GetSubscriptionsByCategoryUseCase
 
-    @Mock
-    private lateinit var searchSubscriptionsUseCase: SearchSubscriptionsUseCase
+    @Mock private lateinit var searchSubscriptionsUseCase: SearchSubscriptionsUseCase
 
     private lateinit var viewModel: SubscriptionViewModel
 
@@ -70,35 +60,37 @@ class SubscriptionViewModelTest {
         whenever(getAllSubscriptionsUseCase()).thenReturn(flowOf(emptyList()))
         whenever(getActiveSubscriptionsUseCase()).thenReturn(flowOf(emptyList()))
 
-        viewModel = SubscriptionViewModel(
-            addSubscriptionUseCase,
-            getSubscriptionUseCase,
-            getAllSubscriptionsUseCase,
-            getActiveSubscriptionsUseCase,
-            updateSubscriptionUseCase,
-            deleteSubscriptionUseCase,
-            getSubscriptionsByCategoryUseCase,
-            searchSubscriptionsUseCase
-        )
+        viewModel =
+                SubscriptionViewModel(
+                        addSubscriptionUseCase,
+                        getSubscriptionUseCase,
+                        getAllSubscriptionsUseCase,
+                        getActiveSubscriptionsUseCase,
+                        updateSubscriptionUseCase,
+                        deleteSubscriptionUseCase,
+                        getSubscriptionsByCategoryUseCase,
+                        searchSubscriptionsUseCase
+                )
 
         clearInvocations(
-            addSubscriptionUseCase,
-            getSubscriptionUseCase,
-            getAllSubscriptionsUseCase,
-            getActiveSubscriptionsUseCase,
-            updateSubscriptionUseCase,
-            deleteSubscriptionUseCase,
-            getSubscriptionsByCategoryUseCase,
-            searchSubscriptionsUseCase
+                addSubscriptionUseCase,
+                getSubscriptionUseCase,
+                getAllSubscriptionsUseCase,
+                getActiveSubscriptionsUseCase,
+                updateSubscriptionUseCase,
+                deleteSubscriptionUseCase,
+                getSubscriptionsByCategoryUseCase,
+                searchSubscriptionsUseCase
         )
     }
 
     @Test
     fun `loadAllSubscriptions should update state`() = runTest {
-        val subscriptions = listOf(
-            sampleSubscription(id = 1, name = "Netflix"),
-            sampleSubscription(id = 2, name = "Spotify", nextBillingOffsetDays = 15)
-        )
+        val subscriptions =
+                listOf(
+                        sampleSubscription(id = 1, name = "Netflix"),
+                        sampleSubscription(id = 2, name = "Spotify", nextBillingOffsetDays = 15)
+                )
 
         whenever(getAllSubscriptionsUseCase()).thenReturn(flowOf(subscriptions))
 
@@ -228,31 +220,69 @@ class SubscriptionViewModelTest {
         assertNull(viewModel.error.value)
     }
 
+    @Test
+    fun `loadSubscription should preserve currency for detail display`() = runTest {
+        val vndSubscription =
+                sampleSubscription(id = 1, name = "Vietnamese Service", currency = "VND")
+
+        whenever(getSubscriptionUseCase(1)).thenReturn(flowOf(vndSubscription))
+
+        viewModel.loadSubscription(1)
+
+        viewModel.selectedSubscription.test {
+            val loadedSubscription = awaitItem()
+            assertEquals("VND", loadedSubscription?.currency)
+            assertEquals(9.99, loadedSubscription?.price)
+            // Verify that the subscription's own currency is preserved, not the global selected
+            // currency
+            assertNotEquals("USD", loadedSubscription?.currency)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `loadSubscription should preserve currency when editing`() = runTest {
+        val vndSubscription =
+                sampleSubscription(id = 1, name = "Vietnamese Service", currency = "VND")
+
+        whenever(getSubscriptionUseCase(1)).thenReturn(flowOf(vndSubscription))
+
+        viewModel.loadSubscription(1)
+
+        viewModel.selectedSubscription.test {
+            val loadedSubscription = awaitItem()
+            assertEquals("VND", loadedSubscription?.currency)
+            assertEquals(9.99, loadedSubscription?.price)
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
     private fun sampleSubscription(
-        id: Long,
-        name: String,
-        nextBillingOffsetDays: Long = 30
+            id: Long,
+            name: String,
+            currency: String = "USD",
+            nextBillingOffsetDays: Long = 30
     ): Subscription {
         val baseTime = DEFAULT_TIMESTAMP
         val nextBillingDate = baseTime + nextBillingOffsetDays * ONE_DAY_MILLIS
         return Subscription(
-            id = id,
-            name = name,
-            description = "description",
-            price = 9.99,
-            currency = "USD",
-            billingCycle = BillingCycle.MONTHLY,
-            startDate = baseTime,
-            nextBillingDate = nextBillingDate,
-            endDate = null,
-            reminderDays = 3,
-            isActive = true,
-            categoryId = 1L,
-            websiteUrl = "https://example.com",
-            appPackageName = "com.example",
-            notes = null,
-            createdAt = baseTime,
-            updatedAt = baseTime
+                id = id,
+                name = name,
+                description = "description",
+                price = 9.99,
+                currency = currency,
+                billingCycle = BillingCycle.MONTHLY,
+                startDate = baseTime,
+                nextBillingDate = nextBillingDate,
+                endDate = null,
+                reminderDays = 3,
+                isActive = true,
+                categoryId = 1L,
+                websiteUrl = "https://example.com",
+                appPackageName = "com.example",
+                notes = null,
+                createdAt = baseTime,
+                updatedAt = baseTime
         )
     }
 

@@ -10,12 +10,12 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Notifications
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.R
@@ -36,18 +36,16 @@ import com.example.subcriptionmanagementapp.util.getDaysUntil
 
 @Composable
 fun SubscriptionDetailScreen(
-    navController: NavController,
-    subscriptionId: Long,
-    viewModel: SubscriptionViewModel = hiltViewModel()
+        navController: NavController,
+        subscriptionId: Long,
+        viewModel: SubscriptionViewModel = hiltViewModel()
 ) {
     val subscriptionState by viewModel.selectedSubscription.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
 
-    LaunchedEffect(subscriptionId) {
-        viewModel.loadSubscription(subscriptionId)
-    }
+    LaunchedEffect(subscriptionId) { viewModel.loadSubscription(subscriptionId) }
 
     LaunchedEffect(error) {
         if (error != null) {
@@ -58,41 +56,41 @@ fun SubscriptionDetailScreen(
     val currentSubscription = subscriptionState
 
     Scaffold(
-        topBar = {
-            AppTopBar(
-                title = stringResource(R.string.subscription_details),
-                navController = navController,
-                currentRoute = Screen.SubscriptionDetail.route,
-                showBackButton = true,
-                showActions = true
-            )
-        }
+            topBar = {
+                AppTopBar(
+                        title = stringResource(R.string.subscription_details),
+                        navController = navController,
+                        currentRoute = Screen.SubscriptionDetail.route,
+                        showBackButton = true,
+                        showActions = true
+                )
+            }
     ) { paddingValues ->
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-        ) {
+        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             when {
                 isLoading -> LoadingIndicator()
                 error != null -> ErrorMessage(message = error!!)
-                currentSubscription == null -> ErrorMessage(message = stringResource(R.string.subscription_not_found))
-                else -> SubscriptionDetailContent(
-                    subscription = currentSubscription,
-                    selectedCurrency = selectedCurrency,
-                    onEditClick = {
-                        navController.navigate(
-                            Screen.AddEditSubscription.createRoute(currentSubscription.id)
+                currentSubscription == null ->
+                        ErrorMessage(message = stringResource(R.string.subscription_not_found))
+                else ->
+                        SubscriptionDetailContent(
+                                subscription = currentSubscription,
+                                selectedCurrency = selectedCurrency,
+                                onEditClick = {
+                                    navController.navigate(
+                                            Screen.AddEditSubscription.createRoute(
+                                                    currentSubscription.id
+                                            )
+                                    )
+                                },
+                                onDeleteClick = {
+                                    viewModel.deleteSubscription(currentSubscription)
+                                    navController.popBackStack()
+                                },
+                                onToggleReminder = {
+                                    // Toggle reminder
+                                }
                         )
-                    },
-                    onDeleteClick = {
-                        viewModel.deleteSubscription(currentSubscription)
-                        navController.popBackStack()
-                    },
-                    onToggleReminder = {
-                        // Toggle reminder
-                    }
-                )
             }
         }
     }
@@ -100,51 +98,49 @@ fun SubscriptionDetailScreen(
 
 @Composable
 fun SubscriptionDetailContent(
-    subscription: Subscription,
-    selectedCurrency: String,
-    onEditClick: () -> Unit,
-    onDeleteClick: () -> Unit,
-    onToggleReminder: () -> Unit
+        subscription: Subscription,
+        selectedCurrency: String,
+        onEditClick: () -> Unit,
+        onDeleteClick: () -> Unit,
+        onToggleReminder: () -> Unit
 ) {
     val daysUntil = subscription.nextBillingDate.getDaysUntil()
     val isOverdue = daysUntil < 0L
     val isUrgent = daysUntil <= 3L
 
     LazyColumn(
-        modifier = Modifier.fillMaxSize(),
-        contentPadding = PaddingValues(16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp)
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         item {
             SubscriptionInfoCard(
-                subscription = subscription,
-                daysUntil = daysUntil,
-                isOverdue = isOverdue,
-                isUrgent = isUrgent,
-                selectedCurrency = selectedCurrency
+                    subscription = subscription,
+                    daysUntil = daysUntil,
+                    isOverdue = isOverdue,
+                    isUrgent = isUrgent,
+                    selectedCurrency = selectedCurrency
             )
         }
-        
+
         item {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
-                Button(
-                    onClick = onEditClick,
-                    modifier = Modifier.weight(1f)
-                ) {
+                Button(onClick = onEditClick, modifier = Modifier.weight(1f)) {
                     Icon(Icons.Default.Edit, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(stringResource(R.string.edit))
                 }
-                
+
                 OutlinedButton(
-                    onClick = onDeleteClick,
-                    modifier = Modifier.weight(1f),
-                    colors = ButtonDefaults.outlinedButtonColors(
-                        contentColor = MaterialTheme.colorScheme.error
-                    )
+                        onClick = onDeleteClick,
+                        modifier = Modifier.weight(1f),
+                        colors =
+                                ButtonDefaults.outlinedButtonColors(
+                                        contentColor = MaterialTheme.colorScheme.error
+                                )
                 ) {
                     Icon(Icons.Default.Delete, contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
@@ -152,227 +148,222 @@ fun SubscriptionDetailContent(
                 }
             }
         }
-        
-        item {
-            ReminderCard(
-                subscription = subscription,
-                onToggleReminder = onToggleReminder
-            )
-        }
-        
+
+        item { ReminderCard(subscription = subscription, onToggleReminder = onToggleReminder) }
+
         item {
             PaymentHistoryCard(
-                paymentHistory = emptyList(), // Will be populated from repository
-                selectedCurrency = selectedCurrency
+                    paymentHistory = emptyList(), // Will be populated from repository
+                    selectedCurrency = selectedCurrency
             )
         }
-        
-        item {
-            NotesCard(
-                notes = subscription.notes ?: ""
-            )
-        }
+
+        item { NotesCard(notes = subscription.notes ?: "") }
     }
 }
 
 @Composable
 fun SubscriptionInfoCard(
-    subscription: Subscription,
-    daysUntil: Long,
-    isOverdue: Boolean,
-    isUrgent: Boolean,
-    selectedCurrency: String
+        subscription: Subscription,
+        daysUntil: Long,
+        isOverdue: Boolean,
+        isUrgent: Boolean,
+        selectedCurrency: String
 ) {
     Card(
-        modifier = Modifier.fillMaxWidth(),
-        colors = CardDefaults.cardColors(
-            containerColor = if (!subscription.isActive) {
-                MaterialTheme.colorScheme.surfaceVariant
-            } else if (isUrgent) {
-                WarningColor.copy(alpha = 0.2f)
-            } else {
-                MaterialTheme.colorScheme.surface
-            }
-        ),
-        border = if (isUrgent || !subscription.isActive) {
-            BorderStroke(
-                width = 1.dp,
-                color = if (!subscription.isActive) {
-                    MaterialTheme.colorScheme.outline
-                } else {
-                    WarningColor
-                }
-            )
-        } else {
-            null
-        }
+            modifier = Modifier.fillMaxWidth(),
+            colors =
+                    CardDefaults.cardColors(
+                            containerColor =
+                                    if (!subscription.isActive) {
+                                        MaterialTheme.colorScheme.surfaceVariant
+                                    } else if (isUrgent) {
+                                        WarningColor.copy(alpha = 0.2f)
+                                    } else {
+                                        MaterialTheme.colorScheme.surface
+                                    }
+                    ),
+            border =
+                    if (isUrgent || !subscription.isActive) {
+                        BorderStroke(
+                                width = 1.dp,
+                                color =
+                                        if (!subscription.isActive) {
+                                            MaterialTheme.colorScheme.outline
+                                        } else {
+                                            WarningColor
+                                        }
+                        )
+                    } else {
+                        null
+                    }
     ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = subscription.name,
-                    style = MaterialTheme.typography.headlineSmall,
-                    fontWeight = FontWeight.Bold,
-                    color = if (!subscription.isActive) {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    } else {
-                        MaterialTheme.colorScheme.onSurface
-                    }
+                        text = subscription.name,
+                        style = MaterialTheme.typography.headlineSmall,
+                        fontWeight = FontWeight.Bold,
+                        color =
+                                if (!subscription.isActive) {
+                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                } else {
+                                    MaterialTheme.colorScheme.onSurface
+                                }
                 )
-                
+
                 if (!subscription.isActive) {
                     Text(
-                        text = stringResource(R.string.inactive),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontWeight = FontWeight.Bold
+                            text = stringResource(R.string.inactive),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontWeight = FontWeight.Bold
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
                     Text(
-                        text = stringResource(R.string.price),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = stringResource(R.string.price),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
+
                     Text(
-                        text = subscription.price.formatCurrency(selectedCurrency),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (!subscription.isActive) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
+                            text = subscription.price.formatCurrency(subscription.currency),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color =
+                                    if (!subscription.isActive) {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    }
                     )
                 }
-                
-                Column(
-                    horizontalAlignment = Alignment.End
-                ) {
+
+                Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = stringResource(R.string.billing_cycle),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = stringResource(R.string.billing_cycle),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
+
                     Text(
-                        text = when (subscription.billingCycle) {
-                            BillingCycle.DAILY -> stringResource(R.string.daily)
-                            BillingCycle.WEEKLY -> stringResource(R.string.weekly)
-                            BillingCycle.MONTHLY -> stringResource(R.string.monthly)
-                            BillingCycle.YEARLY -> stringResource(R.string.yearly)
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (!subscription.isActive) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
+                            text =
+                                    when (subscription.billingCycle) {
+                                        BillingCycle.DAILY -> stringResource(R.string.daily)
+                                        BillingCycle.WEEKLY -> stringResource(R.string.weekly)
+                                        BillingCycle.MONTHLY -> stringResource(R.string.monthly)
+                                        BillingCycle.YEARLY -> stringResource(R.string.yearly)
+                                    },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color =
+                                    if (!subscription.isActive) {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    }
                     )
                 }
             }
-            
+
             Spacer(modifier = Modifier.height(16.dp))
-            
+
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween
             ) {
                 Column {
                     Text(
-                        text = stringResource(R.string.next_billing_date),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = stringResource(R.string.next_billing_date),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
+
                     Text(
-                        text = subscription.nextBillingDate.formatDate(),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = if (!subscription.isActive) {
-                            MaterialTheme.colorScheme.onSurfaceVariant
-                        } else {
-                            MaterialTheme.colorScheme.onSurface
-                        }
+                            text = subscription.nextBillingDate.formatDate(),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color =
+                                    if (!subscription.isActive) {
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                    } else {
+                                        MaterialTheme.colorScheme.onSurface
+                                    }
                     )
                 }
-                
-                Column(
-                    horizontalAlignment = Alignment.End
-                ) {
+
+                Column(horizontalAlignment = Alignment.End) {
                     Text(
-                        text = stringResource(R.string.status),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = stringResource(R.string.status),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
-                    
+
                     Text(
-                        text = when {
-                            !subscription.isActive -> stringResource(R.string.inactive)
-                            isOverdue -> stringResource(R.string.overdue)
-                            daysUntil == 0L -> stringResource(R.string.due_today)
-                            daysUntil == 1L -> stringResource(R.string.due_tomorrow)
-                            else -> stringResource(R.string.due_in_days, daysUntil.toInt())
-                        },
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold,
-                        color = when {
-                            !subscription.isActive -> MaterialTheme.colorScheme.onSurfaceVariant
-                            isOverdue -> ErrorColor
-                            daysUntil <= 3L -> WarningColor
-                            else -> SuccessColor
-                        }
+                            text =
+                                    when {
+                                        !subscription.isActive -> stringResource(R.string.inactive)
+                                        isOverdue -> stringResource(R.string.overdue)
+                                        daysUntil == 0L -> stringResource(R.string.due_today)
+                                        daysUntil == 1L -> stringResource(R.string.due_tomorrow)
+                                        else ->
+                                                stringResource(
+                                                        R.string.due_in_days,
+                                                        daysUntil.toInt()
+                                                )
+                                    },
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold,
+                            color =
+                                    when {
+                                        !subscription.isActive ->
+                                                MaterialTheme.colorScheme.onSurfaceVariant
+                                        isOverdue -> ErrorColor
+                                        daysUntil <= 3L -> WarningColor
+                                        else -> SuccessColor
+                                    }
                     )
                 }
             }
-            
+
             if (subscription.websiteUrl != null || subscription.appPackageName != null) {
                 Spacer(modifier = Modifier.height(16.dp))
-                
+
                 Text(
-                    text = stringResource(R.string.access),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = stringResource(R.string.access),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
-                
+
                 Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     if (subscription.websiteUrl != null) {
                         OutlinedButton(
-                            onClick = { /* Open website */ },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(stringResource(R.string.open_website))
-                        }
+                                onClick = { /* Open website */},
+                                modifier = Modifier.weight(1f)
+                        ) { Text(stringResource(R.string.open_website)) }
                     }
-                    
+
                     if (subscription.appPackageName != null) {
                         OutlinedButton(
-                            onClick = { /* Open app */ },
-                            modifier = Modifier.weight(1f)
-                        ) {
-                            Text(stringResource(R.string.open_app))
-                        }
+                                onClick = { /* Open app */},
+                                modifier = Modifier.weight(1f)
+                        ) { Text(stringResource(R.string.open_app)) }
                     }
                 }
             }
@@ -381,54 +372,47 @@ fun SubscriptionInfoCard(
 }
 
 @Composable
-fun ReminderCard(
-    subscription: Subscription,
-    onToggleReminder: () -> Unit
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
+fun ReminderCard(subscription: Subscription, onToggleReminder: () -> Unit) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
-                ) {
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
-                        imageVector = Icons.Default.Notifications,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.primary
+                            imageVector = Icons.Default.Notifications,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary
                     )
-                    
+
                     Spacer(modifier = Modifier.width(8.dp))
-                    
+
                     Text(
-                        text = stringResource(R.string.reminder),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
+                            text = stringResource(R.string.reminder),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
                     )
                 }
-                
+
                 Switch(
-                    checked = subscription.reminderDays > 0,
-                    onCheckedChange = { onToggleReminder() }
+                        checked = subscription.reminderDays > 0,
+                        onCheckedChange = { onToggleReminder() }
                 )
             }
-            
+
             if (subscription.reminderDays > 0) {
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Text(
-                    text = stringResource(R.string.reminder_days_before, subscription.reminderDays),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text =
+                                stringResource(
+                                        R.string.reminder_days_before,
+                                        subscription.reminderDays
+                                ),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
@@ -436,43 +420,29 @@ fun ReminderCard(
 }
 
 @Composable
-fun PaymentHistoryCard(
-    paymentHistory: List<PaymentHistory>,
-    selectedCurrency: String
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
+fun PaymentHistoryCard(paymentHistory: List<PaymentHistory>, selectedCurrency: String) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Text(
-                text = stringResource(R.string.payment_history),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                    text = stringResource(R.string.payment_history),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
             )
-            
+
             if (paymentHistory.isEmpty()) {
                 Spacer(modifier = Modifier.height(8.dp))
-                
+
                 Text(
-                    text = stringResource(R.string.no_payment_history),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = stringResource(R.string.no_payment_history),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 Spacer(modifier = Modifier.height(8.dp))
-                
-                LazyColumn(
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
+
+                LazyColumn(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     items(paymentHistory) { payment ->
-                        PaymentHistoryItem(
-                            payment = payment,
-                            selectedCurrency = selectedCurrency
-                        )
+                        PaymentHistoryItem(payment = payment, selectedCurrency = selectedCurrency)
                     }
                 }
             }
@@ -481,70 +451,59 @@ fun PaymentHistoryCard(
 }
 
 @Composable
-fun PaymentHistoryItem(
-    payment: PaymentHistory,
-    selectedCurrency: String
-) {
+fun PaymentHistoryItem(payment: PaymentHistory, selectedCurrency: String) {
     Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
             Text(
-                text = payment.paymentDate.formatDate(),
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.Bold
+                    text = payment.paymentDate.formatDate(),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.Bold
             )
-            
+
             if (payment.notes != null) {
                 Text(
-                    text = payment.notes,
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = payment.notes,
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
         }
-        
+
         Text(
-            text = payment.amount.formatCurrency(selectedCurrency),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold
+                text = payment.amount.formatCurrency(selectedCurrency),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Bold
         )
     }
 }
 
 @Composable
-fun NotesCard(
-    notes: String
-) {
-    Card(
-        modifier = Modifier.fillMaxWidth()
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(16.dp)
-        ) {
+fun NotesCard(notes: String) {
+    Card(modifier = Modifier.fillMaxWidth()) {
+        Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Text(
-                text = stringResource(R.string.notes),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
+                    text = stringResource(R.string.notes),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
             )
-            
+
             Spacer(modifier = Modifier.height(8.dp))
-            
+
             if (notes.isEmpty()) {
                 Text(
-                    text = stringResource(R.string.no_notes),
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                        text = stringResource(R.string.no_notes),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
             } else {
                 Text(
-                    text = notes,
-                    style = MaterialTheme.typography.bodyMedium,
-                    color = MaterialTheme.colorScheme.onSurface
+                        text = notes,
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurface
                 )
             }
         }

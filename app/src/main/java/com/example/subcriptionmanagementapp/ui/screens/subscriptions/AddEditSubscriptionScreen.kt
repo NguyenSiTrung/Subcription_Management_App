@@ -3,18 +3,19 @@ package com.example.subcriptionmanagementapp.ui.screens.subscriptions
 import android.app.DatePickerDialog
 import android.widget.Toast
 import androidx.compose.animation.Crossfade
-import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxHeight
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -23,8 +24,10 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Remove
@@ -39,8 +42,9 @@ import androidx.compose.material.icons.outlined.NoteAlt
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Subscriptions
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledTonalIconButton
@@ -48,6 +52,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
@@ -58,6 +63,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,7 +73,6 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
@@ -83,16 +88,10 @@ import com.example.subcriptionmanagementapp.ui.components.AppTopBar
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
-import com.example.subcriptionmanagementapp.ui.viewmodel.CategoryViewModel
 import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
 import java.util.*
-import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material3.OutlinedButton
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -103,9 +102,9 @@ fun AddEditSubscriptionScreen(
 ) {
     val context = LocalContext.current
     val coroutineScope = rememberCoroutineScope()
-    
+
     val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
-    
+
     // Form state
     var name by remember { mutableStateOf("") }
     var description by remember { mutableStateOf("") }
@@ -131,12 +130,13 @@ fun AddEditSubscriptionScreen(
 
     val selectedSubscription by viewModel.selectedSubscription.collectAsStateWithLifecycle()
     val categories by viewModel.categories.collectAsStateWithLifecycle()
-    
+
     LaunchedEffect(selectedSubscription) {
         selectedSubscription?.let { currentSubscription ->
             name = currentSubscription.name
             description = currentSubscription.description ?: ""
             price = currentSubscription.price.toString()
+            selectedCurrencyForSubscription = currentSubscription.currency
             billingCycle = currentSubscription.billingCycle
             nextBillingDate = currentSubscription.nextBillingDate
             isActive = currentSubscription.isActive
@@ -146,11 +146,12 @@ fun AddEditSubscriptionScreen(
             notes = currentSubscription.notes ?: ""
             initialCategoryId = currentSubscription.categoryId
             hasAppliedInitialCategory = false
-        } ?: run {
-            initialCategoryId = null
-            hasAppliedInitialCategory = true
-            selectedCategory = null
         }
+                ?: run {
+                    initialCategoryId = null
+                    hasAppliedInitialCategory = true
+                    selectedCategory = null
+                }
     }
 
     LaunchedEffect(categories, initialCategoryId, hasAppliedInitialCategory) {
@@ -168,15 +169,11 @@ fun AddEditSubscriptionScreen(
 
     LaunchedEffect(Unit) { viewModel.loadCategories() }
 
-    LaunchedEffect(Unit) {
-        viewModel.subscriptionSaved.collect {
-            navController.popBackStack()
-        }
-    }
+    LaunchedEffect(Unit) { viewModel.subscriptionSaved.collect { navController.popBackStack() } }
 
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
-    
+
     LaunchedEffect(error) {
         if (error != null) {
             Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
@@ -228,10 +225,13 @@ fun AddEditSubscriptionScreen(
                                 notes = notes,
                                 onNotesChange = { notes = it },
                                 selectedCurrencyForSubscription = selectedCurrencyForSubscription,
-                                onSelectedCurrencyForSubscriptionChange = { selectedCurrencyForSubscription = it },
+                                onSelectedCurrencyForSubscriptionChange = {
+                                    selectedCurrencyForSubscription = it
+                                },
                                 onSaveClick = {
                                     if (validateInputs(name, price)) {
-                                        val existingSubscription = viewModel.selectedSubscription.value
+                                        val existingSubscription =
+                                                viewModel.selectedSubscription.value
 
                                         val subscriptionToPersist =
                                                 Subscription(
@@ -241,34 +241,28 @@ fun AddEditSubscriptionScreen(
                                                         price = price.toDouble(),
                                                         currency = selectedCurrencyForSubscription,
                                                         billingCycle = billingCycle,
-                                                        startDate =
-                                                                existingSubscription?.startDate
+                                                        startDate = existingSubscription?.startDate
                                                                         ?: System.currentTimeMillis(),
                                                         nextBillingDate = nextBillingDate,
                                                         endDate = null,
                                                         reminderDays = reminderDays,
                                                         isActive = isActive,
-                                                        categoryId =
-                                                                selectedCategory?.id
-                                                                        ?: existingSubscription?.categoryId,
+                                                        categoryId = selectedCategory?.id
+                                                                        ?: existingSubscription
+                                                                                ?.categoryId,
                                                         websiteUrl = websiteUrl.ifBlank { null },
                                                         appPackageName =
                                                                 appPackageName.ifBlank { null },
                                                         notes = notes.ifBlank { null },
-                                                        createdAt =
-                                                                existingSubscription?.createdAt
+                                                        createdAt = existingSubscription?.createdAt
                                                                         ?: System.currentTimeMillis(),
                                                         updatedAt = System.currentTimeMillis()
                                                 )
 
                                         if (subscriptionId != null) {
-                                            viewModel.updateSubscription(
-                                                    subscriptionToPersist
-                                            )
+                                            viewModel.updateSubscription(subscriptionToPersist)
                                         } else {
-                                            viewModel.addSubscription(
-                                                    subscriptionToPersist
-                                            )
+                                            viewModel.addSubscription(subscriptionToPersist)
                                         }
                                     } else {
                                         Toast.makeText(
@@ -327,53 +321,57 @@ fun AddEditSubscriptionContent(
     val priceValue = price.toDoubleOrNull()
     val formattedCycleCost = remember(priceValue) { priceValue?.let(currencyFormatter::format) }
 
-    val monthlyEstimate = remember(priceValue, billingCycle) {
-        priceValue?.let {
-            when (billingCycle) {
-                BillingCycle.DAILY -> it * 30.0
-                BillingCycle.WEEKLY -> it * 4.0
-                BillingCycle.MONTHLY -> it
-                BillingCycle.YEARLY -> it / 12.0
+    val monthlyEstimate =
+            remember(priceValue, billingCycle) {
+                priceValue?.let {
+                    when (billingCycle) {
+                        BillingCycle.DAILY -> it * 30.0
+                        BillingCycle.WEEKLY -> it * 4.0
+                        BillingCycle.MONTHLY -> it
+                        BillingCycle.YEARLY -> it / 12.0
+                    }
+                }
             }
-        }
-    }
-    val yearlyEstimate = remember(priceValue, billingCycle) {
-        priceValue?.let {
-            when (billingCycle) {
-                BillingCycle.DAILY -> it * 365.0
-                BillingCycle.WEEKLY -> it * 52.0
-                BillingCycle.MONTHLY -> it * 12.0
-                BillingCycle.YEARLY -> it
+    val yearlyEstimate =
+            remember(priceValue, billingCycle) {
+                priceValue?.let {
+                    when (billingCycle) {
+                        BillingCycle.DAILY -> it * 365.0
+                        BillingCycle.WEEKLY -> it * 52.0
+                        BillingCycle.MONTHLY -> it * 12.0
+                        BillingCycle.YEARLY -> it
+                    }
+                }
             }
-        }
-    }
 
     val monthlyText = monthlyEstimate?.let(currencyFormatter::format)
     val yearlyText = yearlyEstimate?.let(currencyFormatter::format)
 
-    val billingOptions = listOf(
-            BillingCycle.MONTHLY to stringResource(R.string.monthly),
-            BillingCycle.YEARLY to stringResource(R.string.yearly),
-            BillingCycle.WEEKLY to stringResource(R.string.weekly),
-            BillingCycle.DAILY to stringResource(R.string.daily)
-    )
+    val billingOptions =
+            listOf(
+                    BillingCycle.MONTHLY to stringResource(R.string.monthly),
+                    BillingCycle.YEARLY to stringResource(R.string.yearly),
+                    BillingCycle.WEEKLY to stringResource(R.string.weekly),
+                    BillingCycle.DAILY to stringResource(R.string.daily)
+            )
     val reminderQuickPicks = listOf(0, 1, 3, 7, 14)
     val isSaveEnabled = name.isNotBlank() && priceValue != null && priceValue > 0.0
 
-    val datePickerDialog = remember(context, nextBillingDate) {
-        DatePickerDialog(
-                context,
-                { _, year, month, dayOfMonth ->
-                    calendar.set(Calendar.YEAR, year)
-                    calendar.set(Calendar.MONTH, month)
-                    calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
-                    onNextBillingDateChange(calendar.timeInMillis)
-                },
-                calendar.get(Calendar.YEAR),
-                calendar.get(Calendar.MONTH),
-                calendar.get(Calendar.DAY_OF_MONTH)
-        )
-    }
+    val datePickerDialog =
+            remember(context, nextBillingDate) {
+                DatePickerDialog(
+                        context,
+                        { _, year, month, dayOfMonth ->
+                            calendar.set(Calendar.YEAR, year)
+                            calendar.set(Calendar.MONTH, month)
+                            calendar.set(Calendar.DAY_OF_MONTH, dayOfMonth)
+                            onNextBillingDateChange(calendar.timeInMillis)
+                        },
+                        calendar.get(Calendar.YEAR),
+                        calendar.get(Calendar.MONTH),
+                        calendar.get(Calendar.DAY_OF_MONTH)
+                )
+            }
 
     Box(modifier = Modifier.fillMaxSize()) {
         BoxWithConstraints(modifier = Modifier.fillMaxSize()) {
@@ -382,470 +380,575 @@ fun AddEditSubscriptionContent(
             val contentWidth = maxWidth.coerceAtMost(maxContentWidth)
             val shouldCenterContent = maxWidth > maxContentWidth
 
-            val listModifier = if (shouldCenterContent) {
-                Modifier
-                        .width(contentWidth)
-                        .align(Alignment.TopCenter)
-                        .fillMaxHeight()
-            } else {
-                Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.TopCenter)
-                        .fillMaxHeight()
-            }
+            val listModifier =
+                    if (shouldCenterContent) {
+                        Modifier.width(contentWidth).align(Alignment.TopCenter).fillMaxHeight()
+                    } else {
+                        Modifier.fillMaxWidth().align(Alignment.TopCenter).fillMaxHeight()
+                    }
 
             LazyColumn(
-                state = listState,
-                contentPadding = PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 140.dp),
-                verticalArrangement = Arrangement.spacedBy(20.dp),
-                modifier = listModifier
+                    state = listState,
+                    contentPadding =
+                            PaddingValues(start = 20.dp, end = 20.dp, top = 24.dp, bottom = 140.dp),
+                    verticalArrangement = Arrangement.spacedBy(20.dp),
+                    modifier = listModifier
             ) {
-            item {
-                ElevatedCard(
-                        shape = RoundedCornerShape(28.dp),
-                        modifier = Modifier.fillMaxWidth()
-                ) {
-                    Box(
-                            modifier = Modifier
-                                    .fillMaxWidth()
-                                    .background(
-                                            brush = Brush.linearGradient(
-                                                    colors = listOf(
-                                                            MaterialTheme.colorScheme.primary,
-                                                            MaterialTheme.colorScheme.primaryContainer
-                                                    )
-                                            )
-                                    )
-                                    .padding(24.dp)
+                item {
+                    ElevatedCard(
+                            shape = RoundedCornerShape(28.dp),
+                            modifier = Modifier.fillMaxWidth()
                     ) {
-                        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                            Text(
-                                    text = if (name.isBlank()) stringResource(R.string.subscription_details) else name,
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                            )
-                            Crossfade(targetState = formattedCycleCost) { value ->
-                                if (value != null) {
-                                    val billingLabel = billingOptions.first { it.first == billingCycle }.second
-                                    Text(
-                                            text = "$value • $billingLabel",
-                                            style = MaterialTheme.typography.titleMedium,
-                                            color = MaterialTheme.colorScheme.onPrimary
-                                    )
-                                } else {
-                                    Text(
-                                            text = stringResource(R.string.add_subscription_top_bar_subtitle),
-                                            style = MaterialTheme.typography.bodyMedium,
-                                            color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.85f)
-                                    )
-                                }
-                            }
-                            if (monthlyText != null || yearlyText != null) {
-                                Row(
-                                        modifier = Modifier.fillMaxWidth(),
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                ) {
-                                    if (monthlyText != null) {
-                                        SummaryMetric(
-                                                label = stringResource(R.string.estimated_monthly_cost),
-                                                value = monthlyText,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    }
-                                    if (yearlyText != null) {
-                                        SummaryMetric(
-                                                label = stringResource(R.string.estimated_yearly_cost),
-                                                value = yearlyText,
-                                                contentColor = MaterialTheme.colorScheme.onPrimary
-                                        )
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                ElevatedCard(
-                        shape = RoundedCornerShape(24.dp),
-                        modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                            modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        SectionHeader(
-                                icon = Icons.Outlined.Subscriptions,
-                                title = stringResource(R.string.subscription_details),
-                                subtitle = stringResource(R.string.add_subscription_top_bar_subtitle)
-                        )
-                        OutlinedTextField(
-                                value = name,
-                                onValueChange = onNameChange,
-                                label = { Text(stringResource(R.string.name)) },
-                                placeholder = { Text(stringResource(R.string.subscription_name_placeholder)) },
-                                leadingIcon = { Icon(Icons.Outlined.Subscriptions, contentDescription = null) },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                isError = name.isBlank(),
-                                supportingText = {
-                                    if (name.isBlank()) {
-                                        Text(text = stringResource(R.string.please_fill_required_fields))
-                                    }
-                                }
-                        )
-                        OutlinedTextField(
-                                value = description,
-                                onValueChange = onDescriptionChange,
-                                label = { Text(stringResource(R.string.description)) },
-                                placeholder = { Text(stringResource(R.string.subscription_description_placeholder)) },
-                                leadingIcon = { Icon(Icons.Outlined.Description, contentDescription = null) },
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 2,
-                                maxLines = 4
-                        )
-                        OutlinedTextField(
-                                value = price,
-                                onValueChange = onPriceChange,
-                                label = { Text(stringResource(R.string.price)) },
-                                placeholder = { Text(stringResource(R.string.subscription_price_placeholder)) },
-                                leadingIcon = { Icon(Icons.Outlined.AttachMoney, contentDescription = null) },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                isError = priceValue == null || priceValue <= 0.0,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-                                supportingText = {
-                                    Text(stringResource(R.string.price_field_hint))
-                                }
-                        )
-                    }
-                }
-            }
-
-            item {
-                ElevatedCard(
-                        shape = RoundedCornerShape(24.dp),
-                        modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                            modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        SectionHeader(
-                                icon = Icons.Outlined.AttachMoney,
-                                title = stringResource(R.string.billing_cycle),
-                                subtitle = stringResource(R.string.next_billing_date)
-                        )
-                        BillingCycleSelector(
-                                billingOptions = billingOptions,
-                                selectedCycle = billingCycle,
-                                onOptionSelected = onBillingCycleChange
-                        )
-                        Text(
-                                text = stringResource(R.string.category),
-                                style = MaterialTheme.typography.labelLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
+                        Box(
+                                modifier =
+                                        Modifier.fillMaxWidth()
+                                                .background(
+                                                        brush =
+                                                                Brush.linearGradient(
+                                                                        colors =
+                                                                                listOf(
+                                                                                        MaterialTheme
+                                                                                                .colorScheme
+                                                                                                .primary,
+                                                                                        MaterialTheme
+                                                                                                .colorScheme
+                                                                                                .primaryContainer
+                                                                                )
+                                                                )
+                                                )
+                                                .padding(24.dp)
                         ) {
-                            val isNoneSelected = selectedCategory == null
-                            FilterChip(
-                                    selected = isNoneSelected,
-                                    onClick = { onCategoryChange(null) },
-                                    label = { Text(stringResource(R.string.no_category)) },
-                                    leadingIcon = if (isNoneSelected) {
-                                        {
-                                            Icon(imageVector = Icons.Filled.Check, contentDescription = null)
-                                        }
-                                    } else null,
-                                    colors = FilterChipDefaults.filterChipColors(
-                                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                            )
-                            categories.forEach { category ->
-                                val isSelected = category.id == selectedCategory?.id
-                                FilterChip(
-                                        selected = isSelected,
-                                        onClick = { onCategoryChange(category) },
-                                        label = { Text(category.name) },
-                                        leadingIcon = if (isSelected) {
-                                            {
-                                                Icon(imageVector = Icons.Filled.Check, contentDescription = null)
-                                            }
-                                        } else null,
-                                        colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
+                            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                                Text(
+                                        text =
+                                                if (name.isBlank())
+                                                        stringResource(
+                                                                R.string.subscription_details
+                                                        )
+                                                else name,
+                                        style = MaterialTheme.typography.titleLarge,
+                                        fontWeight = FontWeight.Bold,
+                                        color = MaterialTheme.colorScheme.onPrimary
                                 )
+                                Crossfade(targetState = formattedCycleCost) { value ->
+                                    if (value != null) {
+                                        val billingLabel =
+                                                billingOptions
+                                                        .first { it.first == billingCycle }
+                                                        .second
+                                        Text(
+                                                text = "$value • $billingLabel",
+                                                style = MaterialTheme.typography.titleMedium,
+                                                color = MaterialTheme.colorScheme.onPrimary
+                                        )
+                                    } else {
+                                        Text(
+                                                text =
+                                                        stringResource(
+                                                                R.string
+                                                                        .add_subscription_top_bar_subtitle
+                                                        ),
+                                                style = MaterialTheme.typography.bodyMedium,
+                                                color =
+                                                        MaterialTheme.colorScheme.onPrimary.copy(
+                                                                alpha = 0.85f
+                                                        )
+                                        )
+                                    }
+                                }
+                                if (monthlyText != null || yearlyText != null) {
+                                    Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                    ) {
+                                        if (monthlyText != null) {
+                                            SummaryMetric(
+                                                    label =
+                                                            stringResource(
+                                                                    R.string.estimated_monthly_cost
+                                                            ),
+                                                    value = monthlyText,
+                                                    contentColor =
+                                                            MaterialTheme.colorScheme.onPrimary
+                                            )
+                                        }
+                                        if (yearlyText != null) {
+                                            SummaryMetric(
+                                                    label =
+                                                            stringResource(
+                                                                    R.string.estimated_yearly_cost
+                                                            ),
+                                                    value = yearlyText,
+                                                    contentColor =
+                                                            MaterialTheme.colorScheme.onPrimary
+                                            )
+                                        }
+                                    }
+                                }
                             }
                         }
-                        if (categories.isEmpty()) {
+                    }
+                }
+
+                item {
+                    ElevatedCard(
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            SectionHeader(
+                                    icon = Icons.Outlined.Subscriptions,
+                                    title = stringResource(R.string.subscription_details),
+                                    subtitle =
+                                            stringResource(
+                                                    R.string.add_subscription_top_bar_subtitle
+                                            )
+                            )
+                            OutlinedTextField(
+                                    value = name,
+                                    onValueChange = onNameChange,
+                                    label = { Text(stringResource(R.string.name)) },
+                                    placeholder = {
+                                        Text(stringResource(R.string.subscription_name_placeholder))
+                                    },
+                                    leadingIcon = {
+                                        Icon(
+                                                Icons.Outlined.Subscriptions,
+                                                contentDescription = null
+                                        )
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    isError = name.isBlank(),
+                                    supportingText = {
+                                        if (name.isBlank()) {
+                                            Text(
+                                                    text =
+                                                            stringResource(
+                                                                    R.string
+                                                                            .please_fill_required_fields
+                                                            )
+                                            )
+                                        }
+                                    }
+                            )
+                            OutlinedTextField(
+                                    value = description,
+                                    onValueChange = onDescriptionChange,
+                                    label = { Text(stringResource(R.string.description)) },
+                                    placeholder = {
+                                        Text(
+                                                stringResource(
+                                                        R.string
+                                                                .subscription_description_placeholder
+                                                )
+                                        )
+                                    },
+                                    leadingIcon = {
+                                        Icon(Icons.Outlined.Description, contentDescription = null)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    minLines = 2,
+                                    maxLines = 4
+                            )
+                            OutlinedTextField(
+                                    value = price,
+                                    onValueChange = onPriceChange,
+                                    label = { Text(stringResource(R.string.price)) },
+                                    placeholder = {
+                                        Text(
+                                                stringResource(
+                                                        R.string.subscription_price_placeholder
+                                                )
+                                        )
+                                    },
+                                    leadingIcon = {
+                                        Icon(Icons.Outlined.AttachMoney, contentDescription = null)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    isError = priceValue == null || priceValue <= 0.0,
+                                    keyboardOptions =
+                                            KeyboardOptions(keyboardType = KeyboardType.Decimal),
+                                    supportingText = {
+                                        Text(stringResource(R.string.price_field_hint))
+                                    }
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    ElevatedCard(
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            SectionHeader(
+                                    icon = Icons.Outlined.AttachMoney,
+                                    title = stringResource(R.string.billing_cycle),
+                                    subtitle = stringResource(R.string.next_billing_date)
+                            )
+                            BillingCycleSelector(
+                                    billingOptions = billingOptions,
+                                    selectedCycle = billingCycle,
+                                    onOptionSelected = onBillingCycleChange
+                            )
                             Text(
-                                    text = stringResource(R.string.no_categories_description),
-                                    style = MaterialTheme.typography.bodySmall,
+                                    text = stringResource(R.string.category),
+                                    style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                        }
-                        Surface(
-                                onClick = { datePickerDialog.show() },
-                                shape = RoundedCornerShape(16.dp),
-                                tonalElevation = 2.dp,
-                                modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                    modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 20.dp, vertical = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
+                            FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
                             ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text(
-                                            text = stringResource(R.string.next_billing_date),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                            text = formattedDate,
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = MaterialTheme.colorScheme.onSurface
-                                    )
-                                }
-                                Icon(
-                                        imageVector = Icons.Filled.DateRange,
-                                        contentDescription = stringResource(R.string.next_billing_date),
-                                        tint = MaterialTheme.colorScheme.primary
-                                )
-                            }
-                        }
-                        Surface(
-                                shape = RoundedCornerShape(16.dp),
-                                tonalElevation = 2.dp,
-                                modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                    modifier = Modifier
-                                            .fillMaxWidth()
-                                            .padding(horizontal = 20.dp, vertical = 16.dp),
-                                    verticalAlignment = Alignment.CenterVertically,
-                                    horizontalArrangement = Arrangement.SpaceBetween
-                            ) {
-                                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                                    Text(
-                                            text = stringResource(R.string.status),
-                                            style = MaterialTheme.typography.labelMedium,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                    )
-                                    Text(
-                                            text = if (isActive) stringResource(R.string.active) else stringResource(R.string.inactive),
-                                            style = MaterialTheme.typography.titleMedium,
-                                            fontWeight = FontWeight.SemiBold
-                                    )
-                                }
-                                Switch(
-                                        checked = isActive,
-                                        onCheckedChange = onIsActiveChange
-                                )
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                ElevatedCard(
-                        shape = RoundedCornerShape(24.dp),
-                        modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                            modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        SectionHeader(
-                                icon = Icons.Outlined.NotificationsActive,
-                                title = stringResource(R.string.reminder_days_before),
-                                subtitle = stringResource(R.string.subscription_reminder)
-                        )
-                        FlowRow(
-                                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp)
-                        ) {
-                            reminderQuickPicks.forEach { option ->
-                                val selected = reminderDays == option
+                                val isNoneSelected = selectedCategory == null
                                 FilterChip(
-                                        selected = selected,
-                                        onClick = { onReminderDaysChange(option) },
-                                        label = {
-                                            Text(text = if (option == 0) "0d" else "${option}d")
-                                        },
-                                        leadingIcon = if (selected) {
-                                            {
-                                                Icon(imageVector = Icons.Filled.Check, contentDescription = null)
-                                            }
-                                        } else null,
-                                        colors = FilterChipDefaults.filterChipColors(
-                                                selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
-                                                selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
-                                                selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
-                                        )
+                                        selected = isNoneSelected,
+                                        onClick = { onCategoryChange(null) },
+                                        label = { Text(stringResource(R.string.no_category)) },
+                                        leadingIcon =
+                                                if (isNoneSelected) {
+                                                    {
+                                                        Icon(
+                                                                imageVector = Icons.Filled.Check,
+                                                                contentDescription = null
+                                                        )
+                                                    }
+                                                } else null,
+                                        colors =
+                                                FilterChipDefaults.filterChipColors(
+                                                        selectedContainerColor =
+                                                                MaterialTheme.colorScheme
+                                                                        .primaryContainer,
+                                                        selectedLabelColor =
+                                                                MaterialTheme.colorScheme
+                                                                        .onPrimaryContainer,
+                                                        selectedLeadingIconColor =
+                                                                MaterialTheme.colorScheme
+                                                                        .onPrimaryContainer
+                                                )
+                                )
+                                categories.forEach { category ->
+                                    val isSelected = category.id == selectedCategory?.id
+                                    FilterChip(
+                                            selected = isSelected,
+                                            onClick = { onCategoryChange(category) },
+                                            label = { Text(category.name) },
+                                            leadingIcon =
+                                                    if (isSelected) {
+                                                        {
+                                                            Icon(
+                                                                    imageVector =
+                                                                            Icons.Filled.Check,
+                                                                    contentDescription = null
+                                                            )
+                                                        }
+                                                    } else null,
+                                            colors =
+                                                    FilterChipDefaults.filterChipColors(
+                                                            selectedContainerColor =
+                                                                    MaterialTheme.colorScheme
+                                                                            .primaryContainer,
+                                                            selectedLabelColor =
+                                                                    MaterialTheme.colorScheme
+                                                                            .onPrimaryContainer,
+                                                            selectedLeadingIconColor =
+                                                                    MaterialTheme.colorScheme
+                                                                            .onPrimaryContainer
+                                                    )
+                                    )
+                                }
+                            }
+                            if (categories.isEmpty()) {
+                                Text(
+                                        text = stringResource(R.string.no_categories_description),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
-                        }
-                        Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.Center,
-                                verticalAlignment = Alignment.CenterVertically
-                        ) {
-                            FilledTonalIconButton(
-                                    onClick = { if (reminderDays > 0) onReminderDaysChange(reminderDays - 1) },
-                                    enabled = reminderDays > 0
-                            ) {
-                                Icon(imageVector = Icons.Filled.Remove, contentDescription = null)
-                            }
-                            Text(
-                                    text = "${reminderDays}d",
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold,
-                                    textAlign = TextAlign.Center,
-                                    modifier = Modifier.padding(horizontal = 24.dp)
-                            )
-                            FilledTonalIconButton(onClick = { onReminderDaysChange(reminderDays + 1) }) {
-                                Icon(imageVector = Icons.Filled.Add, contentDescription = null)
-                            }
-                        }
-                    }
-                }
-            }
-
-            item {
-                ElevatedCard(
-                        shape = RoundedCornerShape(24.dp),
-                        modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                            modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        SectionHeader(
-                                icon = Icons.Outlined.Language,
-                                title = stringResource(R.string.access)
-                        )
-                        OutlinedTextField(
-                                value = websiteUrl,
-                                onValueChange = onWebsiteUrlChange,
-                                label = { Text(stringResource(R.string.website_url)) },
-                                placeholder = { Text("https://") },
-                                leadingIcon = { Icon(Icons.Outlined.Language, contentDescription = null) },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true,
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Uri)
-                        )
-                        OutlinedTextField(
-                                value = appPackageName,
-                                onValueChange = onAppPackageNameChange,
-                                label = { Text(stringResource(R.string.app_package_name)) },
-                                placeholder = { Text("com.example.app") },
-                                leadingIcon = { Icon(Icons.Outlined.Android, contentDescription = null) },
-                                modifier = Modifier.fillMaxWidth(),
-                                singleLine = true
-                        )
-                        OutlinedTextField(
-                                value = notes,
-                                onValueChange = onNotesChange,
-                                label = { Text(stringResource(R.string.notes)) },
-                                placeholder = { Text(stringResource(R.string.notes)) },
-                                leadingIcon = { Icon(Icons.Outlined.NoteAlt, contentDescription = null) },
-                                modifier = Modifier.fillMaxWidth(),
-                                minLines = 3,
-                                maxLines = 6
-                        )
-                    }
-                }
-            }
-
-            item {
-                ElevatedCard(
-                        shape = RoundedCornerShape(24.dp),
-                        modifier = Modifier.fillMaxWidth()
-                ) {
-                    Column(
-                            modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(20.dp),
-                            verticalArrangement = Arrangement.spacedBy(16.dp)
-                    ) {
-                        SectionHeader(
-                                icon = Icons.Outlined.Language,
-                                title = stringResource(R.string.currency),
-                                subtitle = stringResource(R.string.currency_description)
-                        )
-                        
-                        var currencyExpanded by remember { mutableStateOf(false) }
-                        val currencyOptions = listOf("USD", "VND")
-                        
-                        Box {
-                            OutlinedButton(
-                                    onClick = { currencyExpanded = true },
+                            Surface(
+                                    onClick = { datePickerDialog.show() },
+                                    shape = RoundedCornerShape(16.dp),
+                                    tonalElevation = 2.dp,
                                     modifier = Modifier.fillMaxWidth()
                             ) {
-                                Text(
-                                        text = selectedCurrencyForSubscription,
-                                        style = MaterialTheme.typography.bodyMedium
-                                )
-                                Icon(
-                                        imageVector = Icons.Filled.ArrowDropDown,
-                                        contentDescription = "Select currency"
-                                )
-                            }
-                            
-                            DropdownMenu(
-                                    expanded = currencyExpanded,
-                                    onDismissRequest = { currencyExpanded = false }
-                            ) {
-                                currencyOptions.forEach { currency ->
-                                    DropdownMenuItem(
-                                            text = { Text(currency) },
-                                            onClick = {
-                                                onSelectedCurrencyForSubscriptionChange(currency)
-                                                currencyExpanded = false
-                                            }
+                                Row(
+                                        modifier =
+                                                Modifier.fillMaxWidth()
+                                                        .padding(
+                                                                horizontal = 20.dp,
+                                                                vertical = 16.dp
+                                                        ),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(
+                                                text = stringResource(R.string.next_billing_date),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                                text = formattedDate,
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.SemiBold,
+                                                color = MaterialTheme.colorScheme.onSurface
+                                        )
+                                    }
+                                    Icon(
+                                            imageVector = Icons.Filled.DateRange,
+                                            contentDescription =
+                                                    stringResource(R.string.next_billing_date),
+                                            tint = MaterialTheme.colorScheme.primary
                                     )
+                                }
+                            }
+                            Surface(
+                                    shape = RoundedCornerShape(16.dp),
+                                    tonalElevation = 2.dp,
+                                    modifier = Modifier.fillMaxWidth()
+                            ) {
+                                Row(
+                                        modifier =
+                                                Modifier.fillMaxWidth()
+                                                        .padding(
+                                                                horizontal = 20.dp,
+                                                                vertical = 16.dp
+                                                        ),
+                                        verticalAlignment = Alignment.CenterVertically,
+                                        horizontalArrangement = Arrangement.SpaceBetween
+                                ) {
+                                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                                        Text(
+                                                text = stringResource(R.string.status),
+                                                style = MaterialTheme.typography.labelMedium,
+                                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                                        )
+                                        Text(
+                                                text =
+                                                        if (isActive)
+                                                                stringResource(R.string.active)
+                                                        else stringResource(R.string.inactive),
+                                                style = MaterialTheme.typography.titleMedium,
+                                                fontWeight = FontWeight.SemiBold
+                                        )
+                                    }
+                                    Switch(checked = isActive, onCheckedChange = onIsActiveChange)
                                 }
                             }
                         }
                     }
                 }
+
+                item {
+                    ElevatedCard(
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            SectionHeader(
+                                    icon = Icons.Outlined.NotificationsActive,
+                                    title = stringResource(R.string.reminder_days_before),
+                                    subtitle = stringResource(R.string.subscription_reminder)
+                            )
+                            FlowRow(
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                            ) {
+                                reminderQuickPicks.forEach { option ->
+                                    val selected = reminderDays == option
+                                    FilterChip(
+                                            selected = selected,
+                                            onClick = { onReminderDaysChange(option) },
+                                            label = {
+                                                Text(text = if (option == 0) "0d" else "${option}d")
+                                            },
+                                            leadingIcon =
+                                                    if (selected) {
+                                                        {
+                                                            Icon(
+                                                                    imageVector =
+                                                                            Icons.Filled.Check,
+                                                                    contentDescription = null
+                                                            )
+                                                        }
+                                                    } else null,
+                                            colors =
+                                                    FilterChipDefaults.filterChipColors(
+                                                            selectedContainerColor =
+                                                                    MaterialTheme.colorScheme
+                                                                            .primaryContainer,
+                                                            selectedLabelColor =
+                                                                    MaterialTheme.colorScheme
+                                                                            .onPrimaryContainer,
+                                                            selectedLeadingIconColor =
+                                                                    MaterialTheme.colorScheme
+                                                                            .onPrimaryContainer
+                                                    )
+                                    )
+                                }
+                            }
+                            Row(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.Center,
+                                    verticalAlignment = Alignment.CenterVertically
+                            ) {
+                                FilledTonalIconButton(
+                                        onClick = {
+                                            if (reminderDays > 0)
+                                                    onReminderDaysChange(reminderDays - 1)
+                                        },
+                                        enabled = reminderDays > 0
+                                ) {
+                                    Icon(
+                                            imageVector = Icons.Filled.Remove,
+                                            contentDescription = null
+                                    )
+                                }
+                                Text(
+                                        text = "${reminderDays}d",
+                                        style = MaterialTheme.typography.titleMedium,
+                                        fontWeight = FontWeight.SemiBold,
+                                        textAlign = TextAlign.Center,
+                                        modifier = Modifier.padding(horizontal = 24.dp)
+                                )
+                                FilledTonalIconButton(
+                                        onClick = { onReminderDaysChange(reminderDays + 1) }
+                                ) {
+                                    Icon(imageVector = Icons.Filled.Add, contentDescription = null)
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item {
+                    ElevatedCard(
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            SectionHeader(
+                                    icon = Icons.Outlined.Language,
+                                    title = stringResource(R.string.access)
+                            )
+                            OutlinedTextField(
+                                    value = websiteUrl,
+                                    onValueChange = onWebsiteUrlChange,
+                                    label = { Text(stringResource(R.string.website_url)) },
+                                    placeholder = { Text("https://") },
+                                    leadingIcon = {
+                                        Icon(Icons.Outlined.Language, contentDescription = null)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true,
+                                    keyboardOptions =
+                                            KeyboardOptions(keyboardType = KeyboardType.Uri)
+                            )
+                            OutlinedTextField(
+                                    value = appPackageName,
+                                    onValueChange = onAppPackageNameChange,
+                                    label = { Text(stringResource(R.string.app_package_name)) },
+                                    placeholder = { Text("com.example.app") },
+                                    leadingIcon = {
+                                        Icon(Icons.Outlined.Android, contentDescription = null)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    singleLine = true
+                            )
+                            OutlinedTextField(
+                                    value = notes,
+                                    onValueChange = onNotesChange,
+                                    label = { Text(stringResource(R.string.notes)) },
+                                    placeholder = { Text(stringResource(R.string.notes)) },
+                                    leadingIcon = {
+                                        Icon(Icons.Outlined.NoteAlt, contentDescription = null)
+                                    },
+                                    modifier = Modifier.fillMaxWidth(),
+                                    minLines = 3,
+                                    maxLines = 6
+                            )
+                        }
+                    }
+                }
+
+                item {
+                    ElevatedCard(
+                            shape = RoundedCornerShape(24.dp),
+                            modifier = Modifier.fillMaxWidth()
+                    ) {
+                        Column(
+                                modifier = Modifier.fillMaxWidth().padding(20.dp),
+                                verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            SectionHeader(
+                                    icon = Icons.Outlined.Language,
+                                    title = stringResource(R.string.currency),
+                                    subtitle = stringResource(R.string.currency_description)
+                            )
+
+                            var currencyExpanded by remember { mutableStateOf(false) }
+                            val currencyOptions = listOf("USD", "VND")
+
+                            Box {
+                                OutlinedButton(
+                                        onClick = { currencyExpanded = true },
+                                        modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Text(
+                                            text = selectedCurrencyForSubscription,
+                                            style = MaterialTheme.typography.bodyMedium
+                                    )
+                                    Icon(
+                                            imageVector = Icons.Filled.ArrowDropDown,
+                                            contentDescription = "Select currency"
+                                    )
+                                }
+
+                                DropdownMenu(
+                                        expanded = currencyExpanded,
+                                        onDismissRequest = { currencyExpanded = false }
+                                ) {
+                                    currencyOptions.forEach { currency ->
+                                        DropdownMenuItem(
+                                                text = { Text(currency) },
+                                                onClick = {
+                                                    onSelectedCurrencyForSubscriptionChange(
+                                                            currency
+                                                    )
+                                                    currencyExpanded = false
+                                                }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                item { Spacer(modifier = Modifier.height(4.dp)) }
             }
 
-            item { Spacer(modifier = Modifier.height(4.dp)) }
-        }
-
-            val bottomBarModifier = if (shouldCenterContent) {
-                Modifier
-                        .width(contentWidth)
-                        .align(Alignment.BottomCenter)
-            } else {
-                Modifier
-                        .fillMaxWidth()
-                        .align(Alignment.BottomCenter)
-            }
+            val bottomBarModifier =
+                    if (shouldCenterContent) {
+                        Modifier.width(contentWidth).align(Alignment.BottomCenter)
+                    } else {
+                        Modifier.fillMaxWidth().align(Alignment.BottomCenter)
+                    }
 
             Surface(
                     color = MaterialTheme.colorScheme.surface,
@@ -869,9 +972,7 @@ fun AddEditSubscriptionContent(
                             enabled = isSaveEnabled,
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(16.dp)
-                    ) {
-                        Text(text = stringResource(R.string.save))
-                    }
+                    ) { Text(text = stringResource(R.string.save)) }
                 }
             }
         }
@@ -887,10 +988,11 @@ private fun BillingCycleSelector(
 ) {
     val itemSpacing = 12.dp
     BoxWithConstraints(modifier = modifier.fillMaxWidth()) {
-        val optionWidth = remember(maxWidth) {
-            val availableWidth = maxWidth - itemSpacing
-            maxOf(0.dp, availableWidth / 2)
-        }
+        val optionWidth =
+                remember(maxWidth) {
+                    val availableWidth = maxWidth - itemSpacing
+                    maxOf(0.dp, availableWidth / 2)
+                }
 
         Column(verticalArrangement = Arrangement.spacedBy(itemSpacing)) {
             for (rowOptions in billingOptions.chunked(2)) {
@@ -924,31 +1026,36 @@ private fun BillingCycleOption(
         onClick: () -> Unit,
         modifier: Modifier = Modifier
 ) {
-    val containerColor = if (isSelected) {
-        MaterialTheme.colorScheme.primaryContainer
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
-    val contentColor = if (isSelected) {
-        MaterialTheme.colorScheme.onPrimaryContainer
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-    val borderColor = if (isSelected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.outlineVariant
-    }
-    val iconTint = if (isSelected) {
-        MaterialTheme.colorScheme.primary
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
-    val subtitleColor = if (isSelected) {
-        MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
-    } else {
-        MaterialTheme.colorScheme.onSurfaceVariant
-    }
+    val containerColor =
+            if (isSelected) {
+                MaterialTheme.colorScheme.primaryContainer
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+    val contentColor =
+            if (isSelected) {
+                MaterialTheme.colorScheme.onPrimaryContainer
+            } else {
+                MaterialTheme.colorScheme.onSurface
+            }
+    val borderColor =
+            if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.outlineVariant
+            }
+    val iconTint =
+            if (isSelected) {
+                MaterialTheme.colorScheme.primary
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
+    val subtitleColor =
+            if (isSelected) {
+                MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.8f)
+            } else {
+                MaterialTheme.colorScheme.onSurfaceVariant
+            }
 
     Surface(
             onClick = onClick,
@@ -960,16 +1067,10 @@ private fun BillingCycleOption(
             contentColor = contentColor
     ) {
         Column(
-                modifier = Modifier
-                        .fillMaxSize()
-                        .padding(16.dp),
+                modifier = Modifier.fillMaxSize().padding(16.dp),
                 verticalArrangement = Arrangement.SpaceBetween
         ) {
-            Icon(
-                    imageVector = billingCycleIcon(cycle),
-                    contentDescription = null,
-                    tint = iconTint
-            )
+            Icon(imageVector = billingCycleIcon(cycle), contentDescription = null, tint = iconTint)
             Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
                 Text(
                         text = label,
