@@ -14,9 +14,13 @@ import com.example.subcriptionmanagementapp.ui.screens.categories.CategoryListSc
 import com.example.subcriptionmanagementapp.ui.screens.statistics.StatisticsScreen
 import com.example.subcriptionmanagementapp.ui.screens.settings.SettingsScreen
 import com.example.subcriptionmanagementapp.ui.screens.about.AboutScreen
+import com.example.subcriptionmanagementapp.ui.viewmodel.SettingsViewModel
 
 @Composable
-fun AppNavigation(navController: NavHostController) {
+fun AppNavigation(
+    navController: NavHostController,
+    settingsViewModel: SettingsViewModel
+) {
     NavHost(
         navController = navController,
         startDestination = Screen.Home.route
@@ -65,7 +69,10 @@ fun AppNavigation(navController: NavHostController) {
             StatisticsScreen(navController = navController)
         }
         composable(Screen.Settings.route) {
-            SettingsScreen(navController = navController)
+            SettingsScreen(
+                navController = navController,
+                viewModel = settingsViewModel
+            )
         }
         composable(Screen.About.route) {
             AboutScreen(navController = navController)

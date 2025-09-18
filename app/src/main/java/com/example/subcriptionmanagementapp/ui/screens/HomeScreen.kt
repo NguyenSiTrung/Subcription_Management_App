@@ -24,13 +24,11 @@ import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.components.NoSubscriptionsEmptyState
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
 import com.example.subcriptionmanagementapp.ui.theme.ErrorColor
-import com.example.subcriptionmanagementapp.ui.theme.PrimaryColor
 import com.example.subcriptionmanagementapp.ui.theme.WarningColor
 import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import com.example.subcriptionmanagementapp.util.formatCurrency
 import com.example.subcriptionmanagementapp.util.formatDate
 import com.example.subcriptionmanagementapp.util.getDaysUntil
-import java.util.*
 
 @Composable
 fun HomeScreen(
@@ -157,15 +155,18 @@ fun HomeContent(
 
 @Composable
 fun SummaryCard(totalMonthlyCost: Double, subscriptionCount: Int, onAddSubscription: () -> Unit) {
+    val cardContainerColor = MaterialTheme.colorScheme.primaryContainer
+    val cardContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+
     Card(
             modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = PrimaryColor)
+            colors = CardDefaults.cardColors(containerColor = cardContainerColor)
     ) {
         Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
             Text(
                     text = stringResource(R.string.monthly_summary),
                     style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onPrimary,
+                    color = cardContentColor,
                     fontWeight = FontWeight.Bold
             )
 
@@ -179,13 +180,13 @@ fun SummaryCard(totalMonthlyCost: Double, subscriptionCount: Int, onAddSubscript
                     Text(
                             text = stringResource(R.string.total_monthly_cost),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = cardContentColor
                     )
 
                     Text(
                             text = totalMonthlyCost.formatCurrency(),
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onPrimary,
+                            color = cardContentColor,
                             fontWeight = FontWeight.Bold
                     )
                 }
@@ -194,13 +195,13 @@ fun SummaryCard(totalMonthlyCost: Double, subscriptionCount: Int, onAddSubscript
                     Text(
                             text = stringResource(R.string.active_subscriptions),
                             style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onPrimary
+                            color = cardContentColor
                     )
 
                     Text(
                             text = subscriptionCount.toString(),
                             style = MaterialTheme.typography.titleLarge,
-                            color = MaterialTheme.colorScheme.onPrimary,
+                            color = cardContentColor,
                             fontWeight = FontWeight.Bold
                     )
                 }
@@ -213,8 +214,8 @@ fun SummaryCard(totalMonthlyCost: Double, subscriptionCount: Int, onAddSubscript
                     modifier = Modifier.fillMaxWidth(),
                     colors =
                             ButtonDefaults.buttonColors(
-                                    containerColor = MaterialTheme.colorScheme.onPrimary,
-                                    contentColor = PrimaryColor
+                                    containerColor = MaterialTheme.colorScheme.primary,
+                                    contentColor = MaterialTheme.colorScheme.onPrimary
                             )
             ) { Text(stringResource(R.string.add_subscription)) }
         }

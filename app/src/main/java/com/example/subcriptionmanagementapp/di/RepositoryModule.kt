@@ -6,6 +6,8 @@ import com.example.subcriptionmanagementapp.data.repository.PaymentHistoryReposi
 import com.example.subcriptionmanagementapp.data.repository.PaymentHistoryRepositoryImpl
 import com.example.subcriptionmanagementapp.data.repository.ReminderRepository
 import com.example.subcriptionmanagementapp.data.repository.ReminderRepositoryImpl
+import com.example.subcriptionmanagementapp.data.repository.SettingsRepository
+import com.example.subcriptionmanagementapp.data.repository.SettingsRepositoryImpl
 import com.example.subcriptionmanagementapp.data.repository.SubscriptionRepository
 import com.example.subcriptionmanagementapp.data.repository.SubscriptionRepositoryImpl
 import dagger.Binds
@@ -41,4 +43,10 @@ abstract class RepositoryModule {
     abstract fun bindPaymentHistoryRepository(
         impl: PaymentHistoryRepositoryImpl
     ): PaymentHistoryRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindSettingsRepository(
+        impl: SettingsRepositoryImpl
+    ): SettingsRepository
 }

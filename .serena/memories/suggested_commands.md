@@ -1,0 +1,7 @@
+- Build: `./gradlew clean build`
+- Assemble debug build: `./gradlew :app:assembleDebug`
+- Install debug APK: `./gradlew :app:installDebug`
+- JVM unit tests: `./gradlew testDebugUnitTest`
+- Instrumented UI tests: `./gradlew :app:connectedDebugAndroidTest`
+- Lint: `./gradlew lint`
+- Static analysis (if enabled): `./gradlew detekt`, `./gradlew ktlintCheck`

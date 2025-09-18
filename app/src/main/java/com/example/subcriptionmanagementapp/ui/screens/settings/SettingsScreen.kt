@@ -9,16 +9,29 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.R
 import com.example.subcriptionmanagementapp.ui.components.AppTopBar
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
+import com.example.subcriptionmanagementapp.ui.viewmodel.SettingsViewModel
 
 @Composable
-fun SettingsScreen(navController: NavController) {
+fun SettingsScreen(
+    navController: NavController,
+    viewModel: SettingsViewModel = hiltViewModel()
+) {
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     var notificationsEnabled by remember { mutableStateOf(true) }
-    var darkMode by remember { mutableStateOf(false) }
     var currency by remember { mutableStateOf("USD") }
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(uiState.errorMessage) {
+        val message = uiState.errorMessage ?: return@LaunchedEffect
+        snackbarHostState.showSnackbar(message)
+        viewModel.clearError()
+    }
 
     Scaffold(
             topBar = {
@@ -29,7 +42,8 @@ fun SettingsScreen(navController: NavController) {
                         showBackButton = true,
                         showActions = false
                 )
-            }
+            },
+            snackbarHost = { SnackbarHost(hostState = snackbarHostState) }
     ) { paddingValues ->
         LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(paddingValues).padding(16.dp),
@@ -69,7 +83,11 @@ fun SettingsScreen(navController: NavController) {
                                 )
                             }
 
-                            Switch(checked = darkMode, onCheckedChange = { darkMode = it })
+                            Switch(
+                                    checked = uiState.isDarkMode,
+                                    onCheckedChange = { isChecked -> viewModel.onDarkModeToggled(isChecked) },
+                                    enabled = !uiState.isLoading
+                            )
                         }
 
                         HorizontalDivider()
