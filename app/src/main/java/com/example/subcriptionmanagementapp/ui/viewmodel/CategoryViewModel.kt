@@ -16,7 +16,8 @@ class CategoryViewModel @Inject constructor(
     private val getCategoryUseCase: GetCategoryUseCase,
     private val getAllCategoriesUseCase: GetAllCategoriesUseCase,
     private val updateCategoryUseCase: UpdateCategoryUseCase,
-    private val deleteCategoryUseCase: DeleteCategoryUseCase
+    private val deleteCategoryUseCase: DeleteCategoryUseCase,
+    private val seedDefaultCategoriesUseCase: SeedDefaultCategoriesUseCase
 ) : ViewModel() {
 
     private val _categories = MutableStateFlow<List<Category>>(emptyList())
@@ -43,7 +44,10 @@ class CategoryViewModel @Inject constructor(
         categoriesJob =
             viewModelScope.launch {
                 getAllCategoriesUseCase()
-                    .onStart { _isLoading.value = true }
+                    .onStart {
+                        _isLoading.value = true
+                        seedDefaultCategoriesUseCase()
+                    }
                     .catch { e ->
                         _error.value = e.message ?: "Failed to load categories"
                         _isLoading.value = false

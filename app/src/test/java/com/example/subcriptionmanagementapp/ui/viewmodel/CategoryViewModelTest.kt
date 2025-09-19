@@ -7,10 +7,12 @@ import com.example.subcriptionmanagementapp.domain.usecase.category.AddCategoryU
 import com.example.subcriptionmanagementapp.domain.usecase.category.DeleteCategoryUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.category.GetAllCategoriesUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.category.GetCategoryUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.category.SeedDefaultCategoriesUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.category.UpdateCategoryUseCase
 import com.example.subcriptionmanagementapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
@@ -50,18 +52,25 @@ class CategoryViewModelTest {
     @Mock
     private lateinit var deleteCategoryUseCase: DeleteCategoryUseCase
 
+    @Mock
+    private lateinit var seedDefaultCategoriesUseCase: SeedDefaultCategoriesUseCase
+
     private lateinit var viewModel: CategoryViewModel
 
     @Before
     fun setUp() {
         whenever(getAllCategoriesUseCase()).thenReturn(flowOf(emptyList()))
+        runBlocking {
+            whenever(seedDefaultCategoriesUseCase.invoke()).thenReturn(Unit)
+        }
 
         viewModel = CategoryViewModel(
             addCategoryUseCase,
             getCategoryUseCase,
             getAllCategoriesUseCase,
             updateCategoryUseCase,
-            deleteCategoryUseCase
+            deleteCategoryUseCase,
+            seedDefaultCategoriesUseCase
         )
 
         clearInvocations(
@@ -69,7 +78,8 @@ class CategoryViewModelTest {
             getCategoryUseCase,
             getAllCategoriesUseCase,
             updateCategoryUseCase,
-            deleteCategoryUseCase
+            deleteCategoryUseCase,
+            seedDefaultCategoriesUseCase
         )
     }
 
@@ -90,6 +100,7 @@ class CategoryViewModelTest {
             cancelAndIgnoreRemainingEvents()
         }
 
+        verify(seedDefaultCategoriesUseCase).invoke()
         verify(getAllCategoriesUseCase).invoke()
     }
 

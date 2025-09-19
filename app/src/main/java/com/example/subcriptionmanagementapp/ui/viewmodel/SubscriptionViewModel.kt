@@ -1,11 +1,15 @@
 package com.example.subcriptionmanagementapp.ui.viewmodel
 
+import android.database.sqlite.SQLiteConstraintException
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.subcriptionmanagementapp.data.local.CategoryDefaults
 import com.example.subcriptionmanagementapp.data.local.entity.Category
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.data.manager.CurrencyRateManager
+import com.example.subcriptionmanagementapp.domain.usecase.category.AddCategoryUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.category.GetAllCategoriesUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.category.SeedDefaultCategoriesUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.settings.GetSelectedCurrencyUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.*
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -27,6 +31,8 @@ constructor(
         private val getSubscriptionsByCategoryUseCase: GetSubscriptionsByCategoryUseCase,
         private val searchSubscriptionsUseCase: SearchSubscriptionsUseCase,
         private val getAllCategoriesUseCase: GetAllCategoriesUseCase,
+        private val addCategoryUseCase: AddCategoryUseCase,
+        private val seedDefaultCategoriesUseCase: SeedDefaultCategoriesUseCase,
         private val getSelectedCurrencyUseCase: GetSelectedCurrencyUseCase,
         private val currencyRateManager: CurrencyRateManager,
         private val getMonthlySpendingUseCase: GetMonthlySpendingUseCase
@@ -49,6 +55,9 @@ constructor(
 
     private val _subscriptionSaved = MutableSharedFlow<Unit>()
     val subscriptionSaved: SharedFlow<Unit> = _subscriptionSaved.asSharedFlow()
+
+    private val _categoryCreated = MutableSharedFlow<Long>()
+    val categoryCreated: SharedFlow<Long> = _categoryCreated.asSharedFlow()
 
     private val _selectedCurrency = MutableStateFlow("USD")
     val selectedCurrency: StateFlow<String> = _selectedCurrency.asStateFlow()
@@ -257,7 +266,10 @@ constructor(
         categoriesJob =
                 viewModelScope.launch {
                     getAllCategoriesUseCase()
-                            .onStart { _isLoading.value = true }
+                            .onStart {
+                                _isLoading.value = true
+                                seedDefaultCategoriesUseCase()
+                            }
                             .catch { e ->
                                 _error.value = e.message ?: "Failed to load categories"
                                 _isLoading.value = false
@@ -267,6 +279,42 @@ constructor(
                                 _isLoading.value = false
                             }
                 }
+    }
+
+    fun createCategory(name: String, keywords: String?) {
+        viewModelScope.launch {
+            _isLoading.value = true
+            val trimmedName = name.trim()
+            if (trimmedName.isEmpty()) {
+                _error.value = "Category name is required"
+                _isLoading.value = false
+                return@launch
+            }
+
+            val sanitizedKeywords = keywords?.trim()?.takeUnless { it.isEmpty() }
+
+            try {
+                val timestamp = System.currentTimeMillis()
+                val category =
+                        Category(
+                                name = trimmedName,
+                                color = CategoryDefaults.DEFAULT_CUSTOM_CATEGORY_COLOR,
+                                icon = null,
+                                isPredefined = false,
+                                keywords = sanitizedKeywords,
+                                createdAt = timestamp,
+                                updatedAt = timestamp
+                        )
+                val newId = addCategoryUseCase(category)
+                _categoryCreated.emit(newId)
+            } catch (constraint: SQLiteConstraintException) {
+                _error.value = "Category name already exists"
+            } catch (e: Exception) {
+                _error.value = e.message ?: "Failed to create category"
+            } finally {
+                _isLoading.value = false
+            }
+        }
     }
 
     fun clearError() {

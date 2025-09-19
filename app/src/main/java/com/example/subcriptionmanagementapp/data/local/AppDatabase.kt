@@ -7,6 +7,7 @@ import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.example.subcriptionmanagementapp.data.local.CategoryDefaults
 import com.example.subcriptionmanagementapp.data.local.dao.CategoryDao
 import com.example.subcriptionmanagementapp.data.local.dao.PaymentHistoryDao
 import com.example.subcriptionmanagementapp.data.local.dao.ReminderDao
@@ -135,11 +136,47 @@ abstract class AppDatabase : RoomDatabase() {
                                                 AppDatabase::class.java,
                                                 "subscription_management_database"
                                         )
+                                        .addCallback(
+                                                object : RoomDatabase.Callback() {
+                                                    override fun onCreate(db: SupportSQLiteDatabase) {
+                                                        super.onCreate(db)
+                                                        insertDefaultCategories(db)
+                                                    }
+                                                }
+                                        )
                                         .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                                         .build()
                         INSTANCE = instance
                         instance
                     }
+        }
+
+        private fun insertDefaultCategories(db: SupportSQLiteDatabase) {
+            CategoryDefaults.predefinedCategories.forEach { seed ->
+                val timestamp = System.currentTimeMillis()
+                db.execSQL(
+                        """
+                        INSERT OR IGNORE INTO categories (
+                                name,
+                                color,
+                                icon,
+                                is_predefined,
+                                keywords,
+                                created_at,
+                                updated_at
+                        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """.trimIndent(),
+                        arrayOf(
+                                seed.name,
+                                seed.colorHex,
+                                null,
+                                1,
+                                seed.keywords,
+                                timestamp,
+                                timestamp
+                        )
+                )
+            }
         }
     }
 }

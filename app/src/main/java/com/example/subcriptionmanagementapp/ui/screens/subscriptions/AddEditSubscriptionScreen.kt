@@ -46,6 +46,8 @@ import androidx.compose.material.icons.outlined.NoteAlt
 import androidx.compose.material.icons.outlined.NotificationsActive
 import androidx.compose.material.icons.outlined.Schedule
 import androidx.compose.material.icons.outlined.Subscriptions
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
@@ -62,6 +64,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Switch
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -127,6 +130,7 @@ fun AddEditSubscriptionScreen(
     var appPackageName by remember { mutableStateOf("") }
     var initialCategoryId by remember(subscriptionId) { mutableStateOf<Long?>(null) }
     var hasAppliedInitialCategory by remember(subscriptionId) { mutableStateOf(false) }
+    var showAddCategoryDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(subscriptionId) {
         if (subscriptionId != null) {
@@ -181,6 +185,14 @@ fun AddEditSubscriptionScreen(
 
     LaunchedEffect(Unit) { viewModel.subscriptionSaved.collect { navController.popBackStack() } }
 
+    LaunchedEffect(Unit) {
+        viewModel.categoryCreated.collect { newCategoryId ->
+            showAddCategoryDialog = false
+            initialCategoryId = newCategoryId
+            hasAppliedInitialCategory = false
+        }
+    }
+
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
 
@@ -189,6 +201,13 @@ fun AddEditSubscriptionScreen(
             Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
             viewModel.clearError()
         }
+    }
+
+    if (showAddCategoryDialog) {
+        CreateCategoryDialog(
+                onDismiss = { showAddCategoryDialog = false },
+                onCreate = { name, keywords -> viewModel.createCategory(name, keywords) }
+        )
     }
 
     Scaffold(
@@ -222,6 +241,7 @@ fun AddEditSubscriptionScreen(
                                 categories = categories,
                                 selectedCategory = selectedCategory,
                                 onCategoryChange = { selectedCategory = it },
+                                onAddCategoryRequest = { showAddCategoryDialog = true },
                                 nextBillingDate = nextBillingDate,
                                 onNextBillingDateChange = { nextBillingDate = it },
                                 isActive = isActive,
@@ -311,6 +331,7 @@ fun AddEditSubscriptionContent(
         categories: List<Category>,
         selectedCategory: Category?,
         onCategoryChange: (Category?) -> Unit,
+        onAddCategoryRequest: () -> Unit,
         nextBillingDate: Long,
         onNextBillingDateChange: (Long) -> Unit,
         isActive: Boolean,
@@ -696,6 +717,13 @@ fun AddEditSubscriptionContent(
                                             colors = chipColors
                                     )
                                 }
+                                AssistChip(
+                                        onClick = onAddCategoryRequest,
+                                        label = { Text(stringResource(R.string.add_category)) },
+                                        leadingIcon = {
+                                            Icon(imageVector = Icons.Filled.Add, contentDescription = null)
+                                        }
+                                )
                             }
                             if (categories.isEmpty()) {
                                 Text(
@@ -1184,6 +1212,55 @@ private fun SectionHeader(
             }
         }
     }
+}
+
+@Composable
+private fun CreateCategoryDialog(
+        onDismiss: () -> Unit,
+        onCreate: (String, String?) -> Unit
+) {
+    var categoryName by remember { mutableStateOf("") }
+    var categoryKeywords by remember { mutableStateOf("") }
+    val isCreateEnabled = categoryName.trim().isNotEmpty()
+
+    AlertDialog(
+            onDismissRequest = onDismiss,
+            title = { Text(stringResource(R.string.create_category_title)) },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                            value = categoryName,
+                            onValueChange = { categoryName = it },
+                            label = { Text(stringResource(R.string.category_name_label)) },
+                            singleLine = true
+                    )
+                    OutlinedTextField(
+                            value = categoryKeywords,
+                            onValueChange = { categoryKeywords = it },
+                            label = { Text(stringResource(R.string.category_keywords_label)) },
+                            placeholder = {
+                                Text(stringResource(R.string.category_keywords_placeholder))
+                            },
+                            minLines = 1,
+                            maxLines = 3
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                        onClick = {
+                            val trimmedName = categoryName.trim()
+                            val trimmedKeywords =
+                                    categoryKeywords.trim().takeIf { it.isNotEmpty() }
+                            onCreate(trimmedName, trimmedKeywords)
+                        },
+                        enabled = isCreateEnabled
+                ) {
+                    Text(stringResource(R.string.save))
+                }
+            },
+            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
+    )
 }
 
 @Composable

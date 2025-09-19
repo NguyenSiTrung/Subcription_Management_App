@@ -4,10 +4,16 @@ import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import app.cash.turbine.test
 import com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
+import com.example.subcriptionmanagementapp.data.manager.CurrencyRateManager
+import com.example.subcriptionmanagementapp.domain.usecase.category.AddCategoryUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.category.GetAllCategoriesUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.category.SeedDefaultCategoriesUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.settings.GetSelectedCurrencyUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.AddSubscriptionUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.DeleteSubscriptionUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.GetActiveSubscriptionsUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.GetAllSubscriptionsUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.subscription.GetMonthlySpendingUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.GetSubscriptionUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.GetSubscriptionsByCategoryUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.SearchSubscriptionsUseCase
@@ -15,8 +21,10 @@ import com.example.subcriptionmanagementapp.domain.usecase.subscription.UpdateSu
 import com.example.subcriptionmanagementapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
+import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
 import org.junit.Before
 import org.junit.Rule
@@ -25,6 +33,8 @@ import org.junit.runner.RunWith
 import org.mockito.Mock
 import org.mockito.Mockito.doAnswer
 import org.mockito.junit.MockitoJUnitRunner
+import org.mockito.kotlin.any
+import org.mockito.kotlin.check
 import org.mockito.kotlin.clearInvocations
 import org.mockito.kotlin.verify
 import org.mockito.kotlin.whenever
@@ -53,12 +63,31 @@ class SubscriptionViewModelTest {
 
     @Mock private lateinit var searchSubscriptionsUseCase: SearchSubscriptionsUseCase
 
+    @Mock private lateinit var getAllCategoriesUseCase: GetAllCategoriesUseCase
+
+    @Mock private lateinit var addCategoryUseCase: AddCategoryUseCase
+
+    @Mock private lateinit var seedDefaultCategoriesUseCase: SeedDefaultCategoriesUseCase
+
+    @Mock private lateinit var getSelectedCurrencyUseCase: GetSelectedCurrencyUseCase
+
+    @Mock private lateinit var currencyRateManager: CurrencyRateManager
+
+    @Mock private lateinit var getMonthlySpendingUseCase: GetMonthlySpendingUseCase
+
     private lateinit var viewModel: SubscriptionViewModel
 
     @Before
     fun setUp() {
         whenever(getAllSubscriptionsUseCase()).thenReturn(flowOf(emptyList()))
         whenever(getActiveSubscriptionsUseCase()).thenReturn(flowOf(emptyList()))
+        whenever(getAllCategoriesUseCase()).thenReturn(flowOf(emptyList()))
+        whenever(getSelectedCurrencyUseCase()).thenReturn(flowOf("USD"))
+        whenever(getMonthlySpendingUseCase()).thenReturn(flowOf(0.0))
+        runBlocking {
+            whenever(seedDefaultCategoriesUseCase.invoke()).thenReturn(Unit)
+            whenever(currencyRateManager.convertCurrency(any(), any(), any())).thenReturn(null)
+        }
 
         viewModel =
                 SubscriptionViewModel(
@@ -69,7 +98,13 @@ class SubscriptionViewModelTest {
                         updateSubscriptionUseCase,
                         deleteSubscriptionUseCase,
                         getSubscriptionsByCategoryUseCase,
-                        searchSubscriptionsUseCase
+                        searchSubscriptionsUseCase,
+                        getAllCategoriesUseCase,
+                        addCategoryUseCase,
+                        seedDefaultCategoriesUseCase,
+                        getSelectedCurrencyUseCase,
+                        currencyRateManager,
+                        getMonthlySpendingUseCase
                 )
 
         clearInvocations(
@@ -80,7 +115,13 @@ class SubscriptionViewModelTest {
                 updateSubscriptionUseCase,
                 deleteSubscriptionUseCase,
                 getSubscriptionsByCategoryUseCase,
-                searchSubscriptionsUseCase
+                searchSubscriptionsUseCase,
+                getAllCategoriesUseCase,
+                addCategoryUseCase,
+                seedDefaultCategoriesUseCase,
+                getSelectedCurrencyUseCase,
+                currencyRateManager,
+                getMonthlySpendingUseCase
         )
     }
 
@@ -204,6 +245,26 @@ class SubscriptionViewModelTest {
         }
 
         verify(searchSubscriptionsUseCase).invoke(query)
+    }
+
+    @Test
+    fun `createCategory should emit new id and forward sanitized data`() = runTest {
+        whenever(addCategoryUseCase.invoke(any())).thenReturn(42L)
+
+        viewModel.categoryCreated.test {
+            viewModel.createCategory(" AI Tools ", " ai, tech ")
+
+            assertEquals(42L, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        verify(addCategoryUseCase).invoke(
+                check { category ->
+                    assertEquals("AI Tools", category.name)
+                    assertEquals("ai, tech", category.keywords)
+                    assertEquals(false, category.isPredefined)
+                }
+        )
     }
 
     @Test
