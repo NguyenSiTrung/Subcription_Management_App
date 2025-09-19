@@ -12,6 +12,7 @@ import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.WindowInsets
@@ -282,68 +283,78 @@ private fun RowScope.OptimizedBottomBarItem(
 
     // Optimized container
     Box(
-            modifier =
-                    Modifier.weight(1f).height(52.dp).clickable(
-                                    interactionSource = interactionSource,
-                                    indication = null
-                            ) {
-                        haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                        onClick()
-                    },
-            contentAlignment = Alignment.Center
+        modifier = Modifier
+            .weight(1f)
+            .height(52.dp)
+            .clickable(
+                interactionSource = interactionSource,
+                indication = null
+            ) {
+                haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onClick()
+            },
+        contentAlignment = Alignment.Center
     ) {
-        // Simplified selection indicator
-        if (isSelected) {
-            Box(
-                    modifier =
-                            Modifier.width(indicatorWidth)
-                                    .height(32.dp)
-                                    .background(
-                                            color = indicatorColor,
-                                            shape = RoundedCornerShape(16.dp)
-                                    )
-            )
-        }
-
-        // Content layout
-        Box(contentAlignment = Alignment.Center) {
-            BadgedBox(
+        // Selection indicator that surrounds both icon and text when selected
+        Box(
+            contentAlignment = Alignment.Center,
+            modifier = Modifier
+                .background(
+                    color = if (isSelected) indicatorColor else Color.Transparent,
+                    shape = RoundedCornerShape(16.dp)
+                )
+                .padding(horizontal = 12.dp, vertical = 8.dp)
+        ) {
+            // Content column (icon + text)
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                // Icon with badge
+                BadgedBox(
                     badge = {
                         // Show notification badge for subscriptions
                         if (item.screen == Screen.SubscriptionList) {
                             Badge(
-                                    modifier = Modifier,
-                                    containerColor =
-                                            if (isDarkTheme) Color(0xFFFF453A)
-                                            else Color(0xFFEF4444),
-                                    contentColor = Color.White
-                            ) { Text(text = "3", fontSize = 10.sp, fontWeight = FontWeight.Medium) }
+                                modifier = Modifier,
+                                containerColor =
+                                    if (isDarkTheme) Color(0xFFFF453A)
+                                    else Color(0xFFEF4444),
+                                contentColor = Color.White
+                            ) { 
+                                Text(text = "3", fontSize = 10.sp, fontWeight = FontWeight.Medium) 
+                            }
                         }
                     }
-            ) {
-                Icon(
+                ) {
+                    Icon(
                         imageVector = if (isSelected) item.selectedIcon else item.icon,
                         contentDescription = stringResource(id = item.labelResId),
-                        modifier =
-                                Modifier.size(24.dp).scale(iconScale).graphicsLayer {
-                                    shadowElevation = if (isSelected) 4.dp.toPx() else 0f
-                                },
+                        modifier = Modifier
+                            .size(24.dp)
+                            .scale(iconScale)
+                            .graphicsLayer {
+                                shadowElevation = if (isSelected) 4.dp.toPx() else 0f
+                            },
                         tint = iconColor
-                )
-            }
+                    )
+                }
 
-            // Label text with better readability
-            if (isSelected) {
-                Text(
+                // Label text with better readability
+                if (isSelected) {
+                    Text(
                         text = stringResource(id = item.labelResId),
                         color = textColor,
                         fontSize = 10.sp,
                         fontWeight = FontWeight.Medium,
-                        modifier =
-                                Modifier.padding(top = 20.dp).graphicsLayer {
-                                    shadowElevation = if (isDarkTheme) 2.dp.toPx() else 0f
-                                }
-                )
+                        modifier = Modifier
+                            .padding(top = 4.dp)  // Consistent padding between icon and text
+                            .graphicsLayer {
+                                shadowElevation = if (isDarkTheme) 2.dp.toPx() else 0f
+                            }
+                    )
+                }
             }
         }
     }
