@@ -1,5 +1,6 @@
 package com.example.subcriptionmanagementapp.ui.navigation
 
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
@@ -27,7 +28,9 @@ fun AppNavigation(
     NavHost(
         navController = navController,
         startDestination = Screen.Home.route,
-        modifier = Modifier.padding(paddingValues)
+        modifier = Modifier
+            .padding(paddingValues)
+            .consumeWindowInsets(paddingValues)
     ) {
         composable(Screen.Home.route) {
             HomeScreen(navController = navController)

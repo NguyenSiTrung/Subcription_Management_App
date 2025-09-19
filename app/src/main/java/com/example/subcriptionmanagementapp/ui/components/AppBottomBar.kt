@@ -333,10 +333,7 @@ private fun RowScope.OptimizedBottomBarItem(
                         contentDescription = stringResource(id = item.labelResId),
                         modifier = Modifier
                             .size(24.dp)
-                            .scale(iconScale)
-                            .graphicsLayer {
-                                shadowElevation = if (isSelected) 4.dp.toPx() else 0f
-                            },
+                            .scale(iconScale),
                         tint = iconColor
                     )
                 }
