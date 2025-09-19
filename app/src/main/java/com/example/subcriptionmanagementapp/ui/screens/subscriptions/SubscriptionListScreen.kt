@@ -19,6 +19,7 @@ import com.example.subcriptionmanagementapp.R
 import com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.ui.components.AppTopBar
+import com.example.subcriptionmanagementapp.ui.components.CategoryFilterRow
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.components.NoSubscriptionsEmptyState
@@ -26,23 +27,27 @@ import com.example.subcriptionmanagementapp.ui.navigation.Screen
 import com.example.subcriptionmanagementapp.ui.theme.ErrorColor
 import com.example.subcriptionmanagementapp.ui.theme.WarningColor
 import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
+import com.example.subcriptionmanagementapp.ui.model.CategoryFilter
+import com.example.subcriptionmanagementapp.ui.model.FilterState
 import com.example.subcriptionmanagementapp.util.formatCurrency
 import com.example.subcriptionmanagementapp.util.formatDate
 import com.example.subcriptionmanagementapp.util.getDaysUntil
-import kotlinx.coroutines.launch
 
 @Composable
 fun SubscriptionListScreen(
         navController: NavController,
         viewModel: SubscriptionViewModel = hiltViewModel()
 ) {
-    val subscriptions by viewModel.subscriptions.collectAsStateWithLifecycle()
+    val subscriptions by viewModel.filteredSubscriptions.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
-    val coroutineScope = rememberCoroutineScope()
-
-    LaunchedEffect(Unit) { viewModel.loadAllSubscriptions() }
+    val categoryFilters by viewModel.categoryFilters.collectAsStateWithLifecycle()
+    val filterState by viewModel.filterState.collectAsStateWithLifecycle()
+    LaunchedEffect(Unit) { 
+        viewModel.loadAllSubscriptions()
+        viewModel.loadCategories()
+    }
 
     Scaffold(
             topBar = {
@@ -72,10 +77,19 @@ fun SubscriptionListScreen(
                         SubscriptionListContent(
                                 subscriptions = subscriptions,
                                 selectedCurrency = selectedCurrency,
+                                categoryFilters = categoryFilters,
+                                filterState = filterState,
                                 onSubscriptionClick = { subscriptionId ->
                                     navController.navigate(
                                             Screen.SubscriptionDetail.createRoute(subscriptionId)
                                     )
+                                },
+                                onFilterClick = { filter ->
+                                    val categoryId = if (filter.id == CategoryFilter.ALL_CATEGORIES.id) null else filter.id
+                                    viewModel.filterByCategory(categoryId)
+                                },
+                                onActiveFilterToggle = {
+                                    viewModel.toggleActiveFilter()
                                 }
                         )
             }
@@ -87,19 +101,35 @@ fun SubscriptionListScreen(
 fun SubscriptionListContent(
         subscriptions: List<Subscription>,
         selectedCurrency: String,
-        onSubscriptionClick: (Long) -> Unit
+        categoryFilters: List<CategoryFilter>,
+        filterState: FilterState,
+        onSubscriptionClick: (Long) -> Unit,
+        onFilterClick: (CategoryFilter) -> Unit,
+        onActiveFilterToggle: () -> Unit
 ) {
-    LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
-    ) {
-        items(subscriptions) { subscription ->
-            SubscriptionListItem(
-                    subscription = subscription,
-                    selectedCurrency = selectedCurrency,
-                    onClick = { onSubscriptionClick(subscription.id) }
-            )
+    Column(modifier = Modifier.fillMaxSize()) {
+        // Filter Row
+        CategoryFilterRow(
+            filters = categoryFilters,
+            showActiveOnly = filterState.showActiveOnly,
+            onFilterClick = onFilterClick,
+            onActiveFilterToggle = onActiveFilterToggle,
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
+        )
+        
+        // Subscription List
+        LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
+        ) {
+            items(subscriptions) { subscription ->
+                SubscriptionListItem(
+                        subscription = subscription,
+                        selectedCurrency = selectedCurrency,
+                        onClick = { onSubscriptionClick(subscription.id) }
+                )
+            }
         }
     }
 }

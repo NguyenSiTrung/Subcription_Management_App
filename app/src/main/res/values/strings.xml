@@ -235,6 +235,20 @@
     <!-- Reminders -->
     <string name="reminder">Reminder</string>
 
+    <!-- Filtering -->
+    <string name="filter_by_category">Filter by Category</string>
+    <string name="all_categories">All Categories</string>
+    <string name="filter_active_only">Active Only</string>
+    <string name="active_only">Active Only</string>
+    <string name="filter_all_subscriptions">All Subscriptions</string>
+    <string name="clear_filter">Clear Filter</string>
+    <string name="filtered_by_category">Filtered by: %1$s</string>
+    <string name="no_subscriptions_in_category">No subscriptions in this category</string>
+    <string name="no_subscriptions_in_category_description">You haven\'t added any subscriptions to the %1$s category yet.</string>
+    <string name="no_subscriptions_in_category_subtitle">You don\'t have any subscriptions in %1$s yet. Add one to get started!</string>
+    <string name="subscriptions_count">%1$d subscriptions</string>
+    <string name="view_subscriptions_in_category">View Subscriptions</string>
+
     <!-- Errors -->
     <string name="error_occurred">An error occurred</string>
 </resources>

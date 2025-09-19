@@ -1,6 +1,8 @@
 package com.example.subcriptionmanagementapp.ui.navigation
 
+import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
+import androidx.compose.ui.Modifier
 import androidx.navigation.NavHostController
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
@@ -19,11 +21,13 @@ import com.example.subcriptionmanagementapp.ui.viewmodel.SettingsViewModel
 @Composable
 fun AppNavigation(
     navController: NavHostController,
-    settingsViewModel: SettingsViewModel
+    settingsViewModel: SettingsViewModel,
+    paddingValues: androidx.compose.foundation.layout.PaddingValues = androidx.compose.foundation.layout.PaddingValues()
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route
+        startDestination = Screen.Home.route,
+        modifier = Modifier.padding(paddingValues)
     ) {
         composable(Screen.Home.route) {
             HomeScreen(navController = navController)

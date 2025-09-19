@@ -52,7 +52,7 @@ private val LightColorScheme =
         )
 
 @Composable
-fun SubcriptionManagementAppTheme(
+fun SubscriptionManagementAppTheme(
         darkTheme: Boolean = isSystemInDarkTheme(),
         dynamicColor: Boolean = true,
         content: @Composable () -> Unit
