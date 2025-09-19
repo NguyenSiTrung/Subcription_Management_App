@@ -1,14 +1,27 @@
 package com.example.subcriptionmanagementapp.ui.components
 
-import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material3.Icon
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.semantics.role
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.subcriptionmanagementapp.ui.model.CategoryFilter
@@ -19,56 +32,88 @@ import com.example.subcriptionmanagementapp.ui.theme.SubscriptionManagementAppTh
 fun CategoryFilterChip(
     filter: CategoryFilter,
     onClick: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    count: Int? = null
 ) {
-    val backgroundColor = if (filter.isSelected) {
-        try {
-            Color(android.graphics.Color.parseColor(filter.color))
-        } catch (e: Exception) {
-            MaterialTheme.colorScheme.primary
+    val categoryColor = runCatching {
+        Color(android.graphics.Color.parseColor(filter.color))
+    }.getOrElse { MaterialTheme.colorScheme.primary }
+
+    val trailingBadge: (@Composable () -> Unit)? = count?.takeIf { it > 0 }?.let { total ->
+        @Composable {
+            Surface(
+                shape = CircleShape,
+                color = if (filter.isSelected) {
+                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.18f)
+                } else {
+                    MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f)
+                },
+                tonalElevation = 0.dp,
+                modifier = Modifier.sizeIn(minWidth = 22.dp, minHeight = 22.dp)
+            ) {
+                Box(contentAlignment = Alignment.Center, modifier = Modifier.padding(horizontal = 6.dp)) {
+                    Text(
+                        text = total.coerceAtMost(99).toString(),
+                        style = MaterialTheme.typography.labelSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = if (filter.isSelected) {
+                            MaterialTheme.colorScheme.onPrimaryContainer
+                        } else {
+                            MaterialTheme.colorScheme.onSurfaceVariant
+                        },
+                        maxLines = 1
+                    )
+                }
+            }
         }
-    } else {
-        MaterialTheme.colorScheme.surface
-    }
-    
-    val contentColor = if (filter.isSelected) {
-        MaterialTheme.colorScheme.onPrimary
-    } else {
-        MaterialTheme.colorScheme.onSurface
-    }
-    
-    val borderColor = if (filter.isSelected) {
-        Color.Transparent
-    } else {
-        MaterialTheme.colorScheme.outline
     }
 
     FilterChip(
+        modifier = modifier
+            .semantics { role = Role.Button },
+        selected = filter.isSelected,
         onClick = onClick,
         label = {
             Text(
                 text = filter.name,
-                style = MaterialTheme.typography.labelMedium,
-                fontWeight = if (filter.isSelected) FontWeight.Medium else FontWeight.Normal,
-                color = contentColor
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = if (filter.isSelected) FontWeight.SemiBold else FontWeight.Medium,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
         },
-        selected = filter.isSelected,
-        modifier = modifier,
+        leadingIcon = {
+            Box(
+                modifier = Modifier
+                    .size(18.dp),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    modifier = Modifier
+                        .size(12.dp)
+                        .clip(CircleShape)
+                        .background(categoryColor)
+                )
+                if (filter.isSelected) {
+                    Icon(
+                        imageVector = Icons.Default.Check,
+                        contentDescription = null,
+                        tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                        modifier = Modifier.size(12.dp)
+                    )
+                }
+            }
+        },
+        trailingIcon = trailingBadge,
         colors = FilterChipDefaults.filterChipColors(
-            containerColor = MaterialTheme.colorScheme.surface,
-            labelColor = MaterialTheme.colorScheme.onSurface,
-            selectedContainerColor = backgroundColor,
-            selectedLabelColor = contentColor
-        ),
-        border = FilterChipDefaults.filterChipBorder(
-            enabled = true,
-            selected = filter.isSelected,
-            borderColor = borderColor,
-            selectedBorderColor = Color.Transparent,
-            borderWidth = 1.dp
-        ),
-        shape = RoundedCornerShape(20.dp)
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            selectedTrailingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+        )
     )
 }
 
@@ -78,15 +123,14 @@ private fun CategoryFilterChipPreview() {
     SubscriptionManagementAppTheme {
         Column(
             modifier = Modifier.padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // All Categories chip (selected)
             CategoryFilterChip(
                 filter = CategoryFilter.ALL_CATEGORIES.copy(isSelected = true),
-                onClick = { }
+                onClick = { },
+                count = 25
             )
-            
-            // Regular category chip (unselected)
+
             CategoryFilterChip(
                 filter = CategoryFilter(
                     id = 1L,
@@ -94,10 +138,10 @@ private fun CategoryFilterChipPreview() {
                     color = "#FF6B6B",
                     isSelected = false
                 ),
-                onClick = { }
+                onClick = { },
+                count = 8
             )
-            
-            // Regular category chip (selected)
+
             CategoryFilterChip(
                 filter = CategoryFilter(
                     id = 2L,
@@ -105,15 +149,26 @@ private fun CategoryFilterChipPreview() {
                     color = "#4ECDC4",
                     isSelected = true
                 ),
-                onClick = { }
+                onClick = { },
+                count = 3
             )
-            
-            // Long name category
+
             CategoryFilterChip(
                 filter = CategoryFilter(
                     id = 3L,
                     name = "Health & Fitness",
                     color = "#45B7D1",
+                    isSelected = false
+                ),
+                onClick = { },
+                count = 12
+            )
+
+            CategoryFilterChip(
+                filter = CategoryFilter(
+                    id = 4L,
+                    name = "Education",
+                    color = "#96CEB4",
                     isSelected = false
                 ),
                 onClick = { }

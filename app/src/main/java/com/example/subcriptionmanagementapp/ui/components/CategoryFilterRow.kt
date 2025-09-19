@@ -1,83 +1,170 @@
 package com.example.subcriptionmanagementapp.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandIn
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkOut
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.LazyRow
-import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.FilterList
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.PlayCircle
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.FilterChipDefaults
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import com.example.subcriptionmanagementapp.R
 import com.example.subcriptionmanagementapp.ui.model.CategoryFilter
 import com.example.subcriptionmanagementapp.ui.theme.SubscriptionManagementAppTheme
 
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
 @Composable
 fun CategoryFilterRow(
     filters: List<CategoryFilter>,
     showActiveOnly: Boolean,
     onFilterClick: (CategoryFilter) -> Unit,
     onActiveFilterToggle: () -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onClearFilters: (() -> Unit)? = null
 ) {
-    Column(
-        modifier = modifier.fillMaxWidth()
-    ) {
-        // Filter header with active toggle
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.FilterList,
-                    contentDescription = null,
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier.size(20.dp)
-                )
-                Text(
-                    text = stringResource(R.string.filter_by_category),
-                    style = MaterialTheme.typography.titleSmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
-            
-            // Active only toggle
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
-            ) {
-                Text(
-                    text = stringResource(R.string.active_only),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                Switch(
-                    checked = showActiveOnly,
-                    onCheckedChange = { onActiveFilterToggle() },
-                    modifier = Modifier.size(width = 32.dp, height = 20.dp)
-                )
-            }
+    val selectedCategories = filters.filter { it.isSelected && it.id != CategoryFilter.ALL_CATEGORIES.id }
+    val hasActiveFilters = selectedCategories.isNotEmpty()
+
+    val selectionSummary = when {
+        selectedCategories.isEmpty() -> stringResource(R.string.filter_all_subscriptions)
+        selectedCategories.size == 1 -> stringResource(
+            R.string.filtered_by_category,
+            selectedCategories.first().name
+        )
+        else -> {
+            val joinedNames = selectedCategories.joinToString(", ") { it.name }
+            stringResource(R.string.filtered_by_category, joinedNames)
         }
-        
-        // Scrollable filter chips
-        if (filters.isNotEmpty()) {
-            LazyRow(
+    }
+
+    Surface(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(24.dp),
+        tonalElevation = 2.dp,
+        shadowElevation = 6.dp,
+        color = MaterialTheme.colorScheme.surface
+    ) {
+        Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
+            Row(
                 modifier = Modifier.fillMaxWidth(),
-                contentPadding = PaddingValues(horizontal = 16.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                items(filters) { filter ->
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Surface(
+                        shape = CircleShape,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.FilterList,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.size(32.dp).padding(6.dp)
+                        )
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = stringResource(R.string.filter_by_category),
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        Text(
+                            text = selectionSummary,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            maxLines = 1
+                        )
+                    }
+                }
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    FilterChip(
+                        selected = showActiveOnly,
+                        onClick = onActiveFilterToggle,
+                        label = {
+                            Text(
+                                text = stringResource(R.string.filter_active_only),
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.Medium
+                            )
+                        },
+                        leadingIcon = {
+                            Icon(
+                                imageVector = Icons.Default.PlayCircle,
+                                contentDescription = null
+                            )
+                        },
+                        colors = FilterChipDefaults.filterChipColors(
+                            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f),
+                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
+                            selectedContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            selectedLabelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            selectedLeadingIconColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    )
+
+                    AnimatedVisibility(
+                        visible = hasActiveFilters && onClearFilters != null,
+                        enter = fadeIn() + expandIn(),
+                        exit = fadeOut() + shrinkOut()
+                    ) {
+                        AssistChip(
+                            onClick = { onClearFilters?.invoke() },
+                            label = { Text(text = stringResource(R.string.clear_filter)) },
+                            leadingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.Clear,
+                                    contentDescription = null
+                                )
+                            },
+                            colors = AssistChipDefaults.assistChipColors(
+                                containerColor = MaterialTheme.colorScheme.errorContainer.copy(alpha = 0.4f),
+                                labelColor = MaterialTheme.colorScheme.error,
+                                leadingIconContentColor = MaterialTheme.colorScheme.error
+                            )
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            FlowRow(
+                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                filters.forEach { filter ->
                     val displayFilter = if (filter.id == CategoryFilter.ALL_CATEGORIES.id) {
                         filter.copy(name = stringResource(R.string.all_categories))
                     } else {
@@ -90,13 +177,11 @@ fun CategoryFilterRow(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
         }
-        
-        // Divider
-        HorizontalDivider(
-            modifier = Modifier.padding(top = 12.dp),
-            color = MaterialTheme.colorScheme.outlineVariant
-        )
     }
 }
 
@@ -116,7 +201,7 @@ private fun CategoryFilterRowPreview() {
                 id = 2L,
                 name = "Productivity",
                 color = "#4ECDC4",
-                isSelected = false
+                isSelected = true
             ),
             CategoryFilter(
                 id = 3L,
@@ -137,12 +222,13 @@ private fun CategoryFilterRowPreview() {
                 isSelected = false
             )
         )
-        
+
         CategoryFilterRow(
             filters = sampleFilters,
             showActiveOnly = false,
             onFilterClick = { },
-            onActiveFilterToggle = { }
+            onActiveFilterToggle = { },
+            onClearFilters = { }
         )
     }
 }
@@ -164,14 +250,21 @@ private fun CategoryFilterRowActivePreview() {
                 name = "Productivity",
                 color = "#4ECDC4",
                 isSelected = false
+            ),
+            CategoryFilter(
+                id = 3L,
+                name = "Health & Fitness",
+                color = "#45B7D1",
+                isSelected = true
             )
         )
-        
+
         CategoryFilterRow(
             filters = sampleFilters,
             showActiveOnly = true,
             onFilterClick = { },
-            onActiveFilterToggle = { }
+            onActiveFilterToggle = { },
+            onClearFilters = { }
         )
     }
 }
