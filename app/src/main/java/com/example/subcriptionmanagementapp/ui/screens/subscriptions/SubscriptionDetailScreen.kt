@@ -24,6 +24,8 @@ import com.example.subcriptionmanagementapp.data.local.entity.Category
 import com.example.subcriptionmanagementapp.data.local.entity.PaymentHistory
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.ui.components.AppTopBar
+import com.example.subcriptionmanagementapp.ui.components.CategoryTag
+import com.example.subcriptionmanagementapp.ui.components.CategoryTagSize
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
@@ -245,30 +247,15 @@ fun SubscriptionInfoCard(
                     color = MaterialTheme.colorScheme.onSurfaceVariant
             )
 
-            Spacer(modifier = Modifier.height(4.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
-            val categoryLabel =
-                    if (isUncategorized) {
-                        stringResource(R.string.no_category)
-                    } else {
-                        category?.name ?: stringResource(R.string.no_category)
-                    }
-            Text(
-                    text = categoryLabel,
-                    style = MaterialTheme.typography.bodyMedium,
-                    fontWeight =
-                            if (!isUncategorized && category != null) {
-                                FontWeight.Medium
-                            } else {
-                                FontWeight.Normal
-                            },
-                    color =
-                            when {
-                                isUncategorized -> MaterialTheme.colorScheme.onSurfaceVariant
-                                !subscription.isActive ->
-                                        MaterialTheme.colorScheme.onSurfaceVariant
-                                else -> MaterialTheme.colorScheme.onSurface
-                            }
+            CategoryTag(
+                    category = category,
+                    isUncategorized = isUncategorized,
+                    size = CategoryTagSize.Medium,
+                    modifier = Modifier.wrapContentWidth(),
+                    showIcon = true,
+                    maxWidth = 200.dp
             )
 
             Spacer(modifier = Modifier.height(16.dp))
