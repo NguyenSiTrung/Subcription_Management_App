@@ -125,6 +125,7 @@ fun AddEditSubscriptionScreen(
     var reminderMinute by remember { mutableStateOf(Subscription.DEFAULT_REMINDER_MINUTE) }
     var isActive by remember { mutableStateOf(true) }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
+    var isCategoryCleared by remember { mutableStateOf(false) }
     var notes by remember { mutableStateOf("") }
     var websiteUrl by remember { mutableStateOf("") }
     var appPackageName by remember { mutableStateOf("") }
@@ -158,14 +159,15 @@ fun AddEditSubscriptionScreen(
             notes = currentSubscription.notes ?: ""
             initialCategoryId = currentSubscription.categoryId
             hasAppliedInitialCategory = false
+            isCategoryCleared = currentSubscription.categoryId == null
+        } ?: run {
+            initialCategoryId = null
+            hasAppliedInitialCategory = true
+            selectedCategory = null
+            isCategoryCleared = true
+            reminderHour = Subscription.DEFAULT_REMINDER_HOUR
+            reminderMinute = Subscription.DEFAULT_REMINDER_MINUTE
         }
-                ?: run {
-                    initialCategoryId = null
-                    hasAppliedInitialCategory = true
-                    selectedCategory = null
-                    reminderHour = Subscription.DEFAULT_REMINDER_HOUR
-                    reminderMinute = Subscription.DEFAULT_REMINDER_MINUTE
-                }
     }
 
     LaunchedEffect(categories, initialCategoryId, hasAppliedInitialCategory) {
@@ -173,9 +175,11 @@ fun AddEditSubscriptionScreen(
             val targetCategoryId = initialCategoryId
             if (targetCategoryId == null) {
                 selectedCategory = null
+                isCategoryCleared = true
                 hasAppliedInitialCategory = true
             } else if (categories.isNotEmpty()) {
                 selectedCategory = categories.find { it.id == targetCategoryId }
+                isCategoryCleared = false
                 hasAppliedInitialCategory = true
             }
         }
@@ -240,7 +244,11 @@ fun AddEditSubscriptionScreen(
                                 onBillingCycleChange = { billingCycle = it },
                                 categories = categories,
                                 selectedCategory = selectedCategory,
-                                onCategoryChange = { selectedCategory = it },
+                                isCategoryCleared = isCategoryCleared,
+                                onCategoryChange = {
+                                    selectedCategory = it
+                                    isCategoryCleared = it == null
+                                },
                                 onAddCategoryRequest = { showAddCategoryDialog = true },
                                 nextBillingDate = nextBillingDate,
                                 onNextBillingDateChange = { nextBillingDate = it },
@@ -269,6 +277,13 @@ fun AddEditSubscriptionScreen(
                                         val existingSubscription =
                                                 viewModel.selectedSubscription.value
 
+                                        val resolvedCategoryId =
+                                                if (isCategoryCleared) {
+                                                    null
+                                                } else {
+                                                    selectedCategory?.id ?: existingSubscription?.categoryId
+                                                }
+
                                         val subscriptionToPersist =
                                                 Subscription(
                                                         id = subscriptionId ?: 0,
@@ -285,9 +300,7 @@ fun AddEditSubscriptionScreen(
                                                         reminderHour = reminderHour,
                                                         reminderMinute = reminderMinute,
                                                         isActive = isActive,
-                                                        categoryId = selectedCategory?.id
-                                                                        ?: existingSubscription
-                                                                                ?.categoryId,
+                                                        categoryId = resolvedCategoryId,
                                                         websiteUrl = websiteUrl.ifBlank { null },
                                                         appPackageName =
                                                                 appPackageName.ifBlank { null },
@@ -330,6 +343,7 @@ fun AddEditSubscriptionContent(
         onBillingCycleChange: (BillingCycle) -> Unit,
         categories: List<Category>,
         selectedCategory: Category?,
+        isCategoryCleared: Boolean,
         onCategoryChange: (Category?) -> Unit,
         onAddCategoryRequest: () -> Unit,
         nextBillingDate: Long,
@@ -683,7 +697,7 @@ fun AddEditSubscriptionContent(
                                     horizontalArrangement = Arrangement.spacedBy(chipSpacing),
                                     verticalArrangement = Arrangement.spacedBy(chipSpacing)
                             ) {
-                                val isNoneSelected = selectedCategory == null
+                                val isNoneSelected = isCategoryCleared
                                 FilterChip(
                                         selected = isNoneSelected,
                                         onClick = { onCategoryChange(null) },

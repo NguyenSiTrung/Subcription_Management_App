@@ -9,6 +9,7 @@ import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.data.manager.CurrencyRateManager
 import com.example.subcriptionmanagementapp.domain.usecase.category.AddCategoryUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.category.GetAllCategoriesUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.category.GetCategoryUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.category.SeedDefaultCategoriesUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.settings.GetSelectedCurrencyUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.*
@@ -31,6 +32,7 @@ constructor(
         private val getSubscriptionsByCategoryUseCase: GetSubscriptionsByCategoryUseCase,
         private val searchSubscriptionsUseCase: SearchSubscriptionsUseCase,
         private val getAllCategoriesUseCase: GetAllCategoriesUseCase,
+        private val getCategoryUseCase: GetCategoryUseCase,
         private val addCategoryUseCase: AddCategoryUseCase,
         private val seedDefaultCategoriesUseCase: SeedDefaultCategoriesUseCase,
         private val getSelectedCurrencyUseCase: GetSelectedCurrencyUseCase,
@@ -46,6 +48,13 @@ constructor(
 
     private val _selectedSubscription = MutableStateFlow<Subscription?>(null)
     val selectedSubscription: StateFlow<Subscription?> = _selectedSubscription.asStateFlow()
+
+    private val _selectedCategory = MutableStateFlow<Category?>(null)
+    val selectedCategory: StateFlow<Category?> = _selectedCategory.asStateFlow()
+
+    private val _isSelectedSubscriptionUncategorized = MutableStateFlow(false)
+    val isSelectedSubscriptionUncategorized: StateFlow<Boolean> =
+            _isSelectedSubscriptionUncategorized.asStateFlow()
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading.asStateFlow()
@@ -75,6 +84,7 @@ constructor(
     private var allSubscriptionsJob: Job? = null
     private var activeSubscriptionsJob: Job? = null
     private var subscriptionJob: Job? = null
+    private var categoryJob: Job? = null
     private var subscriptionsByCategoryJob: Job? = null
     private var categoriesJob: Job? = null
 
@@ -177,7 +187,33 @@ constructor(
                             }
                             .collectLatest { subscription ->
                                 _selectedSubscription.value = subscription
+                                val categoryId = subscription?.categoryId
+                                _isSelectedSubscriptionUncategorized.value =
+                                        subscription != null && categoryId == null
+                                loadCategory(categoryId)
                                 _isLoading.value = false
+                            }
+                }
+    }
+
+    private fun loadCategory(categoryId: Long?) {
+        categoryJob?.cancel()
+        if (categoryId == null) {
+            _selectedCategory.value = null
+            return
+        }
+
+        _isSelectedSubscriptionUncategorized.value = false
+
+        categoryJob =
+                viewModelScope.launch {
+                    getCategoryUseCase(categoryId)
+                            .catch { e ->
+                                _error.value = e.message ?: "Failed to load category"
+                                _selectedCategory.value = null
+                            }
+                            .collectLatest { category ->
+                                _selectedCategory.value = category
                             }
                 }
     }

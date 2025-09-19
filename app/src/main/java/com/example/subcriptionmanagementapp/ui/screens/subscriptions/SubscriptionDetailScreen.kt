@@ -20,6 +20,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.R
 import com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
+import com.example.subcriptionmanagementapp.data.local.entity.Category
 import com.example.subcriptionmanagementapp.data.local.entity.PaymentHistory
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.ui.components.AppTopBar
@@ -44,6 +45,8 @@ fun SubscriptionDetailScreen(
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
+    val category by viewModel.selectedCategory.collectAsStateWithLifecycle()
+    val isUncategorized by viewModel.isSelectedSubscriptionUncategorized.collectAsStateWithLifecycle()
 
     LaunchedEffect(subscriptionId) { viewModel.loadSubscription(subscriptionId) }
 
@@ -75,6 +78,8 @@ fun SubscriptionDetailScreen(
                 else ->
                         SubscriptionDetailContent(
                                 subscription = currentSubscription,
+                                category = category,
+                                isUncategorized = isUncategorized,
                                 selectedCurrency = selectedCurrency,
                                 onEditClick = {
                                     navController.navigate(
@@ -99,6 +104,8 @@ fun SubscriptionDetailScreen(
 @Composable
 fun SubscriptionDetailContent(
         subscription: Subscription,
+        category: Category?,
+        isUncategorized: Boolean,
         selectedCurrency: String,
         onEditClick: () -> Unit,
         onDeleteClick: () -> Unit,
@@ -116,6 +123,8 @@ fun SubscriptionDetailContent(
         item {
             SubscriptionInfoCard(
                     subscription = subscription,
+                    category = category,
+                    isUncategorized = isUncategorized,
                     daysUntil = daysUntil,
                     isOverdue = isOverdue,
                     isUrgent = isUrgent,
@@ -165,6 +174,8 @@ fun SubscriptionDetailContent(
 @Composable
 fun SubscriptionInfoCard(
         subscription: Subscription,
+        category: Category?,
+        isUncategorized: Boolean,
         daysUntil: Long,
         isOverdue: Boolean,
         isUrgent: Boolean,
@@ -225,6 +236,40 @@ fun SubscriptionInfoCard(
                     )
                 }
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            Text(
+                    text = stringResource(R.string.category),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+
+            Spacer(modifier = Modifier.height(4.dp))
+
+            val categoryLabel =
+                    if (isUncategorized) {
+                        stringResource(R.string.no_category)
+                    } else {
+                        category?.name ?: stringResource(R.string.no_category)
+                    }
+            Text(
+                    text = categoryLabel,
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight =
+                            if (!isUncategorized && category != null) {
+                                FontWeight.Medium
+                            } else {
+                                FontWeight.Normal
+                            },
+                    color =
+                            when {
+                                isUncategorized -> MaterialTheme.colorScheme.onSurfaceVariant
+                                !subscription.isActive ->
+                                        MaterialTheme.colorScheme.onSurfaceVariant
+                                else -> MaterialTheme.colorScheme.onSurface
+                            }
+            )
 
             Spacer(modifier = Modifier.height(16.dp))
 

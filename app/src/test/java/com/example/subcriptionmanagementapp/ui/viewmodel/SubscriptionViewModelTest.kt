@@ -3,10 +3,12 @@ package com.example.subcriptionmanagementapp.ui.viewmodel
 import androidx.arch.core.executor.testing.InstantTaskExecutorRule
 import app.cash.turbine.test
 import com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
+import com.example.subcriptionmanagementapp.data.local.entity.Category
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.data.manager.CurrencyRateManager
 import com.example.subcriptionmanagementapp.domain.usecase.category.AddCategoryUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.category.GetAllCategoriesUseCase
+import com.example.subcriptionmanagementapp.domain.usecase.category.GetCategoryUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.category.SeedDefaultCategoriesUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.settings.GetSelectedCurrencyUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.AddSubscriptionUseCase
@@ -24,8 +26,10 @@ import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
 import org.junit.Assert.assertNull
+import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
@@ -65,6 +69,8 @@ class SubscriptionViewModelTest {
 
     @Mock private lateinit var getAllCategoriesUseCase: GetAllCategoriesUseCase
 
+    @Mock private lateinit var getCategoryUseCase: GetCategoryUseCase
+
     @Mock private lateinit var addCategoryUseCase: AddCategoryUseCase
 
     @Mock private lateinit var seedDefaultCategoriesUseCase: SeedDefaultCategoriesUseCase
@@ -82,6 +88,7 @@ class SubscriptionViewModelTest {
         whenever(getAllSubscriptionsUseCase()).thenReturn(flowOf(emptyList()))
         whenever(getActiveSubscriptionsUseCase()).thenReturn(flowOf(emptyList()))
         whenever(getAllCategoriesUseCase()).thenReturn(flowOf(emptyList()))
+        whenever(getCategoryUseCase.invoke(any())).thenReturn(flowOf(null))
         whenever(getSelectedCurrencyUseCase()).thenReturn(flowOf("USD"))
         whenever(getMonthlySpendingUseCase()).thenReturn(flowOf(0.0))
         runBlocking {
@@ -100,6 +107,7 @@ class SubscriptionViewModelTest {
                         getSubscriptionsByCategoryUseCase,
                         searchSubscriptionsUseCase,
                         getAllCategoriesUseCase,
+                        getCategoryUseCase,
                         addCategoryUseCase,
                         seedDefaultCategoriesUseCase,
                         getSelectedCurrencyUseCase,
@@ -117,6 +125,7 @@ class SubscriptionViewModelTest {
                 getSubscriptionsByCategoryUseCase,
                 searchSubscriptionsUseCase,
                 getAllCategoriesUseCase,
+                getCategoryUseCase,
                 addCategoryUseCase,
                 seedDefaultCategoriesUseCase,
                 getSelectedCurrencyUseCase,
@@ -176,6 +185,52 @@ class SubscriptionViewModelTest {
         }
 
         verify(getSubscriptionUseCase).invoke(10)
+    }
+
+    @Test
+    fun `loadSubscription should update selectedCategory when available`() = runTest {
+        val subscription = sampleSubscription(id = 11, name = "Paramount+")
+        val category =
+                Category(
+                        id = subscription.categoryId!!,
+                        name = "Entertainment",
+                        color = "#FFAA00",
+                        icon = null,
+                        isPredefined = true,
+                        keywords = "streaming",
+                        createdAt = DEFAULT_TIMESTAMP,
+                        updatedAt = DEFAULT_TIMESTAMP
+                )
+        whenever(getSubscriptionUseCase(11)).thenReturn(flowOf(subscription))
+        whenever(getCategoryUseCase.invoke(subscription.categoryId!!)).thenReturn(flowOf(category))
+
+        viewModel.loadSubscription(11)
+
+        viewModel.selectedCategory.test {
+            skipItems(1)
+            assertEquals(category, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+
+        viewModel.isSelectedSubscriptionUncategorized.test {
+            skipItems(1)
+            assertFalse(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `loadSubscription without category marks state as uncategorized`() = runTest {
+        val subscription = sampleSubscription(id = 12, name = "No Category", categoryId = null)
+        whenever(getSubscriptionUseCase(12)).thenReturn(flowOf(subscription))
+
+        viewModel.loadSubscription(12)
+
+        viewModel.isSelectedSubscriptionUncategorized.test {
+            skipItems(1)
+            assertTrue(awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
     }
 
     @Test
@@ -322,7 +377,8 @@ class SubscriptionViewModelTest {
             id: Long,
             name: String,
             currency: String = "USD",
-            nextBillingOffsetDays: Long = 30
+            nextBillingOffsetDays: Long = 30,
+            categoryId: Long? = 1L
     ): Subscription {
         val baseTime = DEFAULT_TIMESTAMP
         val nextBillingDate = baseTime + nextBillingOffsetDays * ONE_DAY_MILLIS
@@ -340,7 +396,7 @@ class SubscriptionViewModelTest {
                 reminderHour = Subscription.DEFAULT_REMINDER_HOUR,
                 reminderMinute = Subscription.DEFAULT_REMINDER_MINUTE,
                 isActive = true,
-                categoryId = 1L,
+                categoryId = categoryId,
                 websiteUrl = "https://example.com",
                 appPackageName = "com.example",
                 notes = null,
