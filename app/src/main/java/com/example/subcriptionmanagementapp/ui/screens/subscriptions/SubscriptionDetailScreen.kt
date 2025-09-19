@@ -1,5 +1,7 @@
 package com.example.subcriptionmanagementapp.ui.screens.subscriptions
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -12,6 +14,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -48,7 +51,8 @@ fun SubscriptionDetailScreen(
     val error by viewModel.error.collectAsStateWithLifecycle()
     val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
     val category by viewModel.selectedCategory.collectAsStateWithLifecycle()
-    val isUncategorized by viewModel.isSelectedSubscriptionUncategorized.collectAsStateWithLifecycle()
+    val isUncategorized by
+            viewModel.isSelectedSubscriptionUncategorized.collectAsStateWithLifecycle()
 
     LaunchedEffect(subscriptionId) { viewModel.loadSubscription(subscriptionId) }
 
@@ -91,7 +95,7 @@ fun SubscriptionDetailScreen(
                                     )
                                 },
                                 onDeleteClick = {
-                                    viewModel.deleteSubscription(currentSubscription)
+                                    viewModel.deleteSubscription(currentSubscription.id)
                                     navController.popBackStack()
                                 },
                                 onToggleReminder = {
@@ -113,6 +117,7 @@ fun SubscriptionDetailContent(
         onDeleteClick: () -> Unit,
         onToggleReminder: () -> Unit
 ) {
+    val context = LocalContext.current
     val daysUntil = subscription.nextBillingDate.getDaysUntil()
     val isOverdue = daysUntil < 0L
     val isUrgent = daysUntil <= 3L
@@ -130,7 +135,8 @@ fun SubscriptionDetailContent(
                     daysUntil = daysUntil,
                     isOverdue = isOverdue,
                     isUrgent = isUrgent,
-                    selectedCurrency = selectedCurrency
+                    selectedCurrency = selectedCurrency,
+                    context = context
             )
         }
 
@@ -181,7 +187,8 @@ fun SubscriptionInfoCard(
         daysUntil: Long,
         isOverdue: Boolean,
         isUrgent: Boolean,
-        selectedCurrency: String
+        selectedCurrency: String,
+        context: android.content.Context
 ) {
     Card(
             modifier = Modifier.fillMaxWidth(),
@@ -386,14 +393,51 @@ fun SubscriptionInfoCard(
                 ) {
                     if (subscription.websiteUrl != null) {
                         OutlinedButton(
-                                onClick = { /* Open website */},
+                                onClick = {
+                                    val websiteUrl =
+                                            if (subscription.websiteUrl.startsWith("http://") ||
+                                                            subscription.websiteUrl.startsWith(
+                                                                    "https://"
+                                                            )
+                                            ) {
+                                                subscription.websiteUrl
+                                            } else {
+                                                "https://${subscription.websiteUrl}"
+                                            }
+                                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(websiteUrl))
+                                    if (intent.resolveActivity(context.packageManager) != null) {
+                                        context.startActivity(intent)
+                                    }
+                                },
                                 modifier = Modifier.weight(1f)
                         ) { Text(stringResource(R.string.open_website)) }
                     }
 
                     if (subscription.appPackageName != null) {
                         OutlinedButton(
-                                onClick = { /* Open app */},
+                                onClick = {
+                                    val intent =
+                                            context.packageManager.getLaunchIntentForPackage(
+                                                    subscription.appPackageName
+                                            )
+                                    if (intent != null) {
+                                        context.startActivity(intent)
+                                    } else {
+                                        val playStoreIntent =
+                                                Intent(
+                                                        Intent.ACTION_VIEW,
+                                                        Uri.parse(
+                                                                "market://details?id=${subscription.appPackageName}"
+                                                        )
+                                                )
+                                        if (playStoreIntent.resolveActivity(
+                                                        context.packageManager
+                                                ) != null
+                                        ) {
+                                            context.startActivity(playStoreIntent)
+                                        }
+                                    }
+                                },
                                 modifier = Modifier.weight(1f)
                         ) { Text(stringResource(R.string.open_app)) }
                     }

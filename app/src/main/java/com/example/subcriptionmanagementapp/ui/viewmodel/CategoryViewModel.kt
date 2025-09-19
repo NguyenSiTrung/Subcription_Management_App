@@ -90,6 +90,21 @@ class CategoryViewModel @Inject constructor(
         }
     }
 
+    fun createCategory(name: String, keywords: String?) {
+        val currentTime = System.currentTimeMillis()
+        val category = Category(
+            id = 0, // Room will generate ID
+            name = name,
+            color = "#757575", // Default gray color
+            icon = null, // Default no icon
+            isPredefined = false,
+            keywords = keywords,
+            createdAt = currentTime,
+            updatedAt = currentTime
+        )
+        addCategory(category)
+    }
+
     fun updateCategory(category: Category) {
         viewModelScope.launch {
             _isLoading.value = true
@@ -101,6 +116,19 @@ class CategoryViewModel @Inject constructor(
             } finally {
                 _isLoading.value = false
             }
+        }
+    }
+
+    fun updateCategory(id: Long, name: String, keywords: String?) {
+        // Get existing category to preserve other fields
+        val existingCategory = categories.value.find { it.id == id }
+        if (existingCategory != null) {
+            val category = existingCategory.copy(
+                name = name,
+                keywords = keywords,
+                updatedAt = System.currentTimeMillis()
+            )
+            updateCategory(category)
         }
     }
 

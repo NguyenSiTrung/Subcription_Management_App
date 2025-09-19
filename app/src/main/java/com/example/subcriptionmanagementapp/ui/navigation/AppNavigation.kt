@@ -72,6 +72,7 @@ fun AppNavigation(
         composable(Screen.CategoryList.route) {
             CategoryListScreen(navController = navController)
         }
+        
         composable(Screen.Statistics.route) {
             StatisticsScreen(navController = navController)
         }

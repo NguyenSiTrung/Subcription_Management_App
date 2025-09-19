@@ -13,8 +13,8 @@ import com.example.subcriptionmanagementapp.domain.usecase.category.GetCategoryU
 import com.example.subcriptionmanagementapp.domain.usecase.category.SeedDefaultCategoriesUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.settings.GetSelectedCurrencyUseCase
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.*
-import com.example.subcriptionmanagementapp.ui.model.FilterState
 import com.example.subcriptionmanagementapp.ui.model.CategoryFilter
+import com.example.subcriptionmanagementapp.ui.model.FilterState
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
@@ -158,23 +158,21 @@ constructor(
 
     private fun observeFilteredSubscriptions() {
         filterJob?.cancel()
-        filterJob = viewModelScope.launch {
-            combine(
-                _subscriptions,
-                _filterState,
-                _categories
-            ) { subscriptions, filterState, _ ->
-                applyFilters(subscriptions, filterState)
-            }
-            .collectLatest { filtered ->
-                _filteredSubscriptions.value = filtered
-            }
-        }
+        filterJob =
+                viewModelScope.launch {
+                    combine(_subscriptions, _filterState, _categories) {
+                            subscriptions,
+                            filterState,
+                            _ ->
+                        applyFilters(subscriptions, filterState)
+                    }
+                            .collectLatest { filtered -> _filteredSubscriptions.value = filtered }
+                }
     }
 
     private fun applyFilters(
-        subscriptions: List<Subscription>,
-        filterState: FilterState
+            subscriptions: List<Subscription>,
+            filterState: FilterState
     ): List<Subscription> {
         var filtered = subscriptions
 
@@ -194,22 +192,26 @@ constructor(
     private fun updateCategoryFilters(categories: List<Category>) {
         val currentFilter = _filterState.value
         val filters = mutableListOf<CategoryFilter>()
-        
+
         // Add "All Categories" filter
-        filters.add(CategoryFilter.ALL_CATEGORIES.copy(
-            isSelected = currentFilter.selectedCategoryId == null
-        ))
-        
+        filters.add(
+                CategoryFilter.ALL_CATEGORIES.copy(
+                        isSelected = currentFilter.selectedCategoryId == null
+                )
+        )
+
         // Add category filters
         categories.forEach { category ->
-            filters.add(CategoryFilter(
-                id = category.id,
-                name = category.name,
-                color = category.color,
-                isSelected = currentFilter.selectedCategoryId == category.id
-            ))
+            filters.add(
+                    CategoryFilter(
+                            id = category.id,
+                            name = category.name,
+                            color = category.color,
+                            isSelected = currentFilter.selectedCategoryId == category.id
+                    )
+            )
         }
-        
+
         _categoryFilters.value = filters
     }
 
@@ -284,9 +286,7 @@ constructor(
                                 _error.value = e.message ?: "Failed to load category"
                                 _selectedCategory.value = null
                             }
-                            .collectLatest { category ->
-                                _selectedCategory.value = category
-                            }
+                            .collectLatest { category -> _selectedCategory.value = category }
                 }
     }
 
@@ -322,11 +322,13 @@ constructor(
         }
     }
 
-    fun deleteSubscription(subscription: Subscription) {
+    fun deleteSubscription(subscriptionId: Long) {
         viewModelScope.launch {
             _isLoading.value = true
             try {
-                deleteSubscriptionUseCase(subscription)
+                getSubscriptionUseCase(subscriptionId).first()?.let { subscription ->
+                    deleteSubscriptionUseCase(subscription)
+                }
                 loadAllSubscriptions()
                 loadActiveSubscriptions()
             } catch (e: Exception) {
@@ -433,24 +435,24 @@ constructor(
     // Filter methods
     fun filterByCategory(categoryId: Long?) {
         val currentState = _filterState.value
-        val categoryName = if (categoryId == null) {
-            null
-        } else {
-            _categories.value.find { it.id == categoryId }?.name
-        }
-        
-        _filterState.value = currentState.copy(
-            selectedCategoryId = categoryId,
-            selectedCategoryName = categoryName
-        )
+        val categoryName =
+                if (categoryId == null) {
+                    null
+                } else {
+                    _categories.value.find { it.id == categoryId }?.name
+                }
+
+        _filterState.value =
+                currentState.copy(
+                        selectedCategoryId = categoryId,
+                        selectedCategoryName = categoryName
+                )
         updateCategoryFilters(_categories.value)
     }
 
     fun toggleActiveFilter() {
         val currentState = _filterState.value
-        _filterState.value = currentState.copy(
-            showActiveOnly = !currentState.showActiveOnly
-        )
+        _filterState.value = currentState.copy(showActiveOnly = !currentState.showActiveOnly)
     }
 
     fun clearFilters() {
@@ -463,6 +465,16 @@ constructor(
             null
         } else {
             _categories.value.find { it.id == categoryId }?.name
+        }
+    }
+
+    fun getCategoryById(
+            categoryId: Long?
+    ): com.example.subcriptionmanagementapp.data.local.entity.Category? {
+        return if (categoryId == null) {
+            null
+        } else {
+            _categories.value.find { it.id == categoryId }
         }
     }
 }

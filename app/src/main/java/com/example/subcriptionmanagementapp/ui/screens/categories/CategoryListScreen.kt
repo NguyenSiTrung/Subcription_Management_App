@@ -1,17 +1,35 @@
 package com.example.subcriptionmanagementapp.ui.screens.categories
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.grid.GridCells
+import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.grid.items
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.outlined.Edit
+import androidx.compose.material.icons.outlined.Delete
+import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.R
@@ -20,7 +38,6 @@ import com.example.subcriptionmanagementapp.ui.components.AppTopBar
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.components.NoCategoriesEmptyState
-import com.example.subcriptionmanagementapp.ui.navigation.Screen
 import com.example.subcriptionmanagementapp.ui.theme.EducationColor
 import com.example.subcriptionmanagementapp.ui.theme.FinanceColor
 import com.example.subcriptionmanagementapp.ui.theme.GamingColor
@@ -34,115 +51,402 @@ import com.example.subcriptionmanagementapp.ui.viewmodel.CategoryViewModel
 
 @Composable
 fun CategoryListScreen(
-        navController: NavController,
-        viewModel: CategoryViewModel = hiltViewModel()
+    navController: NavController,
+    viewModel: CategoryViewModel = hiltViewModel()
 ) {
     val categories by viewModel.categories.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
+    
+    var showCreateDialog by remember { mutableStateOf(false) }
+    var showEditDialog by remember { mutableStateOf<Category?>(null) }
 
     LaunchedEffect(Unit) { viewModel.loadCategories() }
 
     Scaffold(
-            topBar = {
-                AppTopBar(
-                        title = stringResource(R.string.categories),
-                        navController = navController,
-                        currentRoute = Screen.CategoryList.route,
-                        onAddClick = {
-                            // Navigate to add category screen
-                        }
+        topBar = {
+            AppTopBar(
+                title = stringResource(R.string.categories),
+                navController = navController,
+                currentRoute = "category_list"
+            )
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showCreateDialog = true },
+                containerColor = MaterialTheme.colorScheme.primary,
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                shape = RoundedCornerShape(16.dp),
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Add,
+                    contentDescription = stringResource(R.string.add_category),
+                    modifier = Modifier.size(24.dp)
                 )
             }
+        }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             when {
                 isLoading -> LoadingIndicator()
                 error != null -> ErrorMessage(message = error!!) { viewModel.loadCategories() }
                 categories.isEmpty() ->
-                        NoCategoriesEmptyState {
-                            // Navigate to add category screen
-                        }
+                    NoCategoriesEmptyState {
+                        showCreateDialog = true
+                    }
                 else ->
-                        CategoryListContent(
-                                categories = categories,
-                                onCategoryClick = { categoryId ->
-                                    // Navigate to category detail or filter subscriptions by
-                                    // category
-                                }
-                        )
+                    CategoryGridContent(
+                        categories = categories,
+                        onCategoryClick = { categoryId ->
+                            // Navigate to category detail or filter subscriptions by category
+                        },
+                        onCategoryEdit = { category ->
+                            showEditDialog = category
+                        },
+                        onCategoryDelete = { category ->
+                            viewModel.deleteCategory(category)
+                        }
+                    )
             }
+        }
+        
+        // Create Category Dialog
+        if (showCreateDialog) {
+            CreateCategoryDialog(
+                onDismiss = { showCreateDialog = false },
+                onCreate = { name, keywords ->
+                    viewModel.createCategory(name, keywords)
+                    showCreateDialog = false
+                }
+            )
+        }
+        
+        // Edit Category Dialog
+        showEditDialog?.let { category ->
+            EditCategoryDialog(
+                category = category,
+                onDismiss = { showEditDialog = null },
+                onUpdate = { name, keywords ->
+                    viewModel.updateCategory(category.id, name, keywords)
+                    showEditDialog = null
+                }
+            )
         }
     }
 }
 
 @Composable
-fun CategoryListContent(categories: List<Category>, onCategoryClick: (Long) -> Unit) {
-    LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(8.dp)
+fun CategoryGridContent(
+    categories: List<Category>,
+    onCategoryClick: (Long) -> Unit,
+    onCategoryEdit: (Category) -> Unit,
+    onCategoryDelete: (Category) -> Unit
+) {
+    LazyVerticalGrid(
+        columns = GridCells.Adaptive(minSize = 160.dp),
+        modifier = Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         items(categories) { category ->
-            CategoryListItem(category = category, onClick = { onCategoryClick(category.id) })
+            CategoryCard(
+                category = category,
+                onClick = { onCategoryClick(category.id) },
+                onEdit = { onCategoryEdit(category) },
+                onDelete = { onCategoryDelete(category) }
+            )
         }
     }
 }
 
 @Composable
-fun CategoryListItem(category: Category, onClick: () -> Unit) {
-    val categoryColor =
-            when (category.name.lowercase()) {
-                "streaming" -> StreamingColor
-                "music" -> MusicColor
-                "software" -> SoftwareColor
-                "gaming" -> GamingColor
-                "news" -> NewsColor
-                "education" -> EducationColor
-                "health" -> HealthColor
-                "finance" -> FinanceColor
-                else -> OtherColor
+fun CategoryCard(
+    category: Category,
+    onClick: () -> Unit,
+    onEdit: () -> Unit,
+    onDelete: () -> Unit
+) {
+    val categoryColor = when (category.name.lowercase()) {
+        "streaming" -> StreamingColor
+        "music" -> MusicColor
+        "software" -> SoftwareColor
+        "gaming" -> GamingColor
+        "news" -> NewsColor
+        "education" -> EducationColor
+        "health" -> HealthColor
+        "finance" -> FinanceColor
+        else -> OtherColor
+    }
+
+    val categoryIcon = when (category.name.lowercase()) {
+        "streaming" -> Icons.Outlined.Category
+        "music" -> Icons.Outlined.Category
+        "software" -> Icons.Outlined.Category
+        "gaming" -> Icons.Outlined.Category
+        "news" -> Icons.Outlined.Category
+        "education" -> Icons.Outlined.Category
+        "health" -> Icons.Outlined.Category
+        "finance" -> Icons.Outlined.Category
+        else -> Icons.Outlined.Category
+    }
+
+    var showMenu by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .aspectRatio(1f)
+            .clickable { onClick() },
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surface,
+            contentColor = MaterialTheme.colorScheme.onSurface
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 2.dp,
+            pressedElevation = 4.dp
+        )
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            // Icon and Color Indicator
+            Box(
+                modifier = Modifier
+                    .size(48.dp)
+                    .clip(RoundedCornerShape(12.dp))
+                    .background(
+                        brush = Brush.verticalGradient(
+                            colors = listOf(
+                                categoryColor.copy(alpha = 0.8f),
+                                categoryColor.copy(alpha = 0.4f)
+                            )
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = categoryIcon,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimary,
+                    modifier = Modifier.size(24.dp)
+                )
             }
 
-    Card(modifier = Modifier.fillMaxWidth().clickable { onClick() }) {
-        Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
+            // Category Name
+            Text(
+                text = category.name,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onSurface,
+                textAlign = TextAlign.Center,
+                maxLines = 2,
+                modifier = Modifier.padding(horizontal = 8.dp)
+            )
+
+            // Keywords
+            if (!category.keywords.isNullOrBlank()) {
+                Text(
+                    text = category.keywords!!,
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    textAlign = TextAlign.Center,
+                    maxLines = 2,
+                    modifier = Modifier.padding(horizontal = 4.dp)
+                )
+            }
+
+            // Predefined Badge and Actions
+            Row(
+                modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically
-        ) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Box(modifier = Modifier.size(16.dp).padding(end = 12.dp)) {
-                    androidx.compose.foundation.Canvas(modifier = Modifier.fillMaxSize()) {
-                        drawCircle(color = categoryColor)
-                    }
-                }
-
-                Column {
-                    Text(
-                            text = category.name,
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                    )
-
-                    if (category.keywords != null) {
-                        Spacer(modifier = Modifier.height(4.dp))
-
+            ) {
+                if (category.isPredefined) {
+                    Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = categoryColor.copy(alpha = 0.12f)
+                    ) {
                         Text(
-                                text = category.keywords!!,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            text = stringResource(R.string.predefined),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = categoryColor,
+                            modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
+                } else {
+                    Spacer(modifier = Modifier.width(24.dp))
                 }
-            }
 
-            if (category.isPredefined) {
-                Text(
-                        text = stringResource(R.string.predefined),
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
+                // Show menu only for non-predefined categories
+                if (!category.isPredefined) {
+                    Box {
+                        IconButton(
+                            onClick = { showMenu = true },
+                            modifier = Modifier.size(32.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.MoreVert,
+                                contentDescription = "More options",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.size(18.dp)
+                            )
+                        }
+
+                        DropdownMenu(
+                            expanded = showMenu,
+                            onDismissRequest = { showMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = stringResource(R.string.edit),
+                                        style = MaterialTheme.typography.bodyMedium
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Edit,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.primary
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    onEdit()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = {
+                                    Text(
+                                        text = stringResource(R.string.delete),
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.error
+                                    )
+                                },
+                                leadingIcon = {
+                                    Icon(
+                                        imageVector = Icons.Default.Delete,
+                                        contentDescription = null,
+                                        tint = MaterialTheme.colorScheme.error
+                                    )
+                                },
+                                onClick = {
+                                    showMenu = false
+                                    onDelete()
+                                }
+                            )
+                        }
+                    }
+                } else {
+                    Spacer(modifier = Modifier.width(32.dp))
+                }
             }
         }
     }
+}
+
+@Composable
+fun CreateCategoryDialog(
+    onDismiss: () -> Unit,
+    onCreate: (String, String?) -> Unit
+) {
+    var categoryName by remember { mutableStateOf("") }
+    var categoryKeywords by remember { mutableStateOf("") }
+    val isCreateEnabled = categoryName.trim().isNotEmpty()
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.create_category_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = categoryName,
+                    onValueChange = { categoryName = it },
+                    label = { Text(stringResource(R.string.category_name_label)) },
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = categoryKeywords,
+                    onValueChange = { categoryKeywords = it },
+                    label = { Text(stringResource(R.string.category_keywords_label)) },
+                    placeholder = {
+                        Text(stringResource(R.string.category_keywords_placeholder))
+                    },
+                    minLines = 1,
+                    maxLines = 3
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val trimmedName = categoryName.trim()
+                    val trimmedKeywords =
+                            categoryKeywords.trim().takeIf { it.isNotEmpty() }
+                    onCreate(trimmedName, trimmedKeywords)
+                },
+                enabled = isCreateEnabled
+            ) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
+    )
+}
+
+@Composable
+fun EditCategoryDialog(
+    category: Category,
+    onDismiss: () -> Unit,
+    onUpdate: (String, String?) -> Unit
+) {
+    var categoryName by remember { mutableStateOf(category.name) }
+    var categoryKeywords by remember { mutableStateOf(category.keywords ?: "") }
+    val isUpdateEnabled = categoryName.trim().isNotEmpty() && categoryName.trim() != category.name
+
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(stringResource(R.string.edit_category_title)) },
+        text = {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                OutlinedTextField(
+                    value = categoryName,
+                    onValueChange = { categoryName = it },
+                    label = { Text(stringResource(R.string.category_name_label)) },
+                    singleLine = true
+                )
+                OutlinedTextField(
+                    value = categoryKeywords,
+                    onValueChange = { categoryKeywords = it },
+                    label = { Text(stringResource(R.string.category_keywords_label)) },
+                    placeholder = {
+                        Text(stringResource(R.string.category_keywords_placeholder))
+                    },
+                    minLines = 1,
+                    maxLines = 3
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    val trimmedName = categoryName.trim()
+                    val trimmedKeywords =
+                            categoryKeywords.trim().takeIf { it.isNotEmpty() }
+                    onUpdate(trimmedName, trimmedKeywords)
+                },
+                enabled = isUpdateEnabled
+            ) {
+                Text(stringResource(R.string.save))
+            }
+        },
+        dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
+    )
 }
