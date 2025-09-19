@@ -276,6 +276,8 @@ class SubscriptionViewModelTest {
                 nextBillingDate = nextBillingDate,
                 endDate = null,
                 reminderDays = 3,
+                reminderHour = Subscription.DEFAULT_REMINDER_HOUR,
+                reminderMinute = Subscription.DEFAULT_REMINDER_MINUTE,
                 isActive = true,
                 categoryId = 1L,
                 websiteUrl = "https://example.com",

@@ -18,7 +18,7 @@ import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 
 @Database(
         entities = [Subscription::class, Category::class, Reminder::class, PaymentHistory::class],
-        version = 2,
+        version = 3,
         exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -31,7 +31,7 @@ abstract class AppDatabase : RoomDatabase() {
     companion object {
         @Volatile private var INSTANCE: AppDatabase? = null
 
-        private val MIGRATION_1_2 =
+        internal val MIGRATION_1_2 =
                 object : Migration(1, 2) {
                     override fun migrate(database: SupportSQLiteDatabase) {
                         database.execSQL(
@@ -114,6 +114,18 @@ abstract class AppDatabase : RoomDatabase() {
                     }
                 }
 
+        internal val MIGRATION_2_3 =
+                object : Migration(2, 3) {
+                    override fun migrate(database: SupportSQLiteDatabase) {
+                        database.execSQL(
+                                "ALTER TABLE `subscriptions` ADD COLUMN `reminder_hour` INTEGER NOT NULL DEFAULT ${Subscription.DEFAULT_REMINDER_HOUR}"
+                        )
+                        database.execSQL(
+                                "ALTER TABLE `subscriptions` ADD COLUMN `reminder_minute` INTEGER NOT NULL DEFAULT ${Subscription.DEFAULT_REMINDER_MINUTE}"
+                        )
+                    }
+                }
+
         fun getDatabase(context: Context): AppDatabase {
             return INSTANCE
                     ?: synchronized(this) {
@@ -123,7 +135,7 @@ abstract class AppDatabase : RoomDatabase() {
                                                 AppDatabase::class.java,
                                                 "subscription_management_database"
                                         )
-                                        .addMigrations(MIGRATION_1_2)
+                                        .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
                                         .build()
                         INSTANCE = instance
                         instance

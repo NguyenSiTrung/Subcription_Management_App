@@ -1,7 +1,9 @@
 package com.example.subcriptionmanagementapp.ui.screens.subscriptions
 
 import android.app.DatePickerDialog
+import android.app.TimePickerDialog
 import android.widget.Toast
+import android.text.format.DateFormat
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -116,6 +118,8 @@ fun AddEditSubscriptionScreen(
     var startDate by remember { mutableStateOf(System.currentTimeMillis()) }
     var nextBillingDate by remember { mutableStateOf(System.currentTimeMillis()) }
     var reminderDays by remember { mutableStateOf(3) }
+    var reminderHour by remember { mutableStateOf(Subscription.DEFAULT_REMINDER_HOUR) }
+    var reminderMinute by remember { mutableStateOf(Subscription.DEFAULT_REMINDER_MINUTE) }
     var isActive by remember { mutableStateOf(true) }
     var selectedCategory by remember { mutableStateOf<Category?>(null) }
     var notes by remember { mutableStateOf("") }
@@ -143,6 +147,8 @@ fun AddEditSubscriptionScreen(
             nextBillingDate = currentSubscription.nextBillingDate
             isActive = currentSubscription.isActive
             reminderDays = currentSubscription.reminderDays
+            reminderHour = currentSubscription.reminderHour
+            reminderMinute = currentSubscription.reminderMinute
             websiteUrl = currentSubscription.websiteUrl ?: ""
             appPackageName = currentSubscription.appPackageName ?: ""
             notes = currentSubscription.notes ?: ""
@@ -153,6 +159,8 @@ fun AddEditSubscriptionScreen(
                     initialCategoryId = null
                     hasAppliedInitialCategory = true
                     selectedCategory = null
+                    reminderHour = Subscription.DEFAULT_REMINDER_HOUR
+                    reminderMinute = Subscription.DEFAULT_REMINDER_MINUTE
                 }
     }
 
@@ -220,6 +228,12 @@ fun AddEditSubscriptionScreen(
                                 onIsActiveChange = { isActive = it },
                                 reminderDays = reminderDays,
                                 onReminderDaysChange = { reminderDays = it },
+                                reminderHour = reminderHour,
+                                reminderMinute = reminderMinute,
+                                onReminderTimeChange = { hour, minute ->
+                                    reminderHour = hour
+                                    reminderMinute = minute
+                                },
                                 websiteUrl = websiteUrl,
                                 onWebsiteUrlChange = { websiteUrl = it },
                                 appPackageName = appPackageName,
@@ -248,6 +262,8 @@ fun AddEditSubscriptionScreen(
                                                         nextBillingDate = nextBillingDate,
                                                         endDate = null,
                                                         reminderDays = reminderDays,
+                                                        reminderHour = reminderHour,
+                                                        reminderMinute = reminderMinute,
                                                         isActive = isActive,
                                                         categoryId = selectedCategory?.id
                                                                         ?: existingSubscription
@@ -301,6 +317,9 @@ fun AddEditSubscriptionContent(
         onIsActiveChange: (Boolean) -> Unit,
         reminderDays: Int,
         onReminderDaysChange: (Int) -> Unit,
+        reminderHour: Int,
+        reminderMinute: Int,
+        onReminderTimeChange: (Int, Int) -> Unit,
         websiteUrl: String,
         onWebsiteUrlChange: (String) -> Unit,
         appPackageName: String,
@@ -357,6 +376,16 @@ fun AddEditSubscriptionContent(
                     BillingCycle.DAILY to stringResource(R.string.daily)
             )
     val reminderQuickPicks = listOf(0, 1, 3, 7, 14)
+    val reminderTimeText =
+            remember(reminderHour, reminderMinute, context) {
+                val previewCalendar = Calendar.getInstance().apply {
+                    set(Calendar.HOUR_OF_DAY, reminderHour)
+                    set(Calendar.MINUTE, reminderMinute)
+                    set(Calendar.SECOND, 0)
+                    set(Calendar.MILLISECOND, 0)
+                }
+                DateFormat.getTimeFormat(context).format(previewCalendar.time)
+            }
     val isSaveEnabled = name.isNotBlank() && priceValue != null && priceValue > 0.0
 
     val datePickerDialog =
@@ -620,9 +649,18 @@ fun AddEditSubscriptionContent(
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
+                            val chipSpacing = 12.dp
+                            val colorScheme = MaterialTheme.colorScheme
+                            val chipColors =
+                                    FilterChipDefaults.filterChipColors(
+                                            selectedContainerColor = colorScheme.primaryContainer,
+                                            selectedLabelColor = colorScheme.onPrimaryContainer,
+                                            selectedLeadingIconColor = colorScheme.onPrimaryContainer
+                                    )
                             FlowRow(
-                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                                    modifier = Modifier.fillMaxWidth(),
+                                    horizontalArrangement = Arrangement.spacedBy(chipSpacing),
+                                    verticalArrangement = Arrangement.spacedBy(chipSpacing)
                             ) {
                                 val isNoneSelected = selectedCategory == null
                                 FilterChip(
@@ -638,18 +676,7 @@ fun AddEditSubscriptionContent(
                                                         )
                                                     }
                                                 } else null,
-                                        colors =
-                                                FilterChipDefaults.filterChipColors(
-                                                        selectedContainerColor =
-                                                                MaterialTheme.colorScheme
-                                                                        .primaryContainer,
-                                                        selectedLabelColor =
-                                                                MaterialTheme.colorScheme
-                                                                        .onPrimaryContainer,
-                                                        selectedLeadingIconColor =
-                                                                MaterialTheme.colorScheme
-                                                                        .onPrimaryContainer
-                                                )
+                                        colors = chipColors
                                 )
                                 categories.forEach { category ->
                                     val isSelected = category.id == selectedCategory?.id
@@ -661,24 +688,12 @@ fun AddEditSubscriptionContent(
                                                     if (isSelected) {
                                                         {
                                                             Icon(
-                                                                    imageVector =
-                                                                            Icons.Filled.Check,
+                                                                    imageVector = Icons.Filled.Check,
                                                                     contentDescription = null
                                                             )
                                                         }
                                                     } else null,
-                                            colors =
-                                                    FilterChipDefaults.filterChipColors(
-                                                            selectedContainerColor =
-                                                                    MaterialTheme.colorScheme
-                                                                            .primaryContainer,
-                                                            selectedLabelColor =
-                                                                    MaterialTheme.colorScheme
-                                                                            .onPrimaryContainer,
-                                                            selectedLeadingIconColor =
-                                                                    MaterialTheme.colorScheme
-                                                                            .onPrimaryContainer
-                                                    )
+                                            colors = chipColors
                                     )
                                 }
                             }
@@ -842,6 +857,44 @@ fun AddEditSubscriptionContent(
                                         onClick = { onReminderDaysChange(reminderDays + 1) }
                                 ) {
                                     Icon(imageVector = Icons.Filled.Add, contentDescription = null)
+                                }
+                            }
+                            Column(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                            ) {
+                                Text(
+                                        text = stringResource(R.string.reminder_time),
+                                        style = MaterialTheme.typography.labelMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                                OutlinedButton(
+                                        onClick = {
+                                            val is24Hour = DateFormat.is24HourFormat(context)
+                                            TimePickerDialog(
+                                                    context,
+                                                    { _, hourOfDay, minute ->
+                                                        onReminderTimeChange(hourOfDay, minute)
+                                                    },
+                                                    reminderHour,
+                                                    reminderMinute,
+                                                    is24Hour
+                                            )
+                                                    .show()
+                                        },
+                                        modifier = Modifier.fillMaxWidth()
+                                ) {
+                                    Icon(
+                                            imageVector = Icons.Outlined.Schedule,
+                                            contentDescription = null
+                                    )
+                                    Spacer(modifier = Modifier.width(12.dp))
+                                    Text(
+                                            text = reminderTimeText,
+                                            style = MaterialTheme.typography.bodyLarge,
+                                            overflow = TextOverflow.Ellipsis,
+                                            maxLines = 1
+                                    )
                                 }
                             }
                         }

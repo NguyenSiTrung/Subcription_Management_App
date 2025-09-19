@@ -7,6 +7,7 @@ import com.example.subcriptionmanagementapp.data.local.dao.SubscriptionDao
 import com.example.subcriptionmanagementapp.data.local.entity.Reminder
 import com.example.subcriptionmanagementapp.data.local.entity.ReminderType
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
+import java.util.Calendar
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.first
 import javax.inject.Inject
@@ -37,8 +38,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
 
         // Create reminder for the subscription
         if (subscription.reminderDays > 0) {
-            val reminderDate =
-                    subscription.nextBillingDate - (subscription.reminderDays * 24 * 60 * 60 * 1000)
+            val reminderDate = calculateReminderTimestamp(subscription)
             val reminder =
                     Reminder(
                             subscriptionId = subscriptionId,
@@ -62,9 +62,7 @@ class SubscriptionRepositoryImpl @Inject constructor(
         val reminders = reminderDao.getRemindersBySubscriptionId(subscription.id).first()
         for (reminder in reminders) {
             if (reminder.reminderType == ReminderType.RENEWAL) {
-                val newReminderDate =
-                        subscription.nextBillingDate -
-                                (subscription.reminderDays * 24 * 60 * 60 * 1000)
+                val newReminderDate = calculateReminderTimestamp(subscription)
                 val updatedReminder =
                         reminder.copy(
                                 reminderDate = newReminderDate,
@@ -110,5 +108,19 @@ class SubscriptionRepositoryImpl @Inject constructor(
 
     override suspend fun clearAllSubscriptions() {
         subscriptionDao.clearAllSubscriptions()
+    }
+
+    private fun calculateReminderTimestamp(subscription: Subscription): Long {
+        val safeHour = subscription.reminderHour.coerceIn(0, 23)
+        val safeMinute = subscription.reminderMinute.coerceIn(0, 59)
+        val calendar = Calendar.getInstance().apply {
+            timeInMillis = subscription.nextBillingDate
+            add(Calendar.DAY_OF_YEAR, -subscription.reminderDays)
+            set(Calendar.HOUR_OF_DAY, safeHour)
+            set(Calendar.MINUTE, safeMinute)
+            set(Calendar.SECOND, 0)
+            set(Calendar.MILLISECOND, 0)
+        }
+        return calendar.timeInMillis
     }
 }

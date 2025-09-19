@@ -1,10 +1,10 @@
 package com.example.subcriptionmanagementapp.data.local.entity
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.ForeignKey
 import androidx.room.Index
 import androidx.room.PrimaryKey
-import androidx.room.ColumnInfo
 
 @Entity(
     tableName = "subscriptions",
@@ -33,6 +33,8 @@ data class Subscription(
     @ColumnInfo(name = "next_billing_date") val nextBillingDate: Long,
     @ColumnInfo(name = "end_date") val endDate: Long?,
     @ColumnInfo(name = "reminder_days") val reminderDays: Int,
+    @ColumnInfo(name = "reminder_hour") val reminderHour: Int = DEFAULT_REMINDER_HOUR,
+    @ColumnInfo(name = "reminder_minute") val reminderMinute: Int = DEFAULT_REMINDER_MINUTE,
     @ColumnInfo(name = "is_active") val isActive: Boolean,
     @ColumnInfo(name = "category_id") val categoryId: Long?,
     @ColumnInfo(name = "website_url") val websiteUrl: String?,
@@ -40,4 +42,9 @@ data class Subscription(
     @ColumnInfo(name = "notes") val notes: String?,
     @ColumnInfo(name = "created_at") val createdAt: Long,
     @ColumnInfo(name = "updated_at") val updatedAt: Long
-)
+) {
+    companion object {
+        const val DEFAULT_REMINDER_HOUR = 9
+        const val DEFAULT_REMINDER_MINUTE = 0
+    }
+}

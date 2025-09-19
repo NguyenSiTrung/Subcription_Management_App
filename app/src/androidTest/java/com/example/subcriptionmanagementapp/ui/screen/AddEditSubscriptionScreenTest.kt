@@ -80,7 +80,11 @@ class AddEditSubscriptionScreenTest {
             .assertIsDisplayed()
         
         composeTestRule
-            .onNodeWithText("Reminder Days")
+            .onNodeWithText("Reminder Days Before")
+            .assertIsDisplayed()
+        
+        composeTestRule
+            .onNodeWithText("Reminder Time")
             .assertIsDisplayed()
         
         composeTestRule
