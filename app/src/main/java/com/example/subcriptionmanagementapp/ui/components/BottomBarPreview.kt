@@ -25,7 +25,7 @@ private fun BottomBarLightPreview() {
                     contentAlignment = Alignment.BottomCenter
             ) {
                 val navController = rememberNavController()
-                AppBottomBar(navController = navController, currentRoute = Screen.Home.route)
+                AppBottomBar(navController = navController, currentRoute = Screen.SubscriptionList.route)
             }
         }
     }
@@ -41,7 +41,7 @@ private fun BottomBarDarkPreview() {
                     contentAlignment = Alignment.BottomCenter
             ) {
                 val navController = rememberNavController()
-                AppBottomBar(navController = navController, currentRoute = Screen.Home.route)
+                AppBottomBar(navController = navController, currentRoute = Screen.SubscriptionList.route)
             }
         }
     }

@@ -28,12 +28,10 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.outlined.Analytics
 import androidx.compose.material.icons.outlined.Category
-import androidx.compose.material.icons.outlined.Home
 import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material.icons.outlined.Subscriptions
 import androidx.compose.material.icons.rounded.Analytics
 import androidx.compose.material.icons.rounded.Category
-import androidx.compose.material.icons.rounded.Home
 import androidx.compose.material.icons.rounded.Settings
 import androidx.compose.material.icons.rounded.Subscriptions
 import androidx.compose.material3.Badge
@@ -366,12 +364,6 @@ data class BottomNavItem(
 
 val bottomNavItems =
         listOf(
-                BottomNavItem(
-                        screen = Screen.Home,
-                        icon = Icons.Outlined.Home,
-                        selectedIcon = Icons.Rounded.Home,
-                        labelResId = R.string.home
-                ),
                 BottomNavItem(
                         screen = Screen.SubscriptionList,
                         icon = Icons.Outlined.Subscriptions,

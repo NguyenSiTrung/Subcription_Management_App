@@ -41,7 +41,6 @@ class MainActivity : ComponentActivity() {
                     bottomBar = {
                         // Only show bottom bar for main screens
                         when (currentRoute?.substringBefore("/")) {
-                            Screen.Home.route,
                             Screen.SubscriptionList.route,
                             Screen.CategoryList.route,
                             Screen.Statistics.route,

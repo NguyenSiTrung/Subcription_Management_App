@@ -9,7 +9,6 @@ import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.navArgument
-import com.example.subcriptionmanagementapp.ui.screens.HomeScreen
 import com.example.subcriptionmanagementapp.ui.screens.subscriptions.SubscriptionListScreen
 import com.example.subcriptionmanagementapp.ui.screens.subscriptions.SubscriptionDetailScreen
 import com.example.subcriptionmanagementapp.ui.screens.subscriptions.AddEditSubscriptionScreen
@@ -27,14 +26,11 @@ fun AppNavigation(
 ) {
     NavHost(
         navController = navController,
-        startDestination = Screen.Home.route,
+        startDestination = Screen.SubscriptionList.route,
         modifier = Modifier
             .padding(paddingValues)
             .consumeWindowInsets(paddingValues)
     ) {
-        composable(Screen.Home.route) {
-            HomeScreen(navController = navController)
-        }
         composable(Screen.SubscriptionList.route) {
             SubscriptionListScreen(navController = navController)
         }
@@ -89,7 +85,6 @@ fun AppNavigation(
 }
 
 sealed class Screen(val route: String) {
-    object Home : Screen("home")
     object SubscriptionList : Screen("subscription_list")
     object SubscriptionDetail : Screen("subscription_detail/{subscriptionId}") {
         fun createRoute(subscriptionId: Long) = "subscription_detail/$subscriptionId"

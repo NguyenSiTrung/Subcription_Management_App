@@ -10,6 +10,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material3.AssistChip
@@ -19,6 +21,7 @@ import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -43,7 +46,9 @@ fun CategoryFilterRow(
     onFilterClick: (CategoryFilter) -> Unit,
     onActiveFilterToggle: () -> Unit,
     modifier: Modifier = Modifier,
-    onClearFilters: (() -> Unit)? = null
+    onClearFilters: (() -> Unit)? = null,
+    isExpanded: Boolean = true,
+    onExpandToggle: (() -> Unit)? = null
 ) {
     val selectedCategories = filters.filter { it.isSelected && it.id != CategoryFilter.ALL_CATEGORIES.id }
     val hasActiveFilters = selectedCategories.isNotEmpty()
@@ -155,32 +160,56 @@ fun CategoryFilterRow(
                             )
                         )
                     }
+
+                    if (onExpandToggle != null) {
+                        IconButton(onClick = { onExpandToggle() }) {
+                            val (icon, description) =
+                                if (isExpanded) {
+                                    Icons.Default.ExpandLess to stringResource(R.string.collapse_filters)
+                                } else {
+                                    Icons.Default.ExpandMore to stringResource(R.string.expand_filters)
+                                }
+                            Icon(
+                                imageVector = icon,
+                                contentDescription = description,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
-
-            FlowRow(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
+            AnimatedVisibility(
+                visible = isExpanded,
+                enter = fadeIn(),
+                exit = fadeOut()
             ) {
-                filters.forEach { filter ->
-                    val displayFilter = if (filter.id == CategoryFilter.ALL_CATEGORIES.id) {
-                        filter.copy(name = stringResource(R.string.all_categories))
-                    } else {
-                        filter
+                Column {
+                    Spacer(modifier = Modifier.height(16.dp))
+
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                        verticalArrangement = Arrangement.spacedBy(12.dp)
+                    ) {
+                        filters.forEach { filter ->
+                            val displayFilter = if (filter.id == CategoryFilter.ALL_CATEGORIES.id) {
+                                filter.copy(name = stringResource(R.string.all_categories))
+                            } else {
+                                filter
+                            }
+
+                            CategoryFilterChip(
+                                filter = displayFilter,
+                                onClick = { onFilterClick(filter) }
+                            )
+                        }
                     }
 
-                    CategoryFilterChip(
-                        filter = displayFilter,
-                        onClick = { onFilterClick(filter) }
-                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
                 }
             }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f))
         }
     }
 }
@@ -228,7 +257,8 @@ private fun CategoryFilterRowPreview() {
             showActiveOnly = false,
             onFilterClick = { },
             onActiveFilterToggle = { },
-            onClearFilters = { }
+            onClearFilters = { },
+            onExpandToggle = { }
         )
     }
 }
@@ -264,7 +294,8 @@ private fun CategoryFilterRowActivePreview() {
             showActiveOnly = true,
             onFilterClick = { },
             onActiveFilterToggle = { },
-            onClearFilters = { }
+            onClearFilters = { },
+            onExpandToggle = { }
         )
     }
 }

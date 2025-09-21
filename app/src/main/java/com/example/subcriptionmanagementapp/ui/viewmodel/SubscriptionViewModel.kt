@@ -15,6 +15,7 @@ import com.example.subcriptionmanagementapp.domain.usecase.settings.GetSelectedC
 import com.example.subcriptionmanagementapp.domain.usecase.subscription.*
 import com.example.subcriptionmanagementapp.ui.model.CategoryFilter
 import com.example.subcriptionmanagementapp.ui.model.FilterState
+import com.example.subcriptionmanagementapp.ui.model.SubscriptionListTab
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
@@ -93,6 +94,12 @@ constructor(
     private val _filteredSubscriptions = MutableStateFlow<List<Subscription>>(emptyList())
     val filteredSubscriptions: StateFlow<List<Subscription>> = _filteredSubscriptions.asStateFlow()
 
+    private val _upcomingSubscriptions = MutableStateFlow<List<Subscription>>(emptyList())
+    val upcomingSubscriptions: StateFlow<List<Subscription>> = _upcomingSubscriptions.asStateFlow()
+
+    private val _selectedTab = MutableStateFlow(SubscriptionListTab.UPCOMING)
+    val selectedTab: StateFlow<SubscriptionListTab> = _selectedTab.asStateFlow()
+
     private var allSubscriptionsJob: Job? = null
     private var activeSubscriptionsJob: Job? = null
     private var subscriptionJob: Job? = null
@@ -106,6 +113,7 @@ constructor(
         observeMonthlySpending()
         observeConvertedSubscriptions()
         observeFilteredSubscriptions()
+        observeUpcomingSubscriptions()
         loadCategories()
     }
 
@@ -168,6 +176,19 @@ constructor(
                     }
                             .collectLatest { filtered -> _filteredSubscriptions.value = filtered }
                 }
+    }
+
+    private fun observeUpcomingSubscriptions() {
+        viewModelScope.launch {
+            _subscriptions.collectLatest { subscriptionList ->
+                val now = System.currentTimeMillis()
+                _upcomingSubscriptions.value =
+                        subscriptionList
+                                .filter { it.isActive }
+                                .filter { it.nextBillingDate >= now }
+                                .sortedBy { it.nextBillingDate }
+            }
+        }
     }
 
     private fun applyFilters(
@@ -430,6 +451,10 @@ constructor(
 
     fun clearError() {
         _error.value = null
+    }
+
+    fun selectTab(tab: SubscriptionListTab) {
+        _selectedTab.value = tab
     }
 
     // Filter methods

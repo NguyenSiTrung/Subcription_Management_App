@@ -1,9 +1,6 @@
 package com.example.subcriptionmanagementapp.ui.components
 
-import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,27 +11,14 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
-import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.platform.LocalView
-import androidx.compose.ui.unit.IntOffset
-import androidx.compose.ui.window.Popup
-import androidx.compose.ui.window.PopupProperties
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.CenterAlignedTopAppBar
-import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -42,11 +26,8 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBarDefaults
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -55,7 +36,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
@@ -77,24 +57,12 @@ fun AppTopBar(
     onSearchClick: (() -> Unit)? = null,
     onAddClick: (() -> Unit)? = null
 ) {
-    var showMenu by remember { mutableStateOf(false) }
     val colorScheme = MaterialTheme.colorScheme
     val typography = MaterialTheme.typography
-
-    LaunchedEffect(showActions) {
-        if (!showActions && showMenu) {
-            showMenu = false
-        }
-    }
-
-    LaunchedEffect(currentRoute) {
-        showMenu = false
-    }
 
     val normalizedRoute = currentRoute?.substringBefore("/") ?: currentRoute
 
     val subtitle = when (normalizedRoute) {
-        Screen.Home.route -> stringResource(R.string.home_top_bar_subtitle)
         Screen.SubscriptionList.route -> stringResource(R.string.subscriptions_top_bar_subtitle)
         subscriptionDetailBaseRoute -> stringResource(R.string.subscription_detail_top_bar_subtitle)
         addEditSubscriptionBaseRoute -> stringResource(R.string.add_subscription_top_bar_subtitle)
@@ -181,62 +149,11 @@ fun AppTopBar(
                             }
                         }
 
-                        Box {
-                            TopBarIconButton(
-                                onClick = { showMenu = !showMenu },
-                                icon = Icons.Filled.MoreVert,
-                                contentDescription = stringResource(R.string.more_options)
-                            )
-
-                            ModalDropdownLayer(
-                                expanded = showMenu,
-                                onDismiss = { showMenu = false }
-                            ) {
-                                Surface(
-                                    shape = RoundedCornerShape(24.dp),
-                                    color = colorScheme.surface,
-                                    tonalElevation = 0.dp,
-                                    shadowElevation = 18.dp,
-                                    border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.08f))
-                                ) {
-                                    Column(
-                                        modifier =
-                                            Modifier
-                                                .widthIn(min = 220.dp)
-                                                .padding(vertical = 12.dp)
-                                    ) {
-                                        Text(
-                                            text = stringResource(R.string.menu_quick_actions),
-                                            style = typography.labelMedium.copy(fontWeight = FontWeight.SemiBold),
-                                            color = colorScheme.primary,
-                                            modifier = Modifier.padding(horizontal = 20.dp)
-                                        )
-
-                                        Spacer(modifier = Modifier.height(8.dp))
-
-                                        OverflowMenuItem(
-                                            title = stringResource(R.string.settings),
-                                            subtitle = stringResource(R.string.settings_menu_subtitle),
-                                            icon = Icons.Outlined.Settings,
-                                            accentColor = colorScheme.primary
-                                        ) {
-                                            showMenu = false
-                                            navController.navigate(Screen.Settings.route)
-                                        }
-
-                                        OverflowMenuItem(
-                                            title = stringResource(R.string.about),
-                                            subtitle = stringResource(R.string.about_menu_subtitle),
-                                            icon = Icons.Outlined.Info,
-                                            accentColor = colorScheme.secondary
-                                        ) {
-                                            showMenu = false
-                                            navController.navigate(Screen.About.route)
-                                        }
-                                    }
-                                }
-                            }
-                        }
+                        TopBarIconButton(
+                            onClick = { navController.navigate(Screen.About.route) },
+                            icon = Icons.Outlined.Info,
+                            contentDescription = stringResource(R.string.about)
+                        )
                     }
                 }
             },
@@ -251,130 +168,6 @@ fun AppTopBar(
     }
 }
 
-@Composable
-private fun OverflowMenuItem(
-    title: String,
-    subtitle: String,
-    icon: ImageVector,
-    accentColor: Color,
-    onClick: () -> Unit
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    val typography = MaterialTheme.typography
-    val containerShape = RoundedCornerShape(18.dp)
-    val interactionSource = remember { MutableInteractionSource() }
-
-    Surface(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 4.dp),
-        shape = containerShape,
-        tonalElevation = 3.dp,
-        shadowElevation = 0.dp,
-        color = colorScheme.surface,
-        border = BorderStroke(1.dp, colorScheme.outline.copy(alpha = 0.1f))
-    ) {
-        Row(
-            modifier =
-                Modifier
-                    .fillMaxWidth()
-                    .clip(containerShape)
-                    .clickable(
-                        interactionSource = interactionSource,
-                        indication = null,
-                        role = Role.Button,
-                        onClick = onClick
-                    )
-                    .padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier =
-                    Modifier
-                        .size(42.dp)
-                        .clip(RoundedCornerShape(14.dp))
-                        .background(accentColor.copy(alpha = 0.12f)),
-                contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                    imageVector = icon,
-                    contentDescription = null,
-                    tint = accentColor
-                )
-            }
-
-            Spacer(modifier = Modifier.width(16.dp))
-
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = title,
-                    style = typography.bodyLarge.copy(fontWeight = FontWeight.SemiBold),
-                    color = colorScheme.onSurface
-                )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = subtitle,
-                    style = typography.bodySmall,
-                    color = colorScheme.onSurfaceVariant,
-                    maxLines = 2,
-                    overflow = TextOverflow.Ellipsis
-                )
-            }
-
-            Spacer(modifier = Modifier.width(12.dp))
-
-            Icon(
-                imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                contentDescription = null,
-                tint = colorScheme.outline
-            )
-        }
-    }
-}
-
-@Composable
-private fun ModalDropdownLayer(
-    expanded: Boolean,
-    onDismiss: () -> Unit,
-    dropdownContent: @Composable () -> Unit
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    
-    if (expanded) {
-        Popup(
-            onDismissRequest = onDismiss,
-            properties = PopupProperties(
-                dismissOnBackPress = true,
-                dismissOnClickOutside = true,
-                focusable = true
-            )
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(colorScheme.scrim.copy(alpha = 0.32f))
-                    .clickable(
-                        indication = null,
-                        interactionSource = remember { MutableInteractionSource() },
-                        onClick = onDismiss
-                    )
-            ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.TopEnd
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .padding(top = 80.dp, end = 16.dp)
-                            .widthIn(max = 300.dp)
-                    ) {
-                        dropdownContent()
-                    }
-                }
-            }
-        }
-    }
-}
 
 @Composable
 private fun TopBarIconButton(

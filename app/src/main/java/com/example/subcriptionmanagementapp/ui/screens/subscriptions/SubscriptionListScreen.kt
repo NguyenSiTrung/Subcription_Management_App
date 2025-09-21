@@ -1,60 +1,92 @@
 package com.example.subcriptionmanagementapp.ui.screens.subscriptions
 
-import androidx.compose.animation.*
-import androidx.compose.animation.core.*
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.scaleIn
+import androidx.compose.animation.scaleOut
+import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ElevatedButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Tab
+import androidx.compose.material3.TabRow
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.R
+import com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
-import com.example.subcriptionmanagementapp.ui.components.*
+import com.example.subcriptionmanagementapp.ui.components.AppTopBar
+import com.example.subcriptionmanagementapp.ui.components.CategoryFilterRow
+import com.example.subcriptionmanagementapp.ui.components.ModernErrorState
+import com.example.subcriptionmanagementapp.ui.components.ModernFilterEmptyState
+import com.example.subcriptionmanagementapp.ui.components.ModernLoadingState
+import com.example.subcriptionmanagementapp.ui.components.ModernNoSubscriptionsEmptyState
+import com.example.subcriptionmanagementapp.ui.components.ModernSubscriptionCard
 import com.example.subcriptionmanagementapp.ui.model.CategoryFilter
 import com.example.subcriptionmanagementapp.ui.model.FilterState
+import com.example.subcriptionmanagementapp.ui.model.SubscriptionListTab
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
-import com.example.subcriptionmanagementapp.ui.theme.*
+import com.example.subcriptionmanagementapp.ui.theme.ErrorColor
+import com.example.subcriptionmanagementapp.ui.theme.WarningColor
 import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
+import com.example.subcriptionmanagementapp.util.formatCurrency
+import com.example.subcriptionmanagementapp.util.formatDate
+import com.example.subcriptionmanagementapp.util.getDaysUntil
 
 @Composable
 fun SubscriptionListScreen(
-        navController: NavController,
-        viewModel: SubscriptionViewModel = hiltViewModel()
+    navController: NavController,
+    viewModel: SubscriptionViewModel = hiltViewModel()
 ) {
-    val subscriptions by viewModel.filteredSubscriptions.collectAsStateWithLifecycle()
+    val filteredSubscriptions by viewModel.filteredSubscriptions.collectAsStateWithLifecycle()
+    val allSubscriptions by viewModel.subscriptions.collectAsStateWithLifecycle()
+    val upcomingSubscriptions by viewModel.upcomingSubscriptions.collectAsStateWithLifecycle()
+    val selectedTab by viewModel.selectedTab.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
     val categoryFilters by viewModel.categoryFilters.collectAsStateWithLifecycle()
     val filterState by viewModel.filterState.collectAsStateWithLifecycle()
 
-    // Calculate statistics
-    val totalSubscriptions = subscriptions.size
-    val activeSubscriptions = subscriptions.count { it.isActive }
-    val totalMonthlyCost =
-            remember(subscriptions) {
-                subscriptions.filter { it.isActive }.sumOf { subscription ->
-                    when (subscription.billingCycle) {
-                        com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
-                                .MONTHLY -> subscription.price
-                        com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
-                                .YEARLY -> subscription.price / 12
-                        com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
-                                .WEEKLY -> subscription.price * 4.33
-                        com.example.subcriptionmanagementapp.data.local.entity.BillingCycle.DAILY ->
-                                subscription.price * 30
-                    }
-                }
+    var isCategoryFilterExpanded by rememberSaveable { mutableStateOf(true) }
+
+    val totalSubscriptions = allSubscriptions.size
+    val activeSubscriptions = allSubscriptions.count { it.isActive }
+    val totalMonthlyCost = remember(allSubscriptions) {
+        allSubscriptions.filter { it.isActive }.sumOf { subscription ->
+            when (subscription.billingCycle) {
+                BillingCycle.MONTHLY -> subscription.price
+                BillingCycle.YEARLY -> subscription.price / 12
+                BillingCycle.WEEKLY -> subscription.price * 4.33
+                BillingCycle.DAILY -> subscription.price * 30
             }
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.loadAllSubscriptions()
@@ -62,123 +94,81 @@ fun SubscriptionListScreen(
     }
 
     Scaffold(
-            topBar = {
-                AppTopBar(
-                        title = stringResource(R.string.subscriptions),
-                        navController = navController,
-                        currentRoute = Screen.SubscriptionList.route,
-                        onSearchClick = {
-                            // Navigate to search screen
-                        },
-                        onAddClick = {
-                            navController.navigate(Screen.AddEditSubscription.createRoute(-1))
-                        }
-                )
-            },
-            floatingActionButton = {
-                AnimatedVisibility(
-                        visible = !isLoading && error == null,
-                        enter = fadeIn() + scaleIn(),
-                        exit = fadeOut() + scaleOut()
-                ) {
-                    FloatingActionButton(
-                            onClick = {
-                                navController.navigate(Screen.AddEditSubscription.createRoute(-1))
-                            },
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.padding(16.dp)
-                    ) {
-                        Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = stringResource(R.string.add_subscription)
-                        )
-                    }
+        topBar = {
+            AppTopBar(
+                title = stringResource(R.string.subscriptions),
+                navController = navController,
+                currentRoute = Screen.SubscriptionList.route,
+                onSearchClick = {
+                    // Navigate to search screen when implemented
                 }
-            }
+            )
+        }
     ) { paddingValues ->
         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
             when {
                 isLoading -> ModernLoadingState()
-                error != null ->
-                        ModernErrorState(
-                                message = error!!,
-                                onRetry = {
-                                    viewModel.clearError()
-                                    viewModel.loadAllSubscriptions()
-                                }
-                        )
-                subscriptions.isEmpty() ->
-                        Column(modifier = Modifier.fillMaxSize()) {
-                            // Filter Row - always show even when empty
-                            CategoryFilterRow(
-                                    filters = categoryFilters,
-                                    showActiveOnly = filterState.showActiveOnly,
-                                    onFilterClick = { filter ->
-                                        val categoryId =
-                                                if (filter.id ==
-                                                                com.example.subcriptionmanagementapp
-                                                                        .ui.model.CategoryFilter
-                                                                        .ALL_CATEGORIES
-                                                                        .id
-                                                )
-                                                        null
-                                                else filter.id
-                                        viewModel.filterByCategory(categoryId)
-                                    },
-                                    onActiveFilterToggle = { viewModel.toggleActiveFilter() }
-                            )
+                error != null -> ModernErrorState(
+                    message = error!!,
+                    onRetry = {
+                        viewModel.clearError()
+                        viewModel.loadAllSubscriptions()
+                    }
+                )
+                allSubscriptions.isEmpty() -> Column(modifier = Modifier.fillMaxSize()) {
+                    CategoryFilterRow(
+                        filters = categoryFilters,
+                        showActiveOnly = filterState.showActiveOnly,
+                        onFilterClick = { filter ->
+                            val categoryId = if (filter.id == CategoryFilter.ALL_CATEGORIES.id) null else filter.id
+                            viewModel.filterByCategory(categoryId)
+                        },
+                        onActiveFilterToggle = { viewModel.toggleActiveFilter() },
+                        isExpanded = isCategoryFilterExpanded,
+                        onExpandToggle = { isCategoryFilterExpanded = !isCategoryFilterExpanded }
+                    )
 
-                            // Empty state content
-                            Box(
-                                    modifier = Modifier.weight(1f),
-                                    contentAlignment = Alignment.Center
-                            ) {
-                                ModernNoSubscriptionsEmptyState {
-                                    navController.navigate(
-                                            Screen.AddEditSubscription.createRoute(-1)
-                                    )
-                                }
-                            }
+                    Box(
+                        modifier = Modifier.weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        ModernNoSubscriptionsEmptyState {
+                            navController.navigate(Screen.AddEditSubscription.createRoute(-1))
                         }
-                else ->
-                        ModernSubscriptionListContent(
-                                subscriptions = subscriptions,
-                                selectedCurrency = selectedCurrency,
-                                totalSubscriptions = totalSubscriptions,
-                                activeSubscriptions = activeSubscriptions,
-                                totalMonthlyCost = totalMonthlyCost,
-                                categoryFilters = categoryFilters,
-                                filterState = filterState,
-                                viewModel = viewModel,
-                                onSubscriptionClick = { subscriptionId ->
-                                    navController.navigate(
-                                            Screen.SubscriptionDetail.createRoute(subscriptionId)
-                                    )
-                                },
-                                onEditClick = { subscriptionId ->
-                                    navController.navigate(
-                                            Screen.AddEditSubscription.createRoute(subscriptionId)
-                                    )
-                                },
-                                onDeleteClick = { subscriptionId ->
-                                    // Handle delete - you might want to show a confirmation dialog
-                                    viewModel.deleteSubscription(subscriptionId)
-                                },
-                                onFilterClick = { filter ->
-                                    val categoryId =
-                                            if (filter.id ==
-                                                            com.example.subcriptionmanagementapp.ui
-                                                                    .model.CategoryFilter
-                                                                    .ALL_CATEGORIES
-                                                                    .id
-                                            )
-                                                    null
-                                            else filter.id
-                                    viewModel.filterByCategory(categoryId)
-                                },
-                                onActiveFilterToggle = { viewModel.toggleActiveFilter() }
-                        )
+                    }
+                }
+                else -> ModernSubscriptionListContent(
+                    filteredSubscriptions = filteredSubscriptions,
+                    selectedCurrency = selectedCurrency,
+                    totalSubscriptions = totalSubscriptions,
+                    activeSubscriptions = activeSubscriptions,
+                    totalMonthlyCost = totalMonthlyCost,
+                    upcomingSubscriptions = upcomingSubscriptions,
+                    categoryFilters = categoryFilters,
+                    filterState = filterState,
+                    selectedTab = selectedTab,
+                    isFilterExpanded = isCategoryFilterExpanded,
+                    viewModel = viewModel,
+                    onAddSubscription = {
+                        navController.navigate(Screen.AddEditSubscription.createRoute(-1))
+                    },
+                    onSubscriptionClick = { subscriptionId ->
+                        navController.navigate(Screen.SubscriptionDetail.createRoute(subscriptionId))
+                    },
+                    onEditClick = { subscriptionId ->
+                        navController.navigate(Screen.AddEditSubscription.createRoute(subscriptionId))
+                    },
+                    onDeleteClick = { subscriptionId ->
+                        viewModel.deleteSubscription(subscriptionId)
+                    },
+                    onTabSelected = { viewModel.selectTab(it) },
+                    onFilterClick = { filter ->
+                        val categoryId = if (filter.id == CategoryFilter.ALL_CATEGORIES.id) null else filter.id
+                        viewModel.filterByCategory(categoryId)
+                    },
+                    onActiveFilterToggle = { viewModel.toggleActiveFilter() },
+                    onFilterExpandToggle = { isCategoryFilterExpanded = !isCategoryFilterExpanded }
+                )
             }
         }
     }
@@ -186,58 +176,401 @@ fun SubscriptionListScreen(
 
 @Composable
 fun ModernSubscriptionListContent(
-        subscriptions: List<Subscription>,
-        selectedCurrency: String,
-        totalSubscriptions: Int,
-        activeSubscriptions: Int,
-        totalMonthlyCost: Double,
-        categoryFilters: List<com.example.subcriptionmanagementapp.ui.model.CategoryFilter>,
-        filterState: com.example.subcriptionmanagementapp.ui.model.FilterState,
-        viewModel: SubscriptionViewModel,
-        onSubscriptionClick: (Long) -> Unit,
-        onEditClick: (Long) -> Unit,
-        onDeleteClick: (Long) -> Unit,
-        onFilterClick: (com.example.subcriptionmanagementapp.ui.model.CategoryFilter) -> Unit,
-        onActiveFilterToggle: () -> Unit
+    filteredSubscriptions: List<Subscription>,
+    selectedCurrency: String,
+    totalSubscriptions: Int,
+    activeSubscriptions: Int,
+    totalMonthlyCost: Double,
+    upcomingSubscriptions: List<Subscription>,
+    categoryFilters: List<CategoryFilter>,
+    filterState: FilterState,
+    selectedTab: SubscriptionListTab,
+    isFilterExpanded: Boolean,
+    viewModel: SubscriptionViewModel,
+    onAddSubscription: () -> Unit,
+    onSubscriptionClick: (Long) -> Unit,
+    onEditClick: (Long) -> Unit,
+    onDeleteClick: (Long) -> Unit,
+    onTabSelected: (SubscriptionListTab) -> Unit,
+    onFilterClick: (CategoryFilter) -> Unit,
+    onActiveFilterToggle: () -> Unit,
+    onFilterExpandToggle: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        // Statistics Header
-        SubscriptionListHeader(
-                totalSubscriptions = totalSubscriptions,
-                activeSubscriptions = activeSubscriptions,
-                totalMonthlyCost = totalMonthlyCost,
-                selectedCurrency = selectedCurrency
+        SubscriptionOverviewSection(
+            totalSubscriptions = totalSubscriptions,
+            activeSubscriptions = activeSubscriptions,
+            totalMonthlyCost = totalMonthlyCost,
+            selectedCurrency = selectedCurrency,
+            onAddSubscription = onAddSubscription
         )
 
-        // Filter Row
-        CategoryFilterRow(
-                filters = categoryFilters,
-                showActiveOnly = filterState.showActiveOnly,
-                onFilterClick = onFilterClick,
-                onActiveFilterToggle = onActiveFilterToggle
+        Spacer(modifier = Modifier.height(12.dp))
+
+        SubscriptionListTabs(
+            selectedTab = selectedTab,
+            upcomingCount = upcomingSubscriptions.size,
+            totalCount = totalSubscriptions,
+            onTabSelected = onTabSelected
         )
 
-        // Subscription List
-        LazyColumn(
-                modifier = Modifier.fillMaxSize(),
-                contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+        Spacer(modifier = Modifier.height(12.dp))
+
+        when (selectedTab) {
+            SubscriptionListTab.UPCOMING -> {
+                UpcomingRenewalsSection(
+                    subscriptions = upcomingSubscriptions,
+                    selectedCurrency = selectedCurrency,
+                    onSubscriptionClick = onSubscriptionClick,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                )
+            }
+
+            SubscriptionListTab.ALL -> {
+                CategoryFilterRow(
+                    filters = categoryFilters,
+                    showActiveOnly = filterState.showActiveOnly,
+                    onFilterClick = onFilterClick,
+                    onActiveFilterToggle = onActiveFilterToggle,
+                    isExpanded = isFilterExpanded,
+                    onExpandToggle = onFilterExpandToggle
+                )
+
+                Spacer(modifier = Modifier.height(if (isFilterExpanded) 8.dp else 4.dp))
+
+                if (filteredSubscriptions.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        val filterName = when {
+                            filterState.selectedCategoryName != null -> filterState.selectedCategoryName!!
+                            filterState.showActiveOnly -> stringResource(R.string.active_subscriptions)
+                            else -> stringResource(R.string.filter_all_subscriptions)
+                        }
+
+                        if (filterState.selectedCategoryId != null || filterState.showActiveOnly) {
+                            ModernFilterEmptyState(filterName = filterName)
+                        } else {
+                            ModernNoSubscriptionsEmptyState(onAddSubscription = onAddSubscription)
+                        }
+                    }
+                } else {
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .weight(1f),
+                        contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        items(items = filteredSubscriptions) { subscription ->
+                            AnimatedVisibility(
+                                visible = true,
+                                enter = fadeIn() + scaleIn(),
+                                exit = fadeOut() + scaleOut()
+                            ) {
+                                ModernSubscriptionCard(
+                                    subscription = subscription,
+                                    selectedCurrency = selectedCurrency,
+                                    viewModel = viewModel,
+                                    onClick = { onSubscriptionClick(subscription.id) },
+                                    onEdit = { onEditClick(subscription.id) },
+                                    onDelete = { onDeleteClick(subscription.id) }
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubscriptionOverviewSection(
+    totalSubscriptions: Int,
+    activeSubscriptions: Int,
+    totalMonthlyCost: Double,
+    selectedCurrency: String,
+    onAddSubscription: () -> Unit
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
+        SubscriptionSummaryCard(
+            totalMonthlyCost = totalMonthlyCost,
+            activeSubscriptions = activeSubscriptions,
+            subscriptionCount = totalSubscriptions,
+            onAddSubscription = onAddSubscription,
+            selectedCurrency = selectedCurrency
+        )
+    }
+}
+
+@Composable
+private fun SubscriptionSummaryCard(
+    totalMonthlyCost: Double,
+    activeSubscriptions: Int,
+    subscriptionCount: Int,
+    onAddSubscription: () -> Unit,
+    selectedCurrency: String
+) {
+    val containerColor = MaterialTheme.colorScheme.primaryContainer
+    val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        colors = CardDefaults.cardColors(containerColor = containerColor)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            items(items = subscriptions) { subscription ->
-                AnimatedVisibility(
-                        visible = true,
-                        enter = fadeIn() + scaleIn(),
-                        exit = fadeOut() + scaleOut()
-                ) {
-                    ModernSubscriptionCard(
-                            subscription = subscription,
-                            selectedCurrency = selectedCurrency,
-                            viewModel = viewModel,
-                            onClick = { onSubscriptionClick(subscription.id) },
-                            onEdit = { onEditClick(subscription.id) },
-                            onDelete = { onDeleteClick(subscription.id) }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                    Text(
+                        text = stringResource(R.string.monthly_spending),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = contentColor
+                    )
+                    Text(
+                        text = totalMonthlyCost.formatCurrency(selectedCurrency),
+                        style = MaterialTheme.typography.titleLarge,
+                        color = contentColor,
+                        fontWeight = FontWeight.Bold
                     )
                 }
+
+                ElevatedButton(
+                    onClick = onAddSubscription,
+                    colors = ButtonDefaults.elevatedButtonColors(
+                        containerColor = contentColor,
+                        contentColor = containerColor
+                    )
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = stringResource(R.string.add_subscription)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(text = stringResource(R.string.add))
+                }
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                    Text(
+                        text = stringResource(R.string.active_subscriptions),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = contentColor
+                    )
+                    Text(
+                        text = "$activeSubscriptions / $subscriptionCount",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = contentColor,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun SubscriptionListTabs(
+    selectedTab: SubscriptionListTab,
+    upcomingCount: Int,
+    totalCount: Int,
+    onTabSelected: (SubscriptionListTab) -> Unit
+) {
+    val tabs = listOf(
+        SubscriptionListTab.UPCOMING to stringResource(R.string.upcoming_renewals),
+        SubscriptionListTab.ALL to stringResource(R.string.subscription_tab_all)
+    )
+    val selectedIndex = tabs.indexOfFirst { it.first == selectedTab }.takeIf { it >= 0 } ?: 0
+
+    TabRow(
+        selectedTabIndex = selectedIndex,
+        modifier = Modifier.padding(horizontal = 16.dp)
+    ) {
+        tabs.forEach { (tab, title) ->
+            val count = if (tab == SubscriptionListTab.UPCOMING) upcomingCount else totalCount
+            val label = stringResource(R.string.subscription_tab_label_with_count, title, count)
+            Tab(
+                selected = selectedTab == tab,
+                onClick = { onTabSelected(tab) },
+                text = {
+                    Text(
+                        text = label,
+                        style = MaterialTheme.typography.bodyMedium
+                    )
+                }
+            )
+        }
+    }
+}
+
+@Composable
+private fun UpcomingRenewalsSection(
+    subscriptions: List<Subscription>,
+    selectedCurrency: String,
+    onSubscriptionClick: (Long) -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text(
+            text = stringResource(R.string.upcoming_renewals),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .weight(1f)
+        ) {
+            if (subscriptions.isEmpty()) {
+                Card(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .align(Alignment.Center)
+                ) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = stringResource(R.string.no_upcoming_renewals),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier.fillMaxSize(),
+                    contentPadding = PaddingValues(bottom = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp)
+                ) {
+                    items(subscriptions) { subscription ->
+                        UpcomingSubscriptionCard(
+                            subscription = subscription,
+                            selectedCurrency = selectedCurrency,
+                            onClick = { onSubscriptionClick(subscription.id) }
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun UpcomingSubscriptionCard(
+    subscription: Subscription,
+    selectedCurrency: String,
+    onClick: () -> Unit
+) {
+    val daysUntil = subscription.nextBillingDate.getDaysUntil()
+    val isUrgent = daysUntil <= 3
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick),
+        colors = CardDefaults.cardColors(
+            containerColor = if (isUrgent) {
+                WarningColor.copy(alpha = 0.2f)
+            } else {
+                MaterialTheme.colorScheme.surface
+            }
+        ),
+        border = if (isUrgent) BorderStroke(1.dp, WarningColor) else null
+    ) {
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalArrangement = Arrangement.SpaceBetween,
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Text(
+                    text = subscription.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold
+                )
+                Text(
+                    text = buildString {
+                        append(subscription.price.formatCurrency(selectedCurrency))
+                        append("/")
+                        append(
+                            when (subscription.billingCycle) {
+                                BillingCycle.DAILY -> stringResource(R.string.daily)
+                                BillingCycle.WEEKLY -> stringResource(R.string.weekly)
+                                BillingCycle.MONTHLY -> stringResource(R.string.monthly)
+                                BillingCycle.YEARLY -> stringResource(R.string.yearly)
+                            }
+                        )
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = when {
+                        !isUrgent -> MaterialTheme.colorScheme.onSurfaceVariant
+                        daysUntil <= 0L -> ErrorColor
+                        daysUntil <= 3L -> ErrorColor
+                        daysUntil <= 7L -> WarningColor
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    }
+                )
+            }
+
+            Column(
+                horizontalAlignment = Alignment.End,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
+                Text(
+                    text = subscription.nextBillingDate.formatDate(),
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                Text(
+                    text = when {
+                        daysUntil < 0L -> stringResource(R.string.overdue)
+                        daysUntil == 0L -> stringResource(R.string.due_today)
+                        daysUntil == 1L -> stringResource(R.string.due_tomorrow)
+                        else -> stringResource(R.string.due_in_days, daysUntil)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = when {
+                        daysUntil < 0L -> ErrorColor
+                        daysUntil <= 3L -> WarningColor
+                        else -> MaterialTheme.colorScheme.onSurfaceVariant
+                    },
+                    fontWeight = if (isUrgent) FontWeight.Bold else FontWeight.Normal
+                )
             }
         }
     }

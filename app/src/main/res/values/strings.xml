@@ -1,8 +1,8 @@
 <resources>
-    <string name="app_name">Subcription Management App</string>
+    <string name="app_name">Subscription Management App</string>
+    <string name="app_name_short">Subscriptions</string>
 
     <!-- Navigation -->
-    <string name="home">Home</string>
     <string name="subscriptions">Subscriptions</string>
     <string name="categories">Categories</string>
     <string name="statistics">Statistics</string>
@@ -14,7 +14,6 @@
     <string name="about_menu_subtitle">Version info, policies, and credits</string>
 
     <!-- Top bar subtitles -->
-    <string name="home_top_bar_subtitle">Stay on top of your recurring spending</string>
     <string name="subscriptions_top_bar_subtitle">All your plans at a glance</string>
     <string name="subscription_detail_top_bar_subtitle">Review subscription insights and activity</string>
     <string name="add_subscription_top_bar_subtitle">Create or update your subscription details</string>
@@ -47,6 +46,10 @@
     <string name="no_subscriptions_description">You haven\'t added any subscriptions yet. Tap the + button to get started.</string>
     <string name="active_subscriptions">Active Subscriptions</string>
     <string name="upcoming_renewals">Upcoming Renewals</string>
+    <string name="subscription_tab_all">All Subscriptions</string>
+    <string name="subscription_tab_label_with_count">%1$s (%2$d)</string>
+    <string name="expand_filters">Expand filters</string>
+    <string name="collapse_filters">Collapse filters</string>
     <string name="view_all_subscriptions">View All</string>
     <string name="no_upcoming_renewals">No upcoming renewals</string>
     <string name="next_billing_date">Next Billing Date</string>
