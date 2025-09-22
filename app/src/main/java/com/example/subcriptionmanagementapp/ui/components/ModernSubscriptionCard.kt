@@ -160,11 +160,7 @@ fun ModernSubscriptionCard(
                             .animateContentSize(),
             shape = cardShape,
             colors = CardDefaults.cardColors(containerColor = Color.Transparent),
-            elevation =
-                    CardDefaults.cardElevation(
-                            defaultElevation = 0.dp,
-                            pressedElevation = 0.dp
-                    )
+            elevation = CardDefaults.cardElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
     ) {
         Box(modifier = Modifier.fillMaxWidth()) {
             Box(
@@ -181,13 +177,22 @@ fun ModernSubscriptionCard(
                                     .border(
                                             BorderStroke(
                                                     width = 1.dp,
-                                                    brush = Brush.linearGradient(
-                                                            colors =
-                                                                    listOf(
-                                                                            Color.White.copy(alpha = 0.45f),
-                                                                            Color.White.copy(alpha = 0.1f)
-                                                                    )
-                                                    )
+                                                    brush =
+                                                            Brush.linearGradient(
+                                                                    colors =
+                                                                            listOf(
+                                                                                    Color.White
+                                                                                            .copy(
+                                                                                                    alpha =
+                                                                                                            0.45f
+                                                                                            ),
+                                                                                    Color.White
+                                                                                            .copy(
+                                                                                                    alpha =
+                                                                                                            0.1f
+                                                                                            )
+                                                                            )
+                                                            )
                                             ),
                                             shape = cardShape
                                     )
@@ -203,7 +208,9 @@ fun ModernSubscriptionCard(
                                                     Brush.radialGradient(
                                                             colors =
                                                                     listOf(
-                                                                            Color.White.copy(alpha = 0.3f),
+                                                                            Color.White.copy(
+                                                                                    alpha = 0.3f
+                                                                            ),
                                                                             Color.Transparent
                                                                     )
                                                     ),
@@ -211,9 +218,7 @@ fun ModernSubscriptionCard(
                                     )
             )
 
-            Column(
-                    modifier = Modifier.fillMaxWidth().padding(20.dp)
-            ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
                 Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -229,9 +234,10 @@ fun ModernSubscriptionCard(
                                 overflow = TextOverflow.Ellipsis
                         )
 
-                        Spacer(modifier = Modifier.height(6.dp))
+                        Spacer(modifier = Modifier.height(4.dp))
 
-                        val category = subscription.categoryId?.let { id -> viewModel.getCategoryById(id) }
+                        val category =
+                                subscription.categoryId?.let { id -> viewModel.getCategoryById(id) }
                         if (category != null) {
                             CategoryTag(
                                     category = category,
@@ -249,7 +255,7 @@ fun ModernSubscriptionCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(18.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 Text(
                         text = subscription.price.formatCurrency(selectedCurrency),
@@ -258,7 +264,7 @@ fun ModernSubscriptionCard(
                         color = MaterialTheme.colorScheme.onSurface
                 )
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Row(
                         modifier = Modifier.fillMaxWidth(),
@@ -279,11 +285,11 @@ fun ModernSubscriptionCard(
                     )
                 }
 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
 
                 HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
 
-                Spacer(modifier = Modifier.height(12.dp))
+                Spacer(modifier = Modifier.height(8.dp))
 
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Icon(
@@ -302,7 +308,7 @@ fun ModernSubscriptionCard(
                 }
 
                 if (isActive && !isOverdue) {
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(12.dp))
 
                     val progress =
                             when (subscription.billingCycle) {
@@ -323,14 +329,18 @@ fun ModernSubscriptionCard(
                                 }
                                 BillingCycle.YEARLY -> {
                                     val daysInCycle = 365
-                                    val daysPassed = 365 - (daysUntil % daysInCycle).coerceAtLeast(0)
+                                    val daysPassed =
+                                            365 - (daysUntil % daysInCycle).coerceAtLeast(0)
                                     daysPassed.toFloat() / daysInCycle
                                 }
                             }
 
                     LinearProgressIndicator(
                             progress = { progress.coerceIn(0f, 1f) },
-                            modifier = Modifier.fillMaxWidth().height(6.dp).clip(RoundedCornerShape(50)),
+                            modifier =
+                                    Modifier.fillMaxWidth()
+                                            .height(6.dp)
+                                            .clip(RoundedCornerShape(50)),
                             color = statusColor,
                             trackColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
                     )
@@ -347,8 +357,14 @@ fun ModernSubscriptionCard(
                                                         Brush.horizontalGradient(
                                                                 colors =
                                                                         listOf(
-                                                                                ErrorColor.copy(alpha = 0.85f),
-                                                                                ErrorColor.copy(alpha = 0.65f)
+                                                                                ErrorColor.copy(
+                                                                                        alpha =
+                                                                                                0.85f
+                                                                                ),
+                                                                                ErrorColor.copy(
+                                                                                        alpha =
+                                                                                                0.65f
+                                                                                )
                                                                         )
                                                         )
                                         ),
@@ -440,10 +456,7 @@ private fun InfoRowItem(
         valueColor: Color = MaterialTheme.colorScheme.onSurface,
         modifier: Modifier = Modifier
 ) {
-    Column(
-            modifier = modifier,
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-    ) {
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(6.dp)) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             Icon(
                     imageVector = icon,
@@ -468,4 +481,3 @@ private fun InfoRowItem(
         )
     }
 }
-
