@@ -27,6 +27,7 @@ import com.example.subcriptionmanagementapp.data.local.entity.Category
 import com.example.subcriptionmanagementapp.data.local.entity.PaymentHistory
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.ui.components.AppTopBar
+import com.example.subcriptionmanagementapp.ui.components.CompactTopBar
 import com.example.subcriptionmanagementapp.ui.components.CategoryTag
 import com.example.subcriptionmanagementapp.ui.components.CategoryTagSize
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
@@ -66,12 +67,9 @@ fun SubscriptionDetailScreen(
 
     Scaffold(
             topBar = {
-                AppTopBar(
+                CompactTopBar(
                         title = stringResource(R.string.subscription_details),
-                        navController = navController,
-                        currentRoute = Screen.SubscriptionDetail.route,
-                        showBackButton = true,
-                        showActions = true
+                        navController = navController
                 )
             }
     ) { paddingValues ->

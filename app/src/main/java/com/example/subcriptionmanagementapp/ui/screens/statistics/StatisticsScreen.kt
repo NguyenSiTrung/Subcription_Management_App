@@ -16,6 +16,7 @@ import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.R
 import com.example.subcriptionmanagementapp.data.local.entity.PaymentHistory
 import com.example.subcriptionmanagementapp.ui.components.AppTopBar
+import com.example.subcriptionmanagementapp.ui.components.CompactTopBar
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
@@ -48,11 +49,9 @@ fun StatisticsScreen(
 
     Scaffold(
             topBar = {
-                AppTopBar(
+                CompactTopBar(
                         title = stringResource(R.string.statistics),
-                        navController = navController,
-                        currentRoute = Screen.Statistics.route,
-                        showActions = false
+                        navController = navController
                 )
             }
     ) { paddingValues ->

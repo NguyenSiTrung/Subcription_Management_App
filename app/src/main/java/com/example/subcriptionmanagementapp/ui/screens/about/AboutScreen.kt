@@ -53,6 +53,7 @@ import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.BuildConfig
 import com.example.subcriptionmanagementapp.R
 import com.example.subcriptionmanagementapp.ui.components.AppTopBar
+import com.example.subcriptionmanagementapp.ui.components.CompactTopBar
 
 @Composable
 fun AboutScreen(navController: NavController) {
@@ -154,12 +155,9 @@ fun AboutScreen(navController: NavController) {
     }
 
     Column(modifier = Modifier.fillMaxSize()) {
-        AppTopBar(
+        CompactTopBar(
                 title = stringResource(R.string.about),
-                navController = navController,
-                currentRoute = "about",
-                showBackButton = true,
-                showActions = false
+                navController = navController
         )
 
         LazyColumn(

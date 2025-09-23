@@ -21,6 +21,7 @@ import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.R
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.ui.components.*
+import com.example.subcriptionmanagementapp.ui.components.CompactTopBar
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
 import com.example.subcriptionmanagementapp.ui.theme.*
 import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
@@ -67,11 +68,9 @@ fun FilteredSubscriptionListScreen(
 
     Scaffold(
             topBar = {
-                AppTopBar(
+                CompactTopBar(
                         title = categoryName,
-                        navController = navController,
-                        currentRoute = "filtered_subscription_list",
-                        showBackButton = true
+                        navController = navController
                 )
             },
             floatingActionButton = {

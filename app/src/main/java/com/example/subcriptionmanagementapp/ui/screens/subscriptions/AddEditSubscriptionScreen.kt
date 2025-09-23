@@ -92,6 +92,7 @@ import com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
 import com.example.subcriptionmanagementapp.data.local.entity.Category
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.ui.components.AppTopBar
+import com.example.subcriptionmanagementapp.ui.components.CompactTopBar
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
@@ -216,15 +217,12 @@ fun AddEditSubscriptionScreen(
 
     Scaffold(
             topBar = {
-                AppTopBar(
+                CompactTopBar(
                         title =
                                 if (subscriptionId != null)
                                         stringResource(R.string.edit_subscription)
                                 else stringResource(R.string.add_subscription),
-                        navController = navController,
-                        currentRoute = Screen.AddEditSubscription.route,
-                        showBackButton = true,
-                        showActions = false
+                        navController = navController
                 )
             }
     ) { paddingValues ->
