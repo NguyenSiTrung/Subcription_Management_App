@@ -42,6 +42,9 @@ import com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.ui.components.AppTopBar
 import com.example.subcriptionmanagementapp.ui.components.CategoryFilterRow
+import com.example.subcriptionmanagementapp.ui.components.CompactSubscriptionTopBar
+import com.example.subcriptionmanagementapp.ui.components.CompactSubscriptionSummary
+import com.example.subcriptionmanagementapp.ui.components.CompactTabsAndFilter
 import com.example.subcriptionmanagementapp.ui.components.ModernErrorState
 import com.example.subcriptionmanagementapp.ui.components.ModernFilterEmptyState
 import com.example.subcriptionmanagementapp.ui.components.ModernLoadingState
@@ -73,7 +76,7 @@ fun SubscriptionListScreen(
     val categoryFilters by viewModel.categoryFilters.collectAsStateWithLifecycle()
     val filterState by viewModel.filterState.collectAsStateWithLifecycle()
 
-    var isCategoryFilterExpanded by rememberSaveable { mutableStateOf(true) }
+    var isCategoryFilterExpanded by rememberSaveable { mutableStateOf(false) }
 
     val totalSubscriptions = allSubscriptions.size
     val activeSubscriptions = allSubscriptions.count { it.isActive }
@@ -96,12 +99,13 @@ fun SubscriptionListScreen(
 
     Scaffold(
             topBar = {
-                AppTopBar(
-                        title = stringResource(R.string.subscriptions),
+                CompactSubscriptionTopBar(
                         navController = navController,
-                        currentRoute = Screen.SubscriptionList.route,
                         onSearchClick = {
                             // Navigate to search screen when implemented
+                        },
+                        onAddClick = {
+                            navController.navigate(Screen.AddEditSubscription.createRoute(-1))
                         }
                 )
             }
@@ -148,7 +152,7 @@ fun SubscriptionListScreen(
                             }
                         }
                 else ->
-                        ModernSubscriptionListContent(
+                        CompactSubscriptionListContent(
                                 filteredSubscriptions = filteredSubscriptions,
                                 selectedCurrency = selectedCurrency,
                                 totalSubscriptions = totalSubscriptions,
@@ -196,7 +200,7 @@ fun SubscriptionListScreen(
 }
 
 @Composable
-fun ModernSubscriptionListContent(
+fun CompactSubscriptionListContent(
         filteredSubscriptions: List<Subscription>,
         selectedCurrency: String,
         totalSubscriptions: Int,
@@ -218,24 +222,30 @@ fun ModernSubscriptionListContent(
         onFilterExpandToggle: () -> Unit
 ) {
     Column(modifier = Modifier.fillMaxSize()) {
-        SubscriptionOverviewSection(
-                totalSubscriptions = totalSubscriptions,
-                activeSubscriptions = activeSubscriptions,
+        CompactSubscriptionSummary(
                 totalMonthlyCost = totalMonthlyCost,
+                activeSubscriptions = activeSubscriptions,
+                subscriptionCount = totalSubscriptions,
                 selectedCurrency = selectedCurrency,
                 onAddSubscription = onAddSubscription
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
-        SubscriptionListTabs(
+        CompactTabsAndFilter(
                 selectedTab = selectedTab,
                 upcomingCount = upcomingSubscriptions.size,
                 totalCount = totalSubscriptions,
-                onTabSelected = onTabSelected
+                categoryFilters = categoryFilters,
+                showActiveOnly = filterState.showActiveOnly,
+                isFilterExpanded = isFilterExpanded,
+                onTabSelected = onTabSelected,
+                onFilterClick = onFilterClick,
+                onActiveFilterToggle = onActiveFilterToggle,
+                onFilterExpandToggle = onFilterExpandToggle
         )
 
-        Spacer(modifier = Modifier.height(12.dp))
+        Spacer(modifier = Modifier.height(8.dp))
 
         when (selectedTab) {
             SubscriptionListTab.UPCOMING -> {
@@ -247,16 +257,6 @@ fun ModernSubscriptionListContent(
                 )
             }
             SubscriptionListTab.ALL -> {
-                CategoryFilterRow(
-                        filters = categoryFilters,
-                        showActiveOnly = filterState.showActiveOnly,
-                        onFilterClick = onFilterClick,
-                        onActiveFilterToggle = onActiveFilterToggle,
-                        isExpanded = isFilterExpanded,
-                        onExpandToggle = onFilterExpandToggle
-                )
-
-                Spacer(modifier = Modifier.height(if (isFilterExpanded) 8.dp else 4.dp))
 
                 if (filteredSubscriptions.isEmpty()) {
                     Box(
@@ -307,132 +307,7 @@ fun ModernSubscriptionListContent(
     }
 }
 
-@Composable
-private fun SubscriptionOverviewSection(
-        totalSubscriptions: Int,
-        activeSubscriptions: Int,
-        totalMonthlyCost: Double,
-        selectedCurrency: String,
-        onAddSubscription: () -> Unit
-) {
-    Column(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
-    ) {
-        SubscriptionSummaryCard(
-                totalMonthlyCost = totalMonthlyCost,
-                activeSubscriptions = activeSubscriptions,
-                subscriptionCount = totalSubscriptions,
-                onAddSubscription = onAddSubscription,
-                selectedCurrency = selectedCurrency
-        )
-    }
-}
 
-@Composable
-private fun SubscriptionSummaryCard(
-        totalMonthlyCost: Double,
-        activeSubscriptions: Int,
-        subscriptionCount: Int,
-        onAddSubscription: () -> Unit,
-        selectedCurrency: String
-) {
-    val containerColor = MaterialTheme.colorScheme.primaryContainer
-    val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-
-    Card(
-            modifier = Modifier.fillMaxWidth(),
-            colors = CardDefaults.cardColors(containerColor = containerColor)
-    ) {
-        Column(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                    Text(
-                            text = stringResource(R.string.monthly_spending),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = contentColor
-                    )
-                    Text(
-                            text = totalMonthlyCost.formatCurrency(selectedCurrency),
-                            style = MaterialTheme.typography.titleLarge,
-                            color = contentColor,
-                            fontWeight = FontWeight.Bold
-                    )
-                }
-
-                ElevatedButton(
-                        onClick = onAddSubscription,
-                        colors =
-                                ButtonDefaults.elevatedButtonColors(
-                                        containerColor = contentColor,
-                                        contentColor = containerColor
-                                )
-                ) {
-                    Icon(
-                            imageVector = Icons.Filled.Add,
-                            contentDescription = stringResource(R.string.add_subscription)
-                    )
-                    Spacer(modifier = Modifier.width(4.dp))
-                    Text(text = stringResource(R.string.add))
-                }
-            }
-
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-            ) {
-                Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                    Text(
-                            text = stringResource(R.string.active_subscriptions),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = contentColor
-                    )
-                    Text(
-                            text = "$activeSubscriptions / $subscriptionCount",
-                            style = MaterialTheme.typography.titleMedium,
-                            color = contentColor,
-                            fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-        }
-    }
-}
-
-@Composable
-private fun SubscriptionListTabs(
-        selectedTab: SubscriptionListTab,
-        upcomingCount: Int,
-        totalCount: Int,
-        onTabSelected: (SubscriptionListTab) -> Unit
-) {
-    val tabs =
-            listOf(
-                    SubscriptionListTab.UPCOMING to stringResource(R.string.upcoming_renewals),
-                    SubscriptionListTab.ALL to stringResource(R.string.subscription_tab_all)
-            )
-    val selectedIndex = tabs.indexOfFirst { it.first == selectedTab }.takeIf { it >= 0 } ?: 0
-
-    TabRow(selectedTabIndex = selectedIndex, modifier = Modifier.padding(horizontal = 16.dp)) {
-        tabs.forEach { (tab, title) ->
-            val count = if (tab == SubscriptionListTab.UPCOMING) upcomingCount else totalCount
-            val label = stringResource(R.string.subscription_tab_label_with_count, title, count)
-            Tab(
-                    selected = selectedTab == tab,
-                    onClick = { onTabSelected(tab) },
-                    text = { Text(text = label, style = MaterialTheme.typography.bodyMedium) }
-            )
-        }
-    }
-}
 
 @Composable
 private fun UpcomingRenewalsSection(

@@ -7,6 +7,7 @@ import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkOut
 import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
@@ -20,14 +21,14 @@ import androidx.compose.material.icons.filled.FilterList
 import androidx.compose.material.icons.filled.PlayCircle
 import androidx.compose.material3.AssistChip
 import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.FilterChipDefaults
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -70,14 +71,23 @@ fun CategoryFilterRow(
                 }
             }
 
-    Surface(
-            modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 8.dp),
-            shape = RoundedCornerShape(24.dp),
-            tonalElevation = 2.dp,
-            shadowElevation = 6.dp,
-            color = MaterialTheme.colorScheme.surface
+    Card(
+            modifier = modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .clickable(enabled = onExpandToggle != null) {
+                        onExpandToggle?.invoke()
+                    },
+            shape = RoundedCornerShape(if (isExpanded) 24.dp else 16.dp),
+            colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surface
+            ),
+            elevation = CardDefaults.cardElevation(
+                    defaultElevation = if (isExpanded) 2.dp else 1.dp,
+                    pressedElevation = if (isExpanded) 8.dp else 4.dp
+            )
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(20.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(if (isExpanded) 20.dp else 16.dp)) {
             Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -86,88 +96,141 @@ fun CategoryFilterRow(
                         modifier = Modifier.weight(1f),
                         verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Surface(
+                    Card(
                             shape = CircleShape,
-                            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                            colors = CardDefaults.cardColors(
+                                    containerColor = MaterialTheme.colorScheme.primary.copy(
+                                            alpha = if (isExpanded) 0.1f else 0.15f
+                                    )
+                            )
                     ) {
                         Icon(
                                 imageVector = Icons.Default.FilterList,
                                 contentDescription = null,
                                 tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(32.dp).padding(6.dp)
+                                modifier =
+                                        Modifier.size(if (isExpanded) 32.dp else 28.dp)
+                                                .padding(6.dp)
                         )
                     }
-                    Spacer(modifier = Modifier.width(12.dp))
+                    Spacer(modifier = Modifier.width(if (isExpanded) 12.dp else 10.dp))
                     Column {
                         Text(
                                 text = stringResource(R.string.filter_by_category),
-                                style = MaterialTheme.typography.titleSmall,
+                                style =
+                                        if (isExpanded) MaterialTheme.typography.titleSmall
+                                        else MaterialTheme.typography.bodyLarge,
                                 fontWeight = FontWeight.SemiBold,
                                 color = MaterialTheme.colorScheme.onSurface
                         )
-                        Text(
-                                text = selectionSummary,
-                                style = MaterialTheme.typography.bodySmall,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                maxLines = 1
-                        )
+                        if (isExpanded || hasActiveFilters || showActiveOnly) {
+                            Text(
+                                    text =
+                                            if (isExpanded) selectionSummary
+                                            else {
+                                                when {
+                                                    selectedCategories.size > 1 ->
+                                                            "${selectedCategories.size} categories"
+                                                    selectedCategories.size == 1 ->
+                                                            selectedCategories.first().name
+                                                    showActiveOnly -> "Active only"
+                                                    else -> "All subscriptions"
+                                                }
+                                            },
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    maxLines = 1
+                            )
+                        }
                     }
                 }
 
-                Spacer(modifier = Modifier.width(12.dp))
+                Spacer(modifier = Modifier.width(if (isExpanded) 12.dp else 8.dp))
 
                 FlowRow(
                         modifier = Modifier.align(Alignment.CenterVertically),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        horizontalArrangement =
+                                Arrangement.spacedBy(if (isExpanded) 8.dp else 6.dp),
                         verticalArrangement = Arrangement.Center
                 ) {
-                    FilterChip(
-                            selected = showActiveOnly,
-                            onClick = onActiveFilterToggle,
-                            label = {
-                                Text(
-                                        text = stringResource(R.string.filter_active_only),
-                                        style = MaterialTheme.typography.labelLarge,
-                                        fontWeight = FontWeight.Medium
-                                )
-                            },
-                            leadingIcon = {
-                                Icon(
-                                        imageVector = Icons.Default.PlayCircle,
-                                        contentDescription = null
-                                )
-                            },
-                            colors =
-                                    FilterChipDefaults.filterChipColors(
-                                            containerColor =
-                                                    MaterialTheme.colorScheme.surfaceVariant.copy(
-                                                            alpha = 0.4f
-                                                    ),
-                                            labelColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            iconColor = MaterialTheme.colorScheme.onSurfaceVariant,
-                                            selectedContainerColor =
-                                                    MaterialTheme.colorScheme.primaryContainer,
-                                            selectedLabelColor =
-                                                    MaterialTheme.colorScheme.onPrimaryContainer,
-                                            selectedLeadingIconColor =
-                                                    MaterialTheme.colorScheme.onPrimaryContainer
-                                    )
-                    )
-
+                    // Show Active filter chip only when expanded or when it's selected
                     AnimatedVisibility(
-                            visible = hasActiveFilters && onClearFilters != null,
+                            visible = isExpanded || showActiveOnly,
+                            enter = fadeIn() + expandIn(),
+                            exit = fadeOut() + shrinkOut()
+                    ) {
+                        FilterChip(
+                                selected = showActiveOnly,
+                                onClick = onActiveFilterToggle,
+                                label = {
+                                    Text(
+                                            text =
+                                                    if (isExpanded)
+                                                            stringResource(
+                                                                    R.string.filter_active_only
+                                                            )
+                                                    else "Active",
+                                            style = MaterialTheme.typography.labelLarge,
+                                            fontWeight = FontWeight.Medium
+                                    )
+                                },
+                                leadingIcon =
+                                        if (isExpanded) {
+                                            {
+                                                Icon(
+                                                        imageVector = Icons.Default.PlayCircle,
+                                                        contentDescription = null
+                                                )
+                                            }
+                                        } else null,
+                                colors =
+                                        FilterChipDefaults.filterChipColors(
+                                                containerColor =
+                                                        MaterialTheme.colorScheme.surfaceVariant
+                                                                .copy(alpha = 0.4f),
+                                                labelColor =
+                                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                                iconColor =
+                                                        MaterialTheme.colorScheme.onSurfaceVariant,
+                                                selectedContainerColor =
+                                                        MaterialTheme.colorScheme.primaryContainer,
+                                                selectedLabelColor =
+                                                        MaterialTheme.colorScheme
+                                                                .onPrimaryContainer,
+                                                selectedLeadingIconColor =
+                                                        MaterialTheme.colorScheme.onPrimaryContainer
+                                        )
+                        )
+                    }
+
+                    // Show clear button only when expanded or when filters are active
+                    AnimatedVisibility(
+                            visible =
+                                    hasActiveFilters &&
+                                            onClearFilters != null &&
+                                            (isExpanded || (hasActiveFilters || showActiveOnly)),
                             enter = fadeIn() + expandIn(),
                             exit = fadeOut() + shrinkOut()
                     ) {
                         AssistChip(
                                 onClick = { onClearFilters?.invoke() },
-                                label = { Text(text = stringResource(R.string.clear_filter)) },
-                                leadingIcon = {
-                                    Icon(
-                                            imageVector = Icons.Default.Clear,
-                                            contentDescription = null
+                                label = {
+                                    Text(
+                                            text =
+                                                    if (isExpanded)
+                                                            stringResource(R.string.clear_filter)
+                                                    else "Clear"
                                     )
                                 },
+                                leadingIcon =
+                                        if (isExpanded) {
+                                            {
+                                                Icon(
+                                                        imageVector = Icons.Default.Clear,
+                                                        contentDescription = null
+                                                )
+                                            }
+                                        } else null,
                                 colors =
                                         AssistChipDefaults.assistChipColors(
                                                 containerColor =
@@ -180,8 +243,27 @@ fun CategoryFilterRow(
                         )
                     }
 
+                    // Always show expand/collapse button but make it more prominent when collapsed
                     if (onExpandToggle != null) {
-                        IconButton(onClick = { onExpandToggle() }) {
+                        val buttonModifier =
+                                if (isExpanded) {
+                                    Modifier
+                                } else {
+                                    Modifier.size(40.dp)
+                                }
+
+                        Card(
+                                modifier = buttonModifier,
+                                shape = CircleShape,
+                                colors = CardDefaults.cardColors(
+                                        containerColor =
+                                                if (isExpanded) MaterialTheme.colorScheme.surface
+                                                else
+                                                        MaterialTheme.colorScheme.secondaryContainer.copy(
+                                                                alpha = 0.7f
+                                                        )
+                                )
+                        ) {
                             val (icon, description) =
                                     if (isExpanded) {
                                         Icons.Default.ExpandLess to
@@ -193,7 +275,13 @@ fun CategoryFilterRow(
                             Icon(
                                     imageVector = icon,
                                     contentDescription = description,
-                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                    tint =
+                                            if (isExpanded)
+                                                    MaterialTheme.colorScheme.onSurfaceVariant
+                                            else MaterialTheme.colorScheme.onSecondaryContainer,
+                                    modifier =
+                                            if (isExpanded) Modifier.padding(8.dp)
+                                            else Modifier.padding(10.dp)
                             )
                         }
                     }
