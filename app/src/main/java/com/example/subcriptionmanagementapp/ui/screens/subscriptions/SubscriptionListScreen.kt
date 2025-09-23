@@ -49,7 +49,7 @@ import com.example.subcriptionmanagementapp.ui.components.ModernErrorState
 import com.example.subcriptionmanagementapp.ui.components.ModernFilterEmptyState
 import com.example.subcriptionmanagementapp.ui.components.ModernLoadingState
 import com.example.subcriptionmanagementapp.ui.components.ModernNoSubscriptionsEmptyState
-import com.example.subcriptionmanagementapp.ui.components.ModernSubscriptionCard
+import com.example.subcriptionmanagementapp.ui.components.OptimizedSubscriptionCard
 import com.example.subcriptionmanagementapp.ui.model.CategoryFilter
 import com.example.subcriptionmanagementapp.ui.model.FilterState
 import com.example.subcriptionmanagementapp.ui.model.SubscriptionListTab
@@ -290,7 +290,7 @@ fun CompactSubscriptionListContent(
                                     enter = fadeIn() + scaleIn(),
                                     exit = fadeOut() + scaleOut()
                             ) {
-                                ModernSubscriptionCard(
+                                OptimizedSubscriptionCard(
                                         subscription = subscription,
                                         selectedCurrency = selectedCurrency,
                                         viewModel = viewModel,

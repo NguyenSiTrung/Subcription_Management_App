@@ -251,7 +251,7 @@ fun ModernFilteredSubscriptionListContent(
                         enter = fadeIn() + scaleIn(),
                         exit = fadeOut() + scaleOut()
                 ) {
-                    ModernSubscriptionCard(
+                    OptimizedSubscriptionCard(
                             subscription = subscription,
                             selectedCurrency = selectedCurrency,
                             viewModel = viewModel,
