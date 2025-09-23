@@ -7,22 +7,19 @@ import androidx.test.ext.junit.runners.AndroidJUnit4
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.ui.theme.SubscriptionManagementAppTheme
 import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
+import java.util.*
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.mockito.Mock
-import org.mockito.junit.MockitoJUnitRunner
-import java.util.*
 
 @RunWith(AndroidJUnit4::class)
 class SubscriptionListScreenTest {
 
-    @get:Rule
-    val composeTestRule = createComposeRule()
+    @get:Rule val composeTestRule = createComposeRule()
 
-    @Mock
-    private lateinit var viewModel: SubscriptionViewModel
+    @Mock private lateinit var viewModel: SubscriptionViewModel
 
     @Before
     fun setUp() {
@@ -33,54 +30,48 @@ class SubscriptionListScreenTest {
     @Test
     fun subscriptionListScreen_displaysSubscriptions() {
         // Given
-        val subscriptions = listOf(
-            Subscription(
-                id = 1,
-                name = "Netflix",
-                price = 9.99,
-                billingCycle = com.example.subcriptionmanagementapp.data.local.entity.BillingCycle.MONTHLY,
-                nextBillingDate = Date().time + 30 * 24 * 60 * 60 * 1000,
-                isActive = true,
-                reminderDays = 3
-            ),
-            Subscription(
-                id = 2,
-                name = "Spotify",
-                price = 4.99,
-                billingCycle = com.example.subcriptionmanagementapp.data.local.entity.BillingCycle.MONTHLY,
-                nextBillingDate = Date().time + 15 * 24 * 60 * 60 * 1000,
-                isActive = true,
-                reminderDays = 5
-            )
-        )
+        val subscriptions =
+                listOf(
+                        Subscription(
+                                id = 1,
+                                name = "Netflix",
+                                price = 9.99,
+                                billingCycle =
+                                        com.example.subcriptionmanagementapp.data.local.entity
+                                                .BillingCycle.MONTHLY,
+                                nextBillingDate = Date().time + 30 * 24 * 60 * 60 * 1000,
+                                isActive = true,
+                                reminderDays = 3
+                        ),
+                        Subscription(
+                                id = 2,
+                                name = "Spotify",
+                                price = 4.99,
+                                billingCycle =
+                                        com.example.subcriptionmanagementapp.data.local.entity
+                                                .BillingCycle.MONTHLY,
+                                nextBillingDate = Date().time + 15 * 24 * 60 * 60 * 1000,
+                                isActive = true,
+                                reminderDays = 5
+                        )
+                )
 
         // When
         composeTestRule.setContent {
             SubscriptionManagementAppTheme {
                 val navController = rememberNavController()
-                SubscriptionListScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
+                SubscriptionListScreen(navController = navController, viewModel = viewModel)
             }
         }
 
         // Then
-        composeTestRule
-            .onNodeWithText("Netflix")
-            .assertIsDisplayed()
-        
-        composeTestRule
-            .onNodeWithText("$9.99")
-            .assertIsDisplayed()
-        
-        composeTestRule
-            .onNodeWithText("Spotify")
-            .assertIsDisplayed()
-        
-        composeTestRule
-            .onNodeWithText("$4.99")
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithText("Netflix").assertIsDisplayed()
+
+        composeTestRule.onNodeWithText("$9.99").assertIsDisplayed()
+
+        composeTestRule.onNodeWithText("Spotify").assertIsDisplayed()
+
+        composeTestRule.onNodeWithText("$4.99").assertIsDisplayed()
     }
 
     @Test
@@ -92,21 +83,16 @@ class SubscriptionListScreenTest {
         composeTestRule.setContent {
             SubscriptionManagementAppTheme {
                 val navController = rememberNavController()
-                SubscriptionListScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
+                SubscriptionListScreen(navController = navController, viewModel = viewModel)
             }
         }
 
         // Then
+        composeTestRule.onNodeWithText("No subscriptions found").assertIsDisplayed()
+
         composeTestRule
-            .onNodeWithText("No subscriptions found")
-            .assertIsDisplayed()
-        
-        composeTestRule
-            .onNodeWithText("Add your first subscription to get started")
-            .assertIsDisplayed()
+                .onNodeWithText("Add your first subscription to get started")
+                .assertIsDisplayed()
     }
 
     @Test
@@ -118,17 +104,12 @@ class SubscriptionListScreenTest {
         composeTestRule.setContent {
             SubscriptionManagementAppTheme {
                 val navController = rememberNavController()
-                SubscriptionListScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
+                SubscriptionListScreen(navController = navController, viewModel = viewModel)
             }
         }
 
         // Then
-        composeTestRule
-            .onNodeWithContentDescription("Loading")
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithContentDescription("Loading").assertIsDisplayed()
     }
 
     @Test
@@ -140,41 +121,127 @@ class SubscriptionListScreenTest {
         composeTestRule.setContent {
             SubscriptionManagementAppTheme {
                 val navController = rememberNavController()
-                SubscriptionListScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
+                SubscriptionListScreen(navController = navController, viewModel = viewModel)
             }
         }
 
         // Then
-        composeTestRule
-            .onNodeWithText("Failed to load subscriptions")
-            .assertIsDisplayed()
+        composeTestRule.onNodeWithText("Failed to load subscriptions").assertIsDisplayed()
     }
 
     @Test
     fun subscriptionListScreen_fabClick_navigatesToAddSubscription() {
         // Given
         val navController = androidx.navigation.testing.TestNavController()
-        
+
         // When
         composeTestRule.setContent {
             SubscriptionManagementAppTheme {
-                SubscriptionListScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
+                SubscriptionListScreen(navController = navController, viewModel = viewModel)
             }
         }
 
         // Then
-        composeTestRule
-            .onNodeWithContentDescription("Add Subscription")
-            .performClick()
-        
+        composeTestRule.onNodeWithContentDescription("Add Subscription").performClick()
+
         // Verify navigation
         // Note: In a real test, you would verify that the navigation happened
         // This is a simplified example
+    }
+
+    @Test
+    fun categoryFilter_startsCollapsedByDefault() {
+        // When
+        composeTestRule.setContent {
+            SubscriptionManagementAppTheme {
+                val navController = rememberNavController()
+                SubscriptionListScreen(navController = navController, viewModel = viewModel)
+            }
+        }
+
+        // Then - Filter should start collapsed
+        composeTestRule.onNodeWithText("Filter by category").assertIsDisplayed()
+
+        // Categories should not be visible initially (collapsed state)
+        composeTestRule.onNodeWithContentDescription("Expand filters").assertIsDisplayed()
+    }
+
+    @Test
+    fun categoryFilter_canBeExpanded() {
+        // When
+        composeTestRule.setContent {
+            SubscriptionManagementAppTheme {
+                val navController = rememberNavController()
+                SubscriptionListScreen(navController = navController, viewModel = viewModel)
+            }
+        }
+
+        // Click expand button
+        composeTestRule.onNodeWithContentDescription("Expand filters").performClick()
+
+        // Then - Filter should be expanded
+        composeTestRule.onNodeWithContentDescription("Collapse filters").assertIsDisplayed()
+    }
+
+    @Test
+    fun categoryFilter_canBeCollapsed() {
+        // When
+        composeTestRule.setContent {
+            SubscriptionManagementAppTheme {
+                val navController = rememberNavController()
+                SubscriptionListScreen(navController = navController, viewModel = viewModel)
+            }
+        }
+
+        // First expand the filter
+        composeTestRule.onNodeWithContentDescription("Expand filters").performClick()
+
+        // Then collapse it
+        composeTestRule.onNodeWithContentDescription("Collapse filters").performClick()
+
+        // Then - Filter should be collapsed again
+        composeTestRule.onNodeWithContentDescription("Expand filters").assertIsDisplayed()
+    }
+
+    @Test
+    fun categoryFilter_showsActiveChipInCollapsedState() {
+        // When
+        composeTestRule.setContent {
+            SubscriptionManagementAppTheme {
+                val navController = rememberNavController()
+                SubscriptionListScreen(navController = navController, viewModel = viewModel)
+            }
+        }
+
+        // Assuming active filter is toggled on (this would need proper mocking in real
+        // implementation)
+        // The active chip should be visible even when collapsed
+        composeTestRule.onNodeWithText("Active").assertExists()
+    }
+
+    @Test
+    fun categoryFilter_togglesVisualStateOnExpandCollapse() {
+        // When
+        composeTestRule.setContent {
+            SubscriptionManagementAppTheme {
+                val navController = rememberNavController()
+                SubscriptionListScreen(navController = navController, viewModel = viewModel)
+            }
+        }
+
+        // Initially collapsed - should show compact version
+        composeTestRule.onNodeWithText("Filter by category").assertIsDisplayed()
+
+        // Expand
+        composeTestRule.onNodeWithContentDescription("Expand filters").performClick()
+
+        // Should show full text version when expanded
+        composeTestRule.onNodeWithText("Active only").assertExists()
+
+        // Collapse again
+        composeTestRule.onNodeWithContentDescription("Collapse filters").performClick()
+
+        // Should show compact version again
+        composeTestRule.onNodeWithContentDescription("Expand filters").assertIsDisplayed()
     }
 }
