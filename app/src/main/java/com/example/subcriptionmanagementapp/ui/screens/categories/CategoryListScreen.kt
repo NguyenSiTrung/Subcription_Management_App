@@ -1,12 +1,10 @@
 package com.example.subcriptionmanagementapp.ui.screens.categories
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -23,7 +21,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
@@ -135,11 +132,11 @@ fun CategoryGridContent(
         onCategoryDelete: (Category) -> Unit
 ) {
     LazyVerticalGrid(
-            columns = GridCells.Adaptive(minSize = 160.dp),
+            columns = GridCells.Adaptive(minSize = 260.dp),
             modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 20.dp),
+            horizontalArrangement = Arrangement.spacedBy(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         items(categories) { category ->
             CategoryCard(
@@ -188,103 +185,76 @@ fun CategoryCard(
     var showMenu by remember { mutableStateOf(false) }
 
     Card(
-            modifier = Modifier.fillMaxWidth().aspectRatio(1f).clickable { onClick() },
-            shape = RoundedCornerShape(20.dp),
+            modifier = Modifier.fillMaxWidth(),
+            shape = RoundedCornerShape(18.dp),
+            onClick = onClick,
             colors =
                     CardDefaults.cardColors(
                             containerColor = MaterialTheme.colorScheme.surface,
                             contentColor = MaterialTheme.colorScheme.onSurface
                     ),
-            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp, pressedElevation = 4.dp)
+            elevation = CardDefaults.cardElevation(
+                    defaultElevation = 2.dp,
+                    pressedElevation = 6.dp
+            )
     ) {
         Column(
-                modifier = Modifier.fillMaxSize().padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween
+                modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // Icon and Color Indicator
-            Box(
-                    modifier =
-                            Modifier.size(48.dp)
-                                    .clip(RoundedCornerShape(12.dp))
-                                    .background(
-                                            brush =
-                                                    Brush.verticalGradient(
-                                                            colors =
-                                                                    listOf(
-                                                                            categoryColor.copy(
-                                                                                    alpha = 0.8f
-                                                                            ),
-                                                                            categoryColor.copy(
-                                                                                    alpha = 0.4f
-                                                                            )
-                                                                    )
-                                                    )
-                                    ),
-                    contentAlignment = Alignment.Center
-            ) {
-                Icon(
-                        imageVector = categoryIcon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.onPrimary,
-                        modifier = Modifier.size(24.dp)
-                )
-            }
-
-            // Category Name
-            Text(
-                    text = category.name,
-                    style = MaterialTheme.typography.titleSmall,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onSurface,
-                    textAlign = TextAlign.Center,
-                    maxLines = 2,
-                    modifier = Modifier.padding(horizontal = 8.dp)
-            )
-
-            // Keywords
-            if (!category.keywords.isNullOrBlank()) {
-                Text(
-                        text = category.keywords!!,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        textAlign = TextAlign.Center,
-                        maxLines = 2,
-                        modifier = Modifier.padding(horizontal = 4.dp)
-                )
-            }
-
-            // Predefined Badge and Actions
-            Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-            ) {
-                if (category.isPredefined) {
-                    Surface(
-                            shape = RoundedCornerShape(8.dp),
-                            color = categoryColor.copy(alpha = 0.12f)
-                    ) {
-                        Text(
-                                text = stringResource(R.string.predefined),
-                                style = MaterialTheme.typography.labelSmall,
-                                color = categoryColor,
-                                modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
-                        )
-                    }
-                } else {
-                    Spacer(modifier = Modifier.width(24.dp))
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Box(
+                        modifier =
+                                Modifier.size(44.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .background(
+                                                brush =
+                                                        Brush.verticalGradient(
+                                                                colors =
+                                                                        listOf(
+                                                                                categoryColor.copy(alpha = 0.9f),
+                                                                                categoryColor.copy(alpha = 0.4f)
+                                                                        )
+                                                        )
+                                        ),
+                        contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                            imageVector = categoryIcon,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.onPrimary,
+                            modifier = Modifier.size(22.dp)
+                    )
                 }
 
-                // Show menu only for non-predefined categories
+                Spacer(modifier = Modifier.width(16.dp))
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                            text = category.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = MaterialTheme.colorScheme.onSurface,
+                            maxLines = 2
+                    )
+                    if (!category.keywords.isNullOrBlank()) {
+                        Text(
+                                text = category.keywords.trim(),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 2
+                        )
+                    }
+                }
+
                 if (!category.isPredefined) {
                     Box {
-                        IconButton(onClick = { showMenu = true }, modifier = Modifier.size(32.dp)) {
+                        IconButton(onClick = { showMenu = true }) {
                             Icon(
                                     imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "More options",
+                                    contentDescription = stringResource(R.string.more_options),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    modifier = Modifier.size(18.dp)
+                                    modifier = Modifier.size(20.dp)
                             )
                         }
 
@@ -330,8 +300,20 @@ fun CategoryCard(
                             )
                         }
                     }
-                } else {
-                    Spacer(modifier = Modifier.width(32.dp))
+                }
+            }
+
+            if (category.isPredefined) {
+                Surface(
+                        shape = RoundedCornerShape(8.dp),
+                        color = categoryColor.copy(alpha = 0.12f)
+                ) {
+                    Text(
+                            text = stringResource(R.string.predefined),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = categoryColor,
+                            modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                    )
                 }
             }
         }
