@@ -1,10 +1,16 @@
 package com.example.subcriptionmanagementapp.ui.components
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.animateContentSize
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
@@ -42,6 +48,8 @@ fun ModernSubscriptionCard(
         onDelete: (() -> Unit)? = null,
         modifier: Modifier = Modifier
 ) {
+    var isExpanded by remember { mutableStateOf(false) }
+
     val daysUntil = subscription.nextBillingDate.getDaysUntil()
     val isUrgent = daysUntil in 0L..3L
     val isOverdue = daysUntil < 0L
@@ -51,7 +59,7 @@ fun ModernSubscriptionCard(
     var swipeOffset by remember { mutableStateOf(0f) }
 
     val draggableState = rememberDraggableState { delta ->
-        if (onDelete != null) {
+        if (onDelete != null && !isExpanded) {
             swipeOffset += delta
             swipeOffset = swipeOffset.coerceIn(-150f, 150f)
             isSwiped = swipeOffset < -50f
@@ -144,20 +152,31 @@ fun ModernSubscriptionCard(
 
     val cardShape = RoundedCornerShape(24.dp)
 
+    // Animated rotation for expand/collapse icon
+    val expandIconRotation by
+            animateFloatAsState(
+                    targetValue = if (isExpanded) 180f else 0f,
+                    animationSpec = tween(300),
+                    label = "expandIconRotation"
+            )
+
     Card(
             modifier =
                     modifier.fillMaxWidth()
-                            .padding(horizontal = 16.dp, vertical = 10.dp)
+                            .padding(horizontal = 16.dp, vertical = 6.dp)
                             .graphicsLayer { translationX = swipeOffset }
-                            .shadow(elevation = 18.dp, shape = cardShape, clip = false)
+                            .shadow(
+                                    elevation = if (isExpanded) 12.dp else 8.dp,
+                                    shape = cardShape,
+                                    clip = false
+                            )
                             .draggable(
                                     state = draggableState,
                                     orientation = Orientation.Horizontal,
-                                    enabled = onDelete != null
+                                    enabled = onDelete != null && !isExpanded
                             )
                             .clip(cardShape)
-                            .clickable { if (!isSwiped) onClick() }
-                            .animateContentSize(),
+                            .animateContentSize(animationSpec = tween(300)),
             shape = cardShape,
             colors = CardDefaults.cardColors(containerColor = Color.Transparent),
             elevation = CardDefaults.cardElevation(defaultElevation = 0.dp, pressedElevation = 0.dp)
@@ -219,6 +238,7 @@ fun ModernSubscriptionCard(
             )
 
             Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+                // Main content row - always visible
                 Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
@@ -257,97 +277,235 @@ fun ModernSubscriptionCard(
 
                 Spacer(modifier = Modifier.height(12.dp))
 
-                Text(
-                        text = subscription.price.formatCurrency(selectedCurrency),
-                        style = MaterialTheme.typography.headlineMedium,
-                        fontWeight = FontWeight.ExtraBold,
-                        color = MaterialTheme.colorScheme.onSurface
-                )
-
-                Spacer(modifier = Modifier.height(8.dp))
-
+                // Price and compact next billing info
                 Row(
                         modifier = Modifier.fillMaxWidth(),
-                        horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
                 ) {
-                    InfoRowItem(
-                            icon = Icons.Default.Autorenew,
-                            label = stringResource(R.string.billing_cycle),
-                            value = billingCycleLabel,
-                            modifier = Modifier.weight(1f)
-                    )
-
-                    InfoRowItem(
-                            icon = Icons.Default.Event,
-                            label = stringResource(R.string.next_billing_date),
-                            value = subscription.nextBillingDate.formatDate(),
-                            modifier = Modifier.weight(1f)
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(12.dp))
-
-                HorizontalDivider(color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f))
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                            imageVector = Icons.Default.Schedule,
-                            contentDescription = null,
-                            tint = daysColor,
-                            modifier = Modifier.size(18.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                            text = daysText,
-                            style = MaterialTheme.typography.bodyMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = daysColor
+                            text = subscription.price.formatCurrency(selectedCurrency),
+                            style = MaterialTheme.typography.headlineMedium,
+                            fontWeight = FontWeight.ExtraBold,
+                            color = MaterialTheme.colorScheme.onSurface
                     )
+
+                    if (!isExpanded) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                    imageVector = Icons.Default.Schedule,
+                                    contentDescription = null,
+                                    tint = daysColor,
+                                    modifier = Modifier.size(16.dp)
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                    text = daysText,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    fontWeight = FontWeight.Medium,
+                                    color = daysColor,
+                                    maxLines = 1,
+                                    overflow = TextOverflow.Ellipsis
+                            )
+                        }
+                    }
                 }
 
-                if (isActive && !isOverdue) {
-                    Spacer(modifier = Modifier.height(12.dp))
+                // Expand/Collapse button
+                Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                ) {
+                    if (!isExpanded) {
+                        Text(
+                                text =
+                                        "${billingCycleLabel} • ${subscription.nextBillingDate.formatDate()}",
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis,
+                                modifier = Modifier.weight(1f)
+                        )
+                    } else {
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
 
-                    val progress =
-                            when (subscription.billingCycle) {
-                                BillingCycle.DAILY -> {
-                                    val daysInCycle = 1
-                                    val daysPassed = 1 - (daysUntil % daysInCycle).coerceAtLeast(0)
-                                    daysPassed.toFloat() / daysInCycle
+                    IconButton(
+                            onClick = {
+                                if (!isSwiped) {
+                                    isExpanded = !isExpanded
                                 }
-                                BillingCycle.WEEKLY -> {
-                                    val daysInCycle = 7
-                                    val daysPassed = 7 - (daysUntil % daysInCycle).coerceAtLeast(0)
-                                    daysPassed.toFloat() / daysInCycle
-                                }
-                                BillingCycle.MONTHLY -> {
-                                    val daysInCycle = 30
-                                    val daysPassed = 30 - (daysUntil % daysInCycle).coerceAtLeast(0)
-                                    daysPassed.toFloat() / daysInCycle
-                                }
-                                BillingCycle.YEARLY -> {
-                                    val daysInCycle = 365
-                                    val daysPassed =
-                                            365 - (daysUntil % daysInCycle).coerceAtLeast(0)
-                                    daysPassed.toFloat() / daysInCycle
-                                }
+                            },
+                            modifier = Modifier.size(32.dp)
+                    ) {
+                        Icon(
+                                imageVector = Icons.Default.ExpandMore,
+                                contentDescription = if (isExpanded) "Collapse" else "Expand",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier =
+                                        Modifier.size(20.dp).graphicsLayer {
+                                            rotationZ = expandIconRotation
+                                        }
+                        )
+                    }
+                }
+
+                // Expanded content
+                AnimatedVisibility(
+                        visible = isExpanded,
+                        enter =
+                                expandVertically(animationSpec = tween(300)) +
+                                        fadeIn(animationSpec = tween(300)),
+                        exit =
+                                shrinkVertically(animationSpec = tween(300)) +
+                                        fadeOut(animationSpec = tween(300))
+                ) {
+                    Column {
+                        Spacer(modifier = Modifier.height(8.dp))
+
+                        HorizontalDivider(
+                                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.08f)
+                        )
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            InfoRowItem(
+                                    icon = Icons.Default.Autorenew,
+                                    label = stringResource(R.string.billing_cycle),
+                                    value = billingCycleLabel,
+                                    modifier = Modifier.weight(1f)
+                            )
+
+                            InfoRowItem(
+                                    icon = Icons.Default.Event,
+                                    label = stringResource(R.string.next_billing_date),
+                                    value = subscription.nextBillingDate.formatDate(),
+                                    modifier = Modifier.weight(1f)
+                            )
+                        }
+
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                    imageVector = Icons.Default.Schedule,
+                                    contentDescription = null,
+                                    tint = daysColor,
+                                    modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                    text = daysText,
+                                    style = MaterialTheme.typography.bodyMedium,
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = daysColor
+                            )
+                        }
+
+                        if (isActive && !isOverdue) {
+                            Spacer(modifier = Modifier.height(12.dp))
+
+                            val progress =
+                                    when (subscription.billingCycle) {
+                                        BillingCycle.DAILY -> {
+                                            val daysInCycle = 1
+                                            val daysPassed =
+                                                    1 - (daysUntil % daysInCycle).coerceAtLeast(0)
+                                            daysPassed.toFloat() / daysInCycle
+                                        }
+                                        BillingCycle.WEEKLY -> {
+                                            val daysInCycle = 7
+                                            val daysPassed =
+                                                    7 - (daysUntil % daysInCycle).coerceAtLeast(0)
+                                            daysPassed.toFloat() / daysInCycle
+                                        }
+                                        BillingCycle.MONTHLY -> {
+                                            val daysInCycle = 30
+                                            val daysPassed =
+                                                    30 - (daysUntil % daysInCycle).coerceAtLeast(0)
+                                            daysPassed.toFloat() / daysInCycle
+                                        }
+                                        BillingCycle.YEARLY -> {
+                                            val daysInCycle = 365
+                                            val daysPassed =
+                                                    365 - (daysUntil % daysInCycle).coerceAtLeast(0)
+                                            daysPassed.toFloat() / daysInCycle
+                                        }
+                                    }
+
+                            LinearProgressIndicator(
+                                    progress = { progress.coerceIn(0f, 1f) },
+                                    modifier =
+                                            Modifier.fillMaxWidth()
+                                                    .height(6.dp)
+                                                    .clip(RoundedCornerShape(50)),
+                                    color = statusColor,
+                                    trackColor =
+                                            MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
+                            )
+                        }
+
+                        // Action buttons for expanded mode
+                        Spacer(modifier = Modifier.height(12.dp))
+
+                        Row(
+                                modifier = Modifier.fillMaxWidth(),
+                                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            OutlinedButton(
+                                    onClick = onClick,
+                                    modifier = Modifier.weight(1f),
+                                    colors =
+                                            ButtonDefaults.outlinedButtonColors(
+                                                    contentColor = MaterialTheme.colorScheme.primary
+                                            )
+                            ) {
+                                Icon(
+                                        imageVector = Icons.Default.Visibility,
+                                        contentDescription = null,
+                                        modifier = Modifier.size(16.dp)
+                                )
+                                Spacer(modifier = Modifier.width(4.dp))
+                                Text(
+                                        text = stringResource(R.string.view_details),
+                                        style = MaterialTheme.typography.labelMedium
+                                )
                             }
 
-                    LinearProgressIndicator(
-                            progress = { progress.coerceIn(0f, 1f) },
-                            modifier =
-                                    Modifier.fillMaxWidth()
-                                            .height(6.dp)
-                                            .clip(RoundedCornerShape(50)),
-                            color = statusColor,
-                            trackColor = MaterialTheme.colorScheme.surface.copy(alpha = 0.3f)
-                    )
+                            if (onEdit != null) {
+                                OutlinedButton(
+                                        onClick = onEdit,
+                                        modifier = Modifier.weight(1f),
+                                        colors =
+                                                ButtonDefaults.outlinedButtonColors(
+                                                        contentColor =
+                                                                MaterialTheme.colorScheme.secondary
+                                                )
+                                ) {
+                                    Icon(
+                                            imageVector = Icons.Default.Edit,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                            text = stringResource(R.string.edit),
+                                            style = MaterialTheme.typography.labelMedium
+                                    )
+                                }
+                            }
+                        }
+                    }
                 }
             }
 
-            if (onDelete != null && isSwiped) {
+            // Swipe to delete overlay (only when not expanded)
+            if (onDelete != null && isSwiped && !isExpanded) {
                 Row(
                         modifier =
                                 Modifier.fillMaxSize()

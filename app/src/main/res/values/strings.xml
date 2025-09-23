@@ -36,6 +36,7 @@
     <string name="restore">Restore</string>
     <string name="clear">Clear</string>
     <string name="show">Show</string>
+    <string name="view_details">View Details</string>
 
     <!-- Subscription related -->
     <string name="add_subscription">Add Subscription</string>
