@@ -11,7 +11,6 @@ import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -54,17 +53,6 @@ fun ModernSubscriptionCard(
     val isUrgent = daysUntil in 0L..3L
     val isOverdue = daysUntil < 0L
     val isActive = subscription.isActive
-
-    var isSwiped by remember { mutableStateOf(false) }
-    var swipeOffset by remember { mutableStateOf(0f) }
-
-    val draggableState = rememberDraggableState { delta ->
-        if (onDelete != null && !isExpanded) {
-            swipeOffset += delta
-            swipeOffset = swipeOffset.coerceIn(-150f, 150f)
-            isSwiped = swipeOffset < -50f
-        }
-    }
 
     val statusIcon =
             when {
@@ -161,19 +149,14 @@ fun ModernSubscriptionCard(
             )
 
     Card(
+            onClick = { isExpanded = !isExpanded },
             modifier =
                     modifier.fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 6.dp)
-                            .graphicsLayer { translationX = swipeOffset }
                             .shadow(
                                     elevation = if (isExpanded) 12.dp else 8.dp,
                                     shape = cardShape,
                                     clip = false
-                            )
-                            .draggable(
-                                    state = draggableState,
-                                    orientation = Orientation.Horizontal,
-                                    enabled = onDelete != null && !isExpanded
                             )
                             .clip(cardShape)
                             .animateContentSize(animationSpec = tween(300)),
@@ -332,11 +315,7 @@ fun ModernSubscriptionCard(
                     }
 
                     IconButton(
-                            onClick = {
-                                if (!isSwiped) {
-                                    isExpanded = !isExpanded
-                                }
-                            },
+                            onClick = { isExpanded = !isExpanded },
                             modifier = Modifier.size(32.dp)
                     ) {
                         Icon(
@@ -499,63 +478,28 @@ fun ModernSubscriptionCard(
                                     )
                                 }
                             }
-                        }
-                    }
-                }
-            }
 
-            // Swipe to delete overlay (only when not expanded)
-            if (onDelete != null && isSwiped && !isExpanded) {
-                Row(
-                        modifier =
-                                Modifier.fillMaxSize()
-                                        .clip(cardShape)
-                                        .background(
-                                                brush =
-                                                        Brush.horizontalGradient(
-                                                                colors =
-                                                                        listOf(
-                                                                                ErrorColor.copy(
-                                                                                        alpha =
-                                                                                                0.85f
-                                                                                ),
-                                                                                ErrorColor.copy(
-                                                                                        alpha =
-                                                                                                0.65f
-                                                                                )
-                                                                        )
-                                                        )
-                                        ),
-                        horizontalArrangement = Arrangement.End,
-                        verticalAlignment = Alignment.CenterVertically
-                ) {
-                    IconButton(
-                            onClick = {
-                                onDelete()
-                                swipeOffset = 0f
-                                isSwiped = false
-                            }
-                    ) {
-                        Icon(
-                                imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete",
-                                tint = Color.White
-                        )
-                    }
-
-                    if (onEdit != null) {
-                        IconButton(
-                                onClick = {
-                                    onEdit()
-                                    swipeOffset = 0f
-                                    isSwiped = false
+                            if (onDelete != null) {
+                                OutlinedButton(
+                                        onClick = onDelete,
+                                        modifier = Modifier.weight(1f),
+                                        colors =
+                                                ButtonDefaults.outlinedButtonColors(
+                                                        contentColor = ErrorColor
+                                                )
+                                ) {
+                                    Icon(
+                                            imageVector = Icons.Default.Delete,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(16.dp)
+                                    )
+                                    Spacer(modifier = Modifier.width(4.dp))
+                                    Text(
+                                            text = stringResource(R.string.delete),
+                                            style = MaterialTheme.typography.labelMedium
+                                    )
                                 }
-                        ) {
-                            Icon(
-                                    imageVector = Icons.Default.Edit,
-                                    contentDescription = "Edit",
-                                    tint = Color.White
-                            )
+                            }
                         }
                     }
                 }

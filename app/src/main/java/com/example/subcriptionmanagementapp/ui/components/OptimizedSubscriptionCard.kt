@@ -5,7 +5,6 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.gestures.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -56,34 +55,6 @@ fun OptimizedSubscriptionCard(
     val isOverdue = daysUntil < 0L
     val isActive = subscription.isActive
 
-    var isSwiped by remember { mutableStateOf(false) }
-    var swipeOffset by remember { mutableStateOf(0f) }
-    
-    // Animated swipe offset for smoother visual feedback
-    val animatedSwipeOffset by animateFloatAsState(
-        targetValue = swipeOffset,
-        animationSpec = spring(
-            dampingRatio = Spring.DampingRatioMediumBouncy,
-            stiffness = Spring.StiffnessMedium
-        ),
-        label = "swipeOffset"
-    )
-
-    val draggableState = rememberDraggableState { delta ->
-        if (onDelete != null && !isExpanded) {
-            swipeOffset += delta
-            swipeOffset = swipeOffset.coerceIn(-200f, 50f)
-            isSwiped = swipeOffset < -80f // Increased threshold for better UX
-        }
-    }
-    
-    // Auto-reset swipe when not swiped
-    LaunchedEffect(isSwiped) {
-        if (!isSwiped && swipeOffset != 0f) {
-            swipeOffset = 0f
-        }
-    }
-
     val statusInfo = getStatusInfo(isActive, isOverdue, isUrgent, daysUntil)
     val cardGradient = getCardGradient(isActive, isOverdue, isUrgent)
     val billingCycleLabel = getBillingCycleLabel(subscription.billingCycle)
@@ -98,19 +69,14 @@ fun OptimizedSubscriptionCard(
     )
 
     Card(
+        onClick = { isExpanded = !isExpanded },
         modifier = modifier
             .fillMaxWidth()
             .padding(horizontal = 16.dp, vertical = 4.dp) // Reduced vertical padding
-            .graphicsLayer { translationX = animatedSwipeOffset }
             .shadow(
                 elevation = if (isExpanded) 8.dp else 4.dp, // Reduced elevation
                 shape = cardShape,
                 clip = false
-            )
-            .draggable(
-                state = draggableState,
-                orientation = Orientation.Horizontal,
-                enabled = onDelete != null && !isExpanded
             )
             .clip(cardShape)
             .animateContentSize(animationSpec = tween(300)),
@@ -173,10 +139,8 @@ fun OptimizedSubscriptionCard(
                     selectedCurrency = selectedCurrency,
                     isExpanded = isExpanded,
                     expandIconRotation = expandIconRotation,
-                    onExpandClick = { 
-                        if (!isSwiped) {
-                            isExpanded = !isExpanded
-                        }
+                    onExpandClick = {
+                        isExpanded = !isExpanded
                     }
                 )
 
@@ -193,28 +157,11 @@ fun OptimizedSubscriptionCard(
                         statusInfo = statusInfo,
                         billingCycleLabel = billingCycleLabel,
                         onClick = onClick,
-                        onEdit = onEdit
+                        onEdit = onEdit,
+                        onDelete = onDelete
                     )
                 }
             }
-
-            // Swipe to delete overlay
-            SwipeDeleteOverlay(
-                isVisible = onDelete != null && isSwiped && !isExpanded,
-                cardShape = cardShape,
-                onDelete = {
-                    onDelete?.invoke()
-                    swipeOffset = 0f
-                    isSwiped = false
-                },
-                onEdit = onEdit?.let { editFn ->
-                    {
-                        editFn()
-                        swipeOffset = 0f
-                        isSwiped = false
-                    }
-                }
-            )
         }
     }
 }
@@ -385,7 +332,8 @@ private fun ExpandedCardContent(
     statusInfo: StatusInfo,
     billingCycleLabel: String,
     onClick: () -> Unit,
-    onEdit: (() -> Unit)?
+    onEdit: (() -> Unit)?,
+    onDelete: (() -> Unit)?
 ) {
     Column {
         Spacer(modifier = Modifier.height(8.dp))
@@ -496,6 +444,25 @@ private fun ExpandedCardContent(
                     )
                 }
             }
+
+            if (onDelete != null) {
+                OutlinedButton(
+                    onClick = onDelete,
+                    modifier = Modifier.weight(1f),
+                    colors = ButtonDefaults.outlinedButtonColors(contentColor = ErrorColor)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.Delete,
+                        contentDescription = null,
+                        modifier = Modifier.size(16.dp)
+                    )
+                    Spacer(modifier = Modifier.width(4.dp))
+                    Text(
+                        text = stringResource(R.string.delete),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+            }
         }
     }
 }
@@ -533,86 +500,6 @@ private fun InfoItem(
             maxLines = 1,
             overflow = TextOverflow.Ellipsis
         )
-    }
-}
-
-@Composable
-private fun SwipeDeleteOverlay(
-    isVisible: Boolean,
-    cardShape: RoundedCornerShape,
-    onDelete: () -> Unit,
-    onEdit: (() -> Unit)?
-) {
-    AnimatedVisibility(
-        visible = isVisible,
-        enter = slideInHorizontally(
-            initialOffsetX = { it },
-            animationSpec = spring(
-                dampingRatio = Spring.DampingRatioMediumBouncy,
-                stiffness = Spring.StiffnessMedium
-            )
-        ) + fadeIn(animationSpec = tween(200)),
-        exit = slideOutHorizontally(
-            targetOffsetX = { it },
-            animationSpec = tween(150)
-        ) + fadeOut(animationSpec = tween(150))
-    ) {
-        Row(
-            modifier = Modifier
-                .fillMaxSize()
-                .clip(cardShape)
-                .background(
-                    brush = Brush.horizontalGradient(
-                        colors = listOf(
-                            Color.Transparent,
-                            ErrorColor.copy(alpha = 0.9f),
-                            ErrorColor.copy(alpha = 0.95f)
-                        ),
-                        startX = 0f,
-                        endX = Float.POSITIVE_INFINITY
-                    )
-                ),
-            horizontalArrangement = Arrangement.End,
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Spacer(modifier = Modifier.width(8.dp))
-            
-            if (onEdit != null) {
-                FilledIconButton(
-                    onClick = onEdit,
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.secondary,
-                        contentColor = MaterialTheme.colorScheme.onSecondary
-                    ),
-                    modifier = Modifier.size(36.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = "Edit",
-                        modifier = Modifier.size(18.dp)
-                    )
-                }
-                
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-            
-            FilledIconButton(
-                onClick = onDelete,
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.error,
-                    contentColor = MaterialTheme.colorScheme.onError
-                ),
-                modifier = Modifier.size(36.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.Delete,
-                    contentDescription = "Delete",
-                    modifier = Modifier.size(18.dp)
-                )
-            }
-            
-            Spacer(modifier = Modifier.width(16.dp))
-        }
     }
 }
 
