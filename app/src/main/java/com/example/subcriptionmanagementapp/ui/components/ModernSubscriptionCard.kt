@@ -220,7 +220,7 @@ fun ModernSubscriptionCard(
                                     )
             )
 
-            Column(modifier = Modifier.fillMaxWidth().padding(16.dp)) {
+            Column(modifier = Modifier.fillMaxWidth().padding(12.dp)) {
                 // Main content row - always visible
                 Row(
                         modifier = Modifier.fillMaxWidth(),

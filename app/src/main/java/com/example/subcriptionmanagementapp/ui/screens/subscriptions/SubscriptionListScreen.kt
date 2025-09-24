@@ -321,8 +321,8 @@ fun CompactSubscriptionListContent(
                 } else {
                     LazyColumn(
                             modifier = Modifier.fillMaxWidth().weight(1f),
-                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 4.dp),
-                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                            contentPadding = PaddingValues(horizontal = 16.dp, vertical = 8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         items(items = filteredSubscriptions) { subscription ->
                             OptimizedSubscriptionCard(
