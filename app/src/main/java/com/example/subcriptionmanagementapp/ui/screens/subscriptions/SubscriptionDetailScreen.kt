@@ -29,8 +29,10 @@ import com.example.subcriptionmanagementapp.data.local.entity.Subscription
 import com.example.subcriptionmanagementapp.ui.components.CategoryTag
 import com.example.subcriptionmanagementapp.ui.components.CategoryTagSize
 import com.example.subcriptionmanagementapp.ui.components.CompactTopBar
+import com.example.subcriptionmanagementapp.ui.components.DeleteSubscriptionConfirmationDialog
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
+import com.example.subcriptionmanagementapp.ui.model.DeleteDialogState
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
 import com.example.subcriptionmanagementapp.ui.theme.ErrorColor
 import com.example.subcriptionmanagementapp.ui.theme.SuccessColor
@@ -39,6 +41,9 @@ import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import com.example.subcriptionmanagementapp.util.formatCurrency
 import com.example.subcriptionmanagementapp.util.formatDate
 import com.example.subcriptionmanagementapp.util.getDaysUntil
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
+
 
 @Composable
 fun SubscriptionDetailScreen(
@@ -53,6 +58,8 @@ fun SubscriptionDetailScreen(
     val category by viewModel.selectedCategory.collectAsStateWithLifecycle()
     val isUncategorized by
             viewModel.isSelectedSubscriptionUncategorized.collectAsStateWithLifecycle()
+
+    var deleteDialogState by remember { mutableStateOf<DeleteDialogState>(DeleteDialogState.Hidden) }
 
     LaunchedEffect(subscriptionId) { viewModel.loadSubscription(subscriptionId) }
 
@@ -93,14 +100,59 @@ fun SubscriptionDetailScreen(
                                     )
                                 },
                                 onDeleteClick = {
-                                    viewModel.deleteSubscription(currentSubscription.id)
-                                    navController.popBackStack()
+                                    deleteDialogState = DeleteDialogState.Visible(currentSubscription)
                                 },
                                 onToggleReminder = {
                                     // Toggle reminder
                                 }
                         )
             }
+        }
+    }
+
+    // Delete confirmation dialog
+    when (val state = deleteDialogState) {
+        is DeleteDialogState.Visible -> {
+            DeleteSubscriptionConfirmationDialog(
+                subscription = state.subscription,
+                onConfirm = { subscription ->
+                    deleteDialogState = DeleteDialogState.Deleting(subscription)
+                    viewModel.deleteSubscription(subscription.id)
+                    // Add a minimal delay to show loading state before closing
+                    MainScope().launch {
+                        kotlinx.coroutines.delay(200)
+                        deleteDialogState = DeleteDialogState.Hidden
+                        navController.popBackStack()
+                    }
+                },
+                onDismiss = {
+                    if (state !is DeleteDialogState.Deleting) {
+                        deleteDialogState = DeleteDialogState.Hidden
+                    }
+                },
+                isDeleting = state is DeleteDialogState.Deleting
+            )
+        }
+        is DeleteDialogState.Deleting -> {
+            DeleteSubscriptionConfirmationDialog(
+                subscription = state.subscription,
+                onConfirm = { subscription ->
+                    viewModel.deleteSubscription(subscription.id)
+                    // Add a minimal delay to show loading state before closing
+                    MainScope().launch {
+                        kotlinx.coroutines.delay(200)
+                        deleteDialogState = DeleteDialogState.Hidden
+                        navController.popBackStack()
+                    }
+                },
+                onDismiss = {
+                    // Can't dismiss while deleting
+                },
+                isDeleting = true
+            )
+        }
+        DeleteDialogState.Hidden -> {
+            // No dialog shown
         }
     }
 }

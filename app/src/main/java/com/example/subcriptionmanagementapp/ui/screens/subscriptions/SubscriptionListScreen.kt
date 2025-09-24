@@ -41,6 +41,7 @@ import com.example.subcriptionmanagementapp.ui.components.ModernLoadingState
 import com.example.subcriptionmanagementapp.ui.components.ModernNoSubscriptionsEmptyState
 import com.example.subcriptionmanagementapp.ui.components.OptimizedSubscriptionCard
 import com.example.subcriptionmanagementapp.ui.model.CategoryFilter
+import com.example.subcriptionmanagementapp.ui.model.DeleteDialogState
 import com.example.subcriptionmanagementapp.ui.model.FilterState
 import com.example.subcriptionmanagementapp.ui.model.SubscriptionListTab
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
@@ -51,14 +52,6 @@ import com.example.subcriptionmanagementapp.util.formatCurrency
 import com.example.subcriptionmanagementapp.util.formatDate
 import com.example.subcriptionmanagementapp.util.getDaysUntil
 
-/**
- * Sealed class representing the state of the delete confirmation dialog
- */
-sealed class DeleteDialogState {
-    object Hidden : DeleteDialogState()
-    data class Visible(val subscription: Subscription) : DeleteDialogState()
-    data class Deleting(val subscription: Subscription) : DeleteDialogState()
-}
 
 @Composable
 fun SubscriptionListScreen(
