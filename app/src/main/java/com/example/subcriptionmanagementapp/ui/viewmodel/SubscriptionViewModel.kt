@@ -350,6 +350,7 @@ constructor(
                 getSubscriptionUseCase(subscriptionId).first()?.let { subscription ->
                     deleteSubscriptionUseCase(subscription)
                 }
+                // Only reload subscriptions if the deletion was successful
                 loadAllSubscriptions()
                 loadActiveSubscriptions()
             } catch (e: Exception) {

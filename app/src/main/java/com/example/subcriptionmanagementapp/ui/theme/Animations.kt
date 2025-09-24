@@ -16,6 +16,7 @@ import androidx.compose.ui.unit.dp
 
 // Duration constants for animations
 object AnimationDurations {
+    const val INSTANT: Int = 50
     const val FAST: Int = 200
     const val MEDIUM: Int = 300
     const val SLOW: Int = 500

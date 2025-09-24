@@ -1,26 +1,14 @@
 package com.example.subcriptionmanagementapp.ui.screens.subscriptions
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.scaleIn
-import androidx.compose.animation.scaleOut
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ElevatedButton
-import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Tab
-import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -37,14 +25,16 @@ import androidx.compose.ui.unit.dp
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
+import kotlinx.coroutines.MainScope
+import kotlinx.coroutines.launch
 import com.example.subcriptionmanagementapp.R
 import com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
-import com.example.subcriptionmanagementapp.ui.components.AppTopBar
 import com.example.subcriptionmanagementapp.ui.components.CategoryFilterRow
-import com.example.subcriptionmanagementapp.ui.components.CompactSubscriptionTopBar
 import com.example.subcriptionmanagementapp.ui.components.CompactSubscriptionSummary
+import com.example.subcriptionmanagementapp.ui.components.CompactSubscriptionTopBar
 import com.example.subcriptionmanagementapp.ui.components.CompactTabsAndFilter
+import com.example.subcriptionmanagementapp.ui.components.DeleteSubscriptionConfirmationDialog
 import com.example.subcriptionmanagementapp.ui.components.ModernErrorState
 import com.example.subcriptionmanagementapp.ui.components.ModernFilterEmptyState
 import com.example.subcriptionmanagementapp.ui.components.ModernLoadingState
@@ -60,6 +50,15 @@ import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import com.example.subcriptionmanagementapp.util.formatCurrency
 import com.example.subcriptionmanagementapp.util.formatDate
 import com.example.subcriptionmanagementapp.util.getDaysUntil
+
+/**
+ * Sealed class representing the state of the delete confirmation dialog
+ */
+sealed class DeleteDialogState {
+    object Hidden : DeleteDialogState()
+    data class Visible(val subscription: Subscription) : DeleteDialogState()
+    data class Deleting(val subscription: Subscription) : DeleteDialogState()
+}
 
 @Composable
 fun SubscriptionListScreen(
@@ -77,6 +76,7 @@ fun SubscriptionListScreen(
     val filterState by viewModel.filterState.collectAsStateWithLifecycle()
 
     var isCategoryFilterExpanded by rememberSaveable { mutableStateOf(false) }
+    var deleteDialogState by remember { mutableStateOf<DeleteDialogState>(DeleteDialogState.Hidden) }
 
     val totalSubscriptions = allSubscriptions.size
     val activeSubscriptions = allSubscriptions.count { it.isActive }
@@ -180,7 +180,10 @@ fun SubscriptionListScreen(
                                     )
                                 },
                                 onDeleteClick = { subscriptionId ->
-                                    viewModel.deleteSubscription(subscriptionId)
+                                    val subscription = allSubscriptions.find { it.id == subscriptionId }
+                                    if (subscription != null) {
+                                        deleteDialogState = DeleteDialogState.Visible(subscription)
+                                    }
                                 },
                                 onTabSelected = { viewModel.selectTab(it) },
                                 onFilterClick = { filter ->
@@ -195,6 +198,50 @@ fun SubscriptionListScreen(
                                 }
                         )
             }
+        }
+    }
+
+    // Delete confirmation dialog
+    when (val state = deleteDialogState) {
+        is DeleteDialogState.Visible -> {
+            DeleteSubscriptionConfirmationDialog(
+                subscription = state.subscription,
+                onConfirm = { subscription ->
+                    deleteDialogState = DeleteDialogState.Deleting(subscription)
+                    viewModel.deleteSubscription(subscription.id)
+                    // Add a minimal delay to show loading state before closing
+                    kotlinx.coroutines.MainScope().launch {
+                        kotlinx.coroutines.delay(200)
+                        deleteDialogState = DeleteDialogState.Hidden
+                    }
+                },
+                onDismiss = {
+                    if (state !is DeleteDialogState.Deleting) {
+                        deleteDialogState = DeleteDialogState.Hidden
+                    }
+                },
+                isDeleting = state is DeleteDialogState.Deleting
+            )
+        }
+        is DeleteDialogState.Deleting -> {
+            DeleteSubscriptionConfirmationDialog(
+                subscription = state.subscription,
+                onConfirm = { subscription ->
+                    viewModel.deleteSubscription(subscription.id)
+                    // Add a minimal delay to show loading state before closing
+                    kotlinx.coroutines.MainScope().launch {
+                        kotlinx.coroutines.delay(200)
+                        deleteDialogState = DeleteDialogState.Hidden
+                    }
+                },
+                onDismiss = {
+                    // Can't dismiss while deleting
+                },
+                isDeleting = true
+            )
+        }
+        DeleteDialogState.Hidden -> {
+            // No dialog shown
         }
     }
 }
@@ -285,20 +332,14 @@ fun CompactSubscriptionListContent(
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         items(items = filteredSubscriptions) { subscription ->
-                            AnimatedVisibility(
-                                    visible = true,
-                                    enter = fadeIn() + scaleIn(),
-                                    exit = fadeOut() + scaleOut()
-                            ) {
-                                OptimizedSubscriptionCard(
-                                        subscription = subscription,
-                                        selectedCurrency = selectedCurrency,
-                                        viewModel = viewModel,
-                                        onClick = { onSubscriptionClick(subscription.id) },
-                                        onEdit = { onEditClick(subscription.id) },
-                                        onDelete = { onDeleteClick(subscription.id) }
-                                )
-                            }
+                            OptimizedSubscriptionCard(
+                                    subscription = subscription,
+                                    selectedCurrency = selectedCurrency,
+                                    viewModel = viewModel,
+                                    onClick = { onSubscriptionClick(subscription.id) },
+                                    onEdit = { onEditClick(subscription.id) },
+                                    onDelete = { onDeleteClick(subscription.id) }
+                            )
                         }
                     }
                 }
@@ -306,8 +347,6 @@ fun CompactSubscriptionListContent(
         }
     }
 }
-
-
 
 @Composable
 private fun UpcomingRenewalsSection(

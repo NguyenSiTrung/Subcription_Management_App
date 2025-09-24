@@ -290,4 +290,9 @@
 
     <!-- Errors -->
     <string name="error_occurred">An error occurred</string>
+
+    <!-- Delete Subscription Confirmation -->
+    <string name="delete_subscription_confirmation_title">Delete Subscription?</string>
+    <string name="delete_subscription_confirmation_message">Are you sure you want to delete \"%1$s\"? This will permanently remove the subscription and all associated data.</string>
+    <string name="delete_subscription_warning">This action cannot be undone. All reminders and payment history will be lost.</string>
 </resources>
