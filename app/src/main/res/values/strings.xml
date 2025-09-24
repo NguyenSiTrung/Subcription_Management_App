@@ -37,6 +37,7 @@
     <string name="clear">Clear</string>
     <string name="show">Show</string>
     <string name="view_details">View Details</string>
+    <string name="refresh">Refresh</string>
 
     <!-- Subscription related -->
     <string name="add_subscription">Add Subscription</string>
@@ -122,6 +123,32 @@
     <string name="total_spent">Total Spent</string>
     <string name="payment_count">Payment Count</string>
     <string name="average_payment">Average Payment</string>
+    <string name="statistics_time_range_title">Time range</string>
+    <string name="statistics_period_monthly">Monthly</string>
+    <string name="statistics_period_yearly">Yearly</string>
+    <string name="statistics_period_monthly_description">Focus on the current month</string>
+    <string name="statistics_period_yearly_description">View the year-to-date picture</string>
+    <string name="statistics_month_label">Month</string>
+    <string name="statistics_year_label">Year</string>
+    <string name="statistics_monthly_overview_title">Monthly overview</string>
+    <string name="statistics_total_spent_caption">Amount billed this month</string>
+    <string name="statistics_average_payment_caption">Average per recorded payment</string>
+    <string name="statistics_top_category_caption">Top category - %1$s (%2$s)</string>
+    <string name="statistics_payments_count_caption">Payments recorded this month</string>
+    <string name="statistics_year_overview_title">Yearly overview</string>
+    <string name="statistics_year_to_date_caption">Sum of payments this year</string>
+    <string name="statistics_average_month_caption">Average per month</string>
+    <string name="statistics_best_month_label">Best month</string>
+    <string name="statistics_no_data_label">No data yet</string>
+    <string name="statistics_best_month_caption">Track more payments to unlock insights</string>
+    <string name="statistics_category_distribution_title">Category distribution</string>
+    <string name="statistics_category_distribution_caption">Breakdown for %1$s %2$d</string>
+    <string name="statistics_no_category_data">No category data available for this period</string>
+    <string name="statistics_spending_trend_title">Spending trend</string>
+    <string name="statistics_spending_trend_caption">Track month-to-month changes</string>
+    <string name="statistics_no_trend_data">No spending trend to display</string>
+    <string name="statistics_recent_payments_title">Recent payments</string>
+    <string name="statistics_recent_payments_caption">Most recent payments for this period</string>
 
     <!-- Months -->
     <string name="january">January</string>

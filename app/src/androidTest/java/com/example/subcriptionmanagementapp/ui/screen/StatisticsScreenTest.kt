@@ -1,20 +1,27 @@
 package com.example.subcriptionmanagementapp.ui.screen
 
-import androidx.compose.ui.test.*
+import androidx.compose.ui.test.assertIsDisplayed
 import androidx.compose.ui.test.junit4.createComposeRule
+import androidx.compose.ui.test.onNodeWithText
 import androidx.navigation.compose.rememberNavController
 import androidx.test.ext.junit.runners.AndroidJUnit4
+import com.example.subcriptionmanagementapp.data.local.entity.Category
 import com.example.subcriptionmanagementapp.data.local.entity.PaymentHistory
-import com.example.subcriptionmanagementapp.data.local.entity.Subscription
+import com.example.subcriptionmanagementapp.domain.usecase.statistics.CategorySpending
+import com.example.subcriptionmanagementapp.domain.usecase.statistics.MonthlySpending
 import com.example.subcriptionmanagementapp.ui.theme.SubscriptionManagementAppTheme
+import com.example.subcriptionmanagementapp.ui.viewmodel.StatisticsPeriod
+import com.example.subcriptionmanagementapp.ui.viewmodel.StatisticsUiState
 import com.example.subcriptionmanagementapp.ui.viewmodel.StatisticsViewModel
+import com.example.subcriptionmanagementapp.ui.screens.statistics.StatisticsScreen
+import com.example.subcriptionmanagementapp.util.formatCurrency
+import java.util.Calendar
+import kotlinx.coroutines.flow.MutableStateFlow
 import org.junit.Before
 import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
-import org.mockito.Mock
-import org.mockito.junit.MockitoJUnitRunner
-import java.util.*
+import org.mockito.Mockito
 
 @RunWith(AndroidJUnit4::class)
 class StatisticsScreenTest {
@@ -22,18 +29,65 @@ class StatisticsScreenTest {
     @get:Rule
     val composeTestRule = createComposeRule()
 
-    @Mock
     private lateinit var viewModel: StatisticsViewModel
+    private lateinit var uiStateFlow: MutableStateFlow<StatisticsUiState>
+
+    private lateinit var monthlyState: StatisticsUiState
+    private lateinit var yearlyState: StatisticsUiState
+    private lateinit var emptyErrorState: StatisticsUiState
 
     @Before
     fun setUp() {
-        // Mock the ViewModel
-        viewModel = org.mockito.Mockito.mock(StatisticsViewModel::class.java)
+        viewModel = Mockito.mock(StatisticsViewModel::class.java)
+        monthlyState = buildMonthlyState()
+        yearlyState = buildYearlyState()
+        emptyErrorState = buildErrorState()
+
+        uiStateFlow = MutableStateFlow(monthlyState)
+        Mockito.`when`(viewModel.uiState).thenReturn(uiStateFlow)
     }
 
     @Test
-    fun statisticsScreen_displaysStatisticsCards() {
-        // When
+    fun statisticsScreen_displaysMonthlyOverview() {
+        composeScreen()
+
+        composeTestRule.onNodeWithText("Monthly overview").assertIsDisplayed()
+        composeTestRule.onNodeWithText(monthlyState.monthlyTotal!!.formatCurrency()).assertIsDisplayed()
+        monthlyState.recentPayments.firstOrNull()?.notes?.let { note ->
+            composeTestRule.onNodeWithText(note).assertIsDisplayed()
+        }
+        composeTestRule.onNodeWithText("Recent payments").assertIsDisplayed()
+    }
+
+    @Test
+    fun statisticsScreen_displaysCategoryDistribution() {
+        composeScreen()
+
+        composeTestRule.onNodeWithText("Category distribution").assertIsDisplayed()
+        composeTestRule.onNodeWithText(monthlyState.categorySpending.first().category.name).assertIsDisplayed()
+    }
+
+    @Test
+    fun statisticsScreen_displaysYearlyTrendWhenStateChanges() {
+        composeScreen()
+        composeTestRule.runOnUiThread { uiStateFlow.value = yearlyState }
+        composeTestRule.waitForIdle()
+
+        composeTestRule.onNodeWithText("Yearly overview").assertIsDisplayed()
+        composeTestRule.onNodeWithText(yearlyState.yearlyTotal!!.formatCurrency()).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Spending trend").assertIsDisplayed()
+    }
+
+    @Test
+    fun statisticsScreen_showsErrorStateWhenNoData() {
+        uiStateFlow.value = emptyErrorState
+        composeScreen()
+
+        composeTestRule.onNodeWithText(emptyErrorState.error!!).assertIsDisplayed()
+        composeTestRule.onNodeWithText("Retry").assertIsDisplayed()
+    }
+
+    private fun composeScreen() {
         composeTestRule.setContent {
             SubscriptionManagementAppTheme {
                 val navController = rememberNavController()
@@ -43,230 +97,92 @@ class StatisticsScreenTest {
                 )
             }
         }
-
-        // Then
-        composeTestRule
-            .onNodeWithText("Total Payments")
-            .assertIsDisplayed()
-        
-        composeTestRule
-            .onNodeWithText("Monthly Spending")
-            .assertIsDisplayed()
-        
-        composeTestRule
-            .onNodeWithText("Yearly Spending")
-            .assertIsDisplayed()
+        composeTestRule.waitForIdle()
     }
 
-    @Test
-    fun statisticsScreen_displaysCharts() {
-        // When
-        composeTestRule.setContent {
-            SubscriptionManagementAppTheme {
-                val navController = rememberNavController()
-                StatisticsScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
+    private fun buildMonthlyState(): StatisticsUiState {
+        val calendar = Calendar.getInstance().apply {
+            set(Calendar.YEAR, 2025)
+            set(Calendar.MONTH, Calendar.JANUARY)
+            set(Calendar.DAY_OF_MONTH, 15)
         }
 
-        // Then
-        composeTestRule
-            .onNodeWithText("Spending by Category")
-            .assertIsDisplayed()
-        
-        composeTestRule
-            .onNodeWithText("Monthly Spending Trend")
-            .assertIsDisplayed()
-    }
-
-    @Test
-    fun statisticsScreen_displaysDateFilters() {
-        // When
-        composeTestRule.setContent {
-            SubscriptionManagementAppTheme {
-                val navController = rememberNavController()
-                StatisticsScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
-        }
-
-        // Then
-        composeTestRule
-            .onNodeWithText("Month")
-            .assertIsDisplayed()
-        
-        composeTestRule
-            .onNodeWithText("Year")
-            .assertIsDisplayed()
-    }
-
-    @Test
-    fun statisticsScreen_displaysPaymentHistory() {
-        // When
-        composeTestRule.setContent {
-            SubscriptionManagementAppTheme {
-                val navController = rememberNavController()
-                StatisticsScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
-        }
-
-        // Then
-        composeTestRule
-            .onNodeWithText("Payment History")
-            .assertIsDisplayed()
-    }
-
-    @Test
-    fun statisticsScreen_displaysLoadingState() {
-        // Given
-        org.mockito.Mockito.`when`(viewModel.isLoading.value).thenReturn(true)
-
-        // When
-        composeTestRule.setContent {
-            SubscriptionManagementAppTheme {
-                val navController = rememberNavController()
-                StatisticsScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
-        }
-
-        // Then
-        composeTestRule
-            .onNodeWithContentDescription("Loading")
-            .assertIsDisplayed()
-    }
-
-    @Test
-    fun statisticsScreen_displaysErrorMessage() {
-        // Given
-        org.mockito.Mockito.`when`(viewModel.error.value).thenReturn("Failed to load statistics")
-
-        // When
-        composeTestRule.setContent {
-            SubscriptionManagementAppTheme {
-                val navController = rememberNavController()
-                StatisticsScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
-        }
-
-        // Then
-        composeTestRule
-            .onNodeWithText("Failed to load statistics")
-            .assertIsDisplayed()
-    }
-
-    @Test
-    fun statisticsScreen_displaysStatisticsData() {
-        // Given
-        val paymentHistory = listOf(
-            PaymentHistory(
-                id = 1,
-                subscriptionId = 1,
-                amount = 9.99,
-                paymentDate = Date().time,
-                paymentMethod = "Credit Card",
-                status = "Completed",
-                notes = "Monthly payment"
-            ),
-            PaymentHistory(
-                id = 2,
-                subscriptionId = 2,
-                amount = 4.99,
-                paymentDate = Date().time - 30 * 24 * 60 * 60 * 1000,
-                paymentMethod = "PayPal",
-                status = "Completed",
-                notes = "Monthly payment"
-            )
+        val entertainmentCategory = Category(
+            id = 1,
+            name = "Entertainment",
+            color = "#FF6B6B",
+            icon = null,
+            isPredefined = false,
+            keywords = null,
+            createdAt = calendar.timeInMillis,
+            updatedAt = calendar.timeInMillis
         )
-        
-        org.mockito.Mockito.`when`(viewModel.totalPayment.value).thenReturn(14.98)
-        org.mockito.Mockito.`when`(viewModel.monthlySpending.value).thenReturn(9.99)
-        org.mockito.Mockito.`when`(viewModel.yearlySpending.value).thenReturn(119.88)
+        val productivityCategory = entertainmentCategory.copy(
+            id = 2,
+            name = "Productivity",
+            color = "#4D96FF"
+        )
 
-        // When
-        composeTestRule.setContent {
-            SubscriptionManagementAppTheme {
-                val navController = rememberNavController()
-                StatisticsScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
-        }
+        val paymentOne = PaymentHistory(
+            id = 1,
+            subscriptionId = 1,
+            amount = 19.99,
+            currency = "USD",
+            paymentDate = calendar.timeInMillis,
+            paymentMethod = "Card",
+            transactionId = "txn-1",
+            notes = "Netflix Premium",
+            createdAt = calendar.timeInMillis,
+            updatedAt = calendar.timeInMillis
+        )
+        val paymentTwo = paymentOne.copy(
+            id = 2,
+            subscriptionId = 2,
+            amount = 9.99,
+            notes = "Notion Plus",
+            transactionId = "txn-2"
+        )
 
-        // Then
-        composeTestRule
-            .onNodeWithText("$14.98")
-            .assertIsDisplayed()
-        
-        composeTestRule
-            .onNodeWithText("$9.99")
-            .assertIsDisplayed()
-        
-        composeTestRule
-            .onNodeWithText("$119.88")
-            .assertIsDisplayed()
+        return StatisticsUiState(
+            period = StatisticsPeriod.MONTH,
+            selectedMonth = Calendar.JANUARY,
+            selectedYear = 2025,
+            monthlyTotal = paymentOne.amount + paymentTwo.amount,
+            monthlyPaymentCount = 2,
+            categorySpending = listOf(
+                CategorySpending(entertainmentCategory, paymentOne.amount),
+                CategorySpending(productivityCategory, paymentTwo.amount)
+            ),
+            recentPayments = listOf(paymentOne, paymentTwo)
+        )
     }
 
-    @Test
-    fun statisticsScreen_monthFilterClick_updatesData() {
-        // Given
-        val navController = androidx.navigation.testing.TestNavController()
-        
-        // When
-        composeTestRule.setContent {
-            SubscriptionManagementAppTheme {
-                StatisticsScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
-        }
+    private fun buildYearlyState(): StatisticsUiState {
+        val trend = listOf(
+            MonthlySpending(year = 2025, month = Calendar.JANUARY, amount = 120.0),
+            MonthlySpending(year = 2025, month = Calendar.FEBRUARY, amount = 95.0),
+            MonthlySpending(year = 2025, month = Calendar.MARCH, amount = 110.0)
+        )
 
-        // Then
-        composeTestRule
-            .onNodeWithText("Month")
-            .performClick()
-        
-        // Verify that the ViewModel method was called
-        // Note: In a real test, you would verify that the ViewModel method was called
-        // This is a simplified example
+        return monthlyState.copy(
+            period = StatisticsPeriod.YEAR,
+            yearlyTotal = trend.sumOf { it.amount },
+            monthlyTrend = trend
+        )
     }
 
-    @Test
-    fun statisticsScreen_yearFilterClick_updatesData() {
-        // Given
-        val navController = androidx.navigation.testing.TestNavController()
-        
-        // When
-        composeTestRule.setContent {
-            SubscriptionManagementAppTheme {
-                StatisticsScreen(
-                    navController = navController,
-                    viewModel = viewModel
-                )
-            }
-        }
-
-        // Then
-        composeTestRule
-            .onNodeWithText("Year")
-            .performClick()
-        
-        // Verify that the ViewModel method was called
-        // Note: In a real test, you would verify that the ViewModel method was called
-        // This is a simplified example
+    private fun buildErrorState(): StatisticsUiState {
+        return StatisticsUiState(
+            period = StatisticsPeriod.MONTH,
+            selectedMonth = Calendar.JANUARY,
+            selectedYear = 2025,
+            monthlyTotal = null,
+            monthlyPaymentCount = 0,
+            categorySpending = emptyList(),
+            monthlyTrend = emptyList(),
+            recentPayments = emptyList(),
+            error = "Failed to load statistics",
+            isLoading = false
+        )
     }
 }
