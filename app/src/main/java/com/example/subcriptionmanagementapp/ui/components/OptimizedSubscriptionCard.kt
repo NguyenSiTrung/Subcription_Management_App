@@ -58,8 +58,11 @@ fun OptimizedSubscriptionCard(
         }
     }
 
-    val isExpanded by remember { derivedStateOf { transitionState.currentState } }
+    val isExpanded by remember { derivedStateOf { transitionState.targetState } }
     val isTransitioning by remember { derivedStateOf { !transitionState.isIdle } }
+    val shouldRenderExpandedContent by remember {
+        derivedStateOf { transitionState.targetState || !transitionState.isIdle }
+    }
 
     // Pre-calculate all status information once
     val statusData = remember(subscription.id, subscription.nextBillingDate, subscription.isActive) {
@@ -175,7 +178,7 @@ fun OptimizedSubscriptionCard(
     )
 
     Card(
-            onClick = { transitionState.targetState = !transitionState.currentState },
+            onClick = { transitionState.targetState = !transitionState.targetState },
             modifier = modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 6.dp)
@@ -220,7 +223,7 @@ fun OptimizedSubscriptionCard(
                         isExpanded = isExpanded,
                         expandIconRotation = expandIconRotation,
                         onExpandClick = {
-                            transitionState.targetState = !transitionState.currentState
+                            transitionState.targetState = !transitionState.targetState
                         }
                 )
 
@@ -232,8 +235,7 @@ fun OptimizedSubscriptionCard(
                         exit = fadeOut(animationSpec = tween(150)) +
                                 shrinkVertically(animationSpec = tween(200))
                 ) {
-                    // Only render expanded content when actually expanded
-                    if (isExpanded) {
+                    if (shouldRenderExpandedContent) {
                         ExpandedCardContentOptimized(
                                 subscription = subscription,
                                 statusInfo = statusInfo,
