@@ -26,10 +26,9 @@ import com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
 import com.example.subcriptionmanagementapp.data.local.entity.Category
 import com.example.subcriptionmanagementapp.data.local.entity.PaymentHistory
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
-import com.example.subcriptionmanagementapp.ui.components.AppTopBar
-import com.example.subcriptionmanagementapp.ui.components.CompactTopBar
 import com.example.subcriptionmanagementapp.ui.components.CategoryTag
 import com.example.subcriptionmanagementapp.ui.components.CategoryTagSize
+import com.example.subcriptionmanagementapp.ui.components.CompactTopBar
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
@@ -69,7 +68,8 @@ fun SubscriptionDetailScreen(
             topBar = {
                 CompactTopBar(
                         title = stringResource(R.string.subscription_details),
-                        navController = navController
+                        navController = navController,
+                        showBackButton = true
                 )
             }
     ) { paddingValues ->

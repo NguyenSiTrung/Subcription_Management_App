@@ -2,8 +2,8 @@ package com.example.subcriptionmanagementapp.ui.screens.subscriptions
 
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
-import android.widget.Toast
 import android.text.format.DateFormat
+import android.widget.Toast
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -17,11 +17,11 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.wrapContentHeight
 import androidx.compose.foundation.lazy.LazyColumn
@@ -91,11 +91,9 @@ import com.example.subcriptionmanagementapp.R
 import com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
 import com.example.subcriptionmanagementapp.data.local.entity.Category
 import com.example.subcriptionmanagementapp.data.local.entity.Subscription
-import com.example.subcriptionmanagementapp.ui.components.AppTopBar
 import com.example.subcriptionmanagementapp.ui.components.CompactTopBar
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
-import com.example.subcriptionmanagementapp.ui.navigation.Screen
 import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import java.text.NumberFormat
 import java.text.SimpleDateFormat
@@ -161,14 +159,15 @@ fun AddEditSubscriptionScreen(
             initialCategoryId = currentSubscription.categoryId
             hasAppliedInitialCategory = false
             isCategoryCleared = currentSubscription.categoryId == null
-        } ?: run {
-            initialCategoryId = null
-            hasAppliedInitialCategory = true
-            selectedCategory = null
-            isCategoryCleared = true
-            reminderHour = Subscription.DEFAULT_REMINDER_HOUR
-            reminderMinute = Subscription.DEFAULT_REMINDER_MINUTE
         }
+                ?: run {
+                    initialCategoryId = null
+                    hasAppliedInitialCategory = true
+                    selectedCategory = null
+                    isCategoryCleared = true
+                    reminderHour = Subscription.DEFAULT_REMINDER_HOUR
+                    reminderMinute = Subscription.DEFAULT_REMINDER_MINUTE
+                }
     }
 
     LaunchedEffect(categories, initialCategoryId, hasAppliedInitialCategory) {
@@ -222,7 +221,8 @@ fun AddEditSubscriptionScreen(
                                 if (subscriptionId != null)
                                         stringResource(R.string.edit_subscription)
                                 else stringResource(R.string.add_subscription),
-                        navController = navController
+                        navController = navController,
+                        showBackButton = true
                 )
             }
     ) { paddingValues ->
@@ -279,7 +279,8 @@ fun AddEditSubscriptionScreen(
                                                 if (isCategoryCleared) {
                                                     null
                                                 } else {
-                                                    selectedCategory?.id ?: existingSubscription?.categoryId
+                                                    selectedCategory?.id
+                                                            ?: existingSubscription?.categoryId
                                                 }
 
                                         val subscriptionToPersist =
@@ -411,12 +412,13 @@ fun AddEditSubscriptionContent(
     val reminderQuickPicks = listOf(0, 1, 3, 7, 14)
     val reminderTimeText =
             remember(reminderHour, reminderMinute, context) {
-                val previewCalendar = Calendar.getInstance().apply {
-                    set(Calendar.HOUR_OF_DAY, reminderHour)
-                    set(Calendar.MINUTE, reminderMinute)
-                    set(Calendar.SECOND, 0)
-                    set(Calendar.MILLISECOND, 0)
-                }
+                val previewCalendar =
+                        Calendar.getInstance().apply {
+                            set(Calendar.HOUR_OF_DAY, reminderHour)
+                            set(Calendar.MINUTE, reminderMinute)
+                            set(Calendar.SECOND, 0)
+                            set(Calendar.MILLISECOND, 0)
+                        }
                 DateFormat.getTimeFormat(context).format(previewCalendar.time)
             }
     val isSaveEnabled = name.isNotBlank() && priceValue != null && priceValue > 0.0
@@ -641,14 +643,14 @@ fun AddEditSubscriptionContent(
                                         Text(stringResource(R.string.price_field_hint))
                                     }
                             )
-                            
+
                             // Currency Selector
                             Text(
                                     text = stringResource(R.string.currency),
                                     style = MaterialTheme.typography.labelLarge,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
-                            
+
                             CurrencySelector(
                                     selectedCurrency = selectedCurrencyForSubscription,
                                     onCurrencySelected = onSelectedCurrencyForSubscriptionChange,
@@ -688,7 +690,8 @@ fun AddEditSubscriptionContent(
                                     FilterChipDefaults.filterChipColors(
                                             selectedContainerColor = colorScheme.primaryContainer,
                                             selectedLabelColor = colorScheme.onPrimaryContainer,
-                                            selectedLeadingIconColor = colorScheme.onPrimaryContainer
+                                            selectedLeadingIconColor =
+                                                    colorScheme.onPrimaryContainer
                                     )
                             FlowRow(
                                     modifier = Modifier.fillMaxWidth(),
@@ -721,7 +724,8 @@ fun AddEditSubscriptionContent(
                                                     if (isSelected) {
                                                         {
                                                             Icon(
-                                                                    imageVector = Icons.Filled.Check,
+                                                                    imageVector =
+                                                                            Icons.Filled.Check,
                                                                     contentDescription = null
                                                             )
                                                         }
@@ -733,7 +737,10 @@ fun AddEditSubscriptionContent(
                                         onClick = onAddCategoryRequest,
                                         label = { Text(stringResource(R.string.add_category)) },
                                         leadingIcon = {
-                                            Icon(imageVector = Icons.Filled.Add, contentDescription = null)
+                                            Icon(
+                                                    imageVector = Icons.Filled.Add,
+                                                    contentDescription = null
+                                            )
                                         }
                                 )
                             }
@@ -912,14 +919,17 @@ fun AddEditSubscriptionContent(
                                         onClick = {
                                             val is24Hour = DateFormat.is24HourFormat(context)
                                             TimePickerDialog(
-                                                    context,
-                                                    { _, hourOfDay, minute ->
-                                                        onReminderTimeChange(hourOfDay, minute)
-                                                    },
-                                                    reminderHour,
-                                                    reminderMinute,
-                                                    is24Hour
-                                            )
+                                                            context,
+                                                            { _, hourOfDay, minute ->
+                                                                onReminderTimeChange(
+                                                                        hourOfDay,
+                                                                        minute
+                                                                )
+                                                            },
+                                                            reminderHour,
+                                                            reminderMinute,
+                                                            is24Hour
+                                                    )
                                                     .show()
                                         },
                                         modifier = Modifier.fillMaxWidth()
@@ -993,7 +1003,6 @@ fun AddEditSubscriptionContent(
                         }
                     }
                 }
-
 
                 item { Spacer(modifier = Modifier.height(4.dp)) }
             }
@@ -1227,10 +1236,7 @@ private fun SectionHeader(
 }
 
 @Composable
-private fun CreateCategoryDialog(
-        onDismiss: () -> Unit,
-        onCreate: (String, String?) -> Unit
-) {
+private fun CreateCategoryDialog(onDismiss: () -> Unit, onCreate: (String, String?) -> Unit) {
     var categoryName by remember { mutableStateOf("") }
     var categoryKeywords by remember { mutableStateOf("") }
     val isCreateEnabled = categoryName.trim().isNotEmpty()
@@ -1262,16 +1268,15 @@ private fun CreateCategoryDialog(
                 TextButton(
                         onClick = {
                             val trimmedName = categoryName.trim()
-                            val trimmedKeywords =
-                                    categoryKeywords.trim().takeIf { it.isNotEmpty() }
+                            val trimmedKeywords = categoryKeywords.trim().takeIf { it.isNotEmpty() }
                             onCreate(trimmedName, trimmedKeywords)
                         },
                         enabled = isCreateEnabled
-                ) {
-                    Text(stringResource(R.string.save))
-                }
+                ) { Text(stringResource(R.string.save)) }
             },
-            dismissButton = { TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) } }
+            dismissButton = {
+                TextButton(onClick = onDismiss) { Text(stringResource(R.string.cancel)) }
+            }
     )
 }
 
@@ -1282,24 +1287,20 @@ private fun CurrencySelector(
         modifier: Modifier = Modifier
 ) {
     var expanded by remember { mutableStateOf(false) }
-    
-    val currencyOptions = listOf(
-            CurrencyOption(
-                    code = "USD",
-                    name = "US Dollar",
-                    symbol = "$",
-                    flag = "🇺🇸"
-            ),
-            CurrencyOption(
-                    code = "VND",
-                    name = "Vietnamese Dong",
-                    symbol = "₫",
-                    flag = "🇻🇳"
+
+    val currencyOptions =
+            listOf(
+                    CurrencyOption(code = "USD", name = "US Dollar", symbol = "$", flag = "🇺🇸"),
+                    CurrencyOption(
+                            code = "VND",
+                            name = "Vietnamese Dong",
+                            symbol = "₫",
+                            flag = "🇻🇳"
+                    )
             )
-    )
-    
+
     val selectedOption = currencyOptions.find { it.code == selectedCurrency }
-    
+
     BoxWithConstraints(modifier = modifier) {
         val cardWidth = maxWidth
         Surface(
@@ -1309,9 +1310,8 @@ private fun CurrencySelector(
                 modifier = Modifier.fillMaxWidth()
         ) {
             Row(
-                    modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(horizontal = 20.dp, vertical = 16.dp),
+                    modifier =
+                            Modifier.fillMaxWidth().padding(horizontal = 20.dp, vertical = 16.dp),
                     verticalAlignment = Alignment.CenterVertically,
                     horizontalArrangement = Arrangement.SpaceBetween
             ) {
@@ -1337,7 +1337,7 @@ private fun CurrencySelector(
                             )
                         }
                     }
-                    
+
                     Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                         Text(
                                 text = selectedOption?.code ?: selectedCurrency,
@@ -1352,7 +1352,7 @@ private fun CurrencySelector(
                         )
                     }
                 }
-                
+
                 Icon(
                         imageVector = Icons.Filled.ArrowDropDown,
                         contentDescription = "Select currency",
@@ -1360,13 +1360,11 @@ private fun CurrencySelector(
                 )
             }
         }
-        
+
         DropdownMenu(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
-                modifier = Modifier
-                        .width(cardWidth)
-                        .wrapContentHeight()
+                modifier = Modifier.width(cardWidth).wrapContentHeight()
         ) {
             currencyOptions.forEach { option ->
                 DropdownMenuItem(
@@ -1378,11 +1376,12 @@ private fun CurrencySelector(
                                 // Currency Symbol in Circle
                                 Surface(
                                         shape = CircleShape,
-                                        color = if (option.code == selectedCurrency) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else {
-                                            MaterialTheme.colorScheme.surfaceVariant
-                                        },
+                                        color =
+                                                if (option.code == selectedCurrency) {
+                                                    MaterialTheme.colorScheme.primary
+                                                } else {
+                                                    MaterialTheme.colorScheme.surfaceVariant
+                                                },
                                         modifier = Modifier.size(32.dp)
                                 ) {
                                     Box(
@@ -1393,15 +1392,17 @@ private fun CurrencySelector(
                                                 text = option.symbol,
                                                 style = MaterialTheme.typography.labelLarge,
                                                 fontWeight = FontWeight.Bold,
-                                                color = if (option.code == selectedCurrency) {
-                                                    MaterialTheme.colorScheme.onPrimary
-                                                } else {
-                                                    MaterialTheme.colorScheme.onSurfaceVariant
-                                                }
+                                                color =
+                                                        if (option.code == selectedCurrency) {
+                                                            MaterialTheme.colorScheme.onPrimary
+                                                        } else {
+                                                            MaterialTheme.colorScheme
+                                                                    .onSurfaceVariant
+                                                        }
                                         )
                                     }
                                 }
-                                
+
                                 Column(verticalArrangement = Arrangement.spacedBy(2.dp)) {
                                     Row(
                                             verticalAlignment = Alignment.CenterVertically,
@@ -1424,9 +1425,9 @@ private fun CurrencySelector(
                                             color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
-                                
+
                                 Spacer(modifier = Modifier.weight(1f))
-                                
+
                                 if (option.code == selectedCurrency) {
                                     Icon(
                                             imageVector = Icons.Filled.Check,
@@ -1447,12 +1448,7 @@ private fun CurrencySelector(
     }
 }
 
-data class CurrencyOption(
-        val code: String,
-        val name: String,
-        val symbol: String,
-        val flag: String
-)
+data class CurrencyOption(val code: String, val name: String, val symbol: String, val flag: String)
 
 private fun validateInputs(name: String, price: String): Boolean {
     return name.isNotBlank() &&
