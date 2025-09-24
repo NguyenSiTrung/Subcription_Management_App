@@ -1,5 +1,6 @@
 package com.example.subcriptionmanagementapp.ui.navigation
 
+import android.net.Uri
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.runtime.Composable
@@ -12,6 +13,7 @@ import androidx.navigation.navArgument
 import com.example.subcriptionmanagementapp.ui.screens.subscriptions.SubscriptionListScreen
 import com.example.subcriptionmanagementapp.ui.screens.subscriptions.SubscriptionDetailScreen
 import com.example.subcriptionmanagementapp.ui.screens.subscriptions.AddEditSubscriptionScreen
+import com.example.subcriptionmanagementapp.ui.screens.subscriptions.FilteredSubscriptionListScreen
 import com.example.subcriptionmanagementapp.ui.screens.categories.CategoryListScreen
 import com.example.subcriptionmanagementapp.ui.screens.statistics.StatisticsScreen
 import com.example.subcriptionmanagementapp.ui.screens.settings.SettingsScreen
@@ -68,6 +70,27 @@ fun AppNavigation(
         composable(Screen.CategoryList.route) {
             CategoryListScreen(navController = navController)
         }
+
+        composable(
+            route = Screen.CategorySubscriptions.route,
+            arguments = listOf(
+                navArgument("categoryId") { type = NavType.LongType },
+                navArgument("categoryName") {
+                    type = NavType.StringType
+                    nullable = true
+                    defaultValue = null
+                }
+            )
+        ) { backStackEntry ->
+            val categoryId = backStackEntry.arguments?.getLong("categoryId") ?: return@composable
+            val categoryName = backStackEntry.arguments?.getString("categoryName")
+
+            FilteredSubscriptionListScreen(
+                navController = navController,
+                categoryId = categoryId,
+                categoryName = categoryName
+            )
+        }
         
         composable(Screen.Statistics.route) {
             StatisticsScreen(navController = navController)
@@ -93,6 +116,17 @@ sealed class Screen(val route: String) {
         fun createRoute(subscriptionId: Long) = "add_edit_subscription/$subscriptionId"
     }
     object CategoryList : Screen("category_list")
+    object CategorySubscriptions : Screen("category_subscriptions/{categoryId}?categoryName={categoryName}") {
+        fun createRoute(categoryId: Long, categoryName: String? = null): String {
+            val baseRoute = "category_subscriptions/$categoryId"
+            return if (categoryName.isNullOrBlank()) {
+                baseRoute
+            } else {
+                val encodedName = Uri.encode(categoryName)
+                "$baseRoute?categoryName=$encodedName"
+            }
+        }
+    }
     object Statistics : Screen("statistics")
     object Settings : Screen("settings")
     object About : Screen("about")

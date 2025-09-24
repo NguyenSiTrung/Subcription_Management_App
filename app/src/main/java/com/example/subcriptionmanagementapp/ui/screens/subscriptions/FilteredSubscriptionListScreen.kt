@@ -32,14 +32,19 @@ import kotlinx.coroutines.launch
 fun FilteredSubscriptionListScreen(
         navController: NavController,
         categoryId: Long,
-        categoryName: String,
+        categoryName: String?,
         viewModel: SubscriptionViewModel = hiltViewModel()
 ) {
     val subscriptions by viewModel.filteredSubscriptions.collectAsStateWithLifecycle()
     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
     val error by viewModel.error.collectAsStateWithLifecycle()
     val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
+    val categories by viewModel.categories.collectAsStateWithLifecycle()
     val coroutineScope = rememberCoroutineScope()
+
+    val categoryTitle =
+            categoryName ?: categories.firstOrNull { it.id == categoryId }?.name
+                    ?: stringResource(R.string.category)
 
     // Calculate statistics for this category
     val totalSubscriptions = subscriptions.size
@@ -69,7 +74,7 @@ fun FilteredSubscriptionListScreen(
     Scaffold(
             topBar = {
                 CompactTopBar(
-                        title = categoryName,
+                        title = categoryTitle,
                         navController = navController
                 )
             },
@@ -114,7 +119,7 @@ fun FilteredSubscriptionListScreen(
                                 description =
                                         stringResource(
                                                 R.string.no_subscriptions_in_category_subtitle,
-                                                categoryName
+                                                categoryTitle
                                         ),
                                 icon = Icons.Default.Category,
                                 actionText = stringResource(R.string.add_subscription),
@@ -128,7 +133,7 @@ fun FilteredSubscriptionListScreen(
                         ModernFilteredSubscriptionListContent(
                                 subscriptions = subscriptions,
                                 selectedCurrency = selectedCurrency,
-                                categoryName = categoryName,
+                                categoryName = categoryTitle,
                                 totalSubscriptions = totalSubscriptions,
                                 activeSubscriptions = activeSubscriptions,
                                 totalMonthlyCost = totalMonthlyCost,

@@ -2,6 +2,8 @@ package com.example.subcriptionmanagementapp.ui.screens.categories
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -10,10 +12,12 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Subscriptions
 import androidx.compose.material.icons.outlined.Category
 import androidx.compose.material.icons.outlined.Delete
 import androidx.compose.material.icons.outlined.Edit
 import androidx.compose.material3.*
+import androidx.compose.material3.BottomSheetDefaults
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -27,19 +31,13 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.R
 import com.example.subcriptionmanagementapp.data.local.entity.Category
+import com.example.subcriptionmanagementapp.ui.navigation.Screen
+import com.example.subcriptionmanagementapp.util.CategoryUtils
+import com.example.subcriptionmanagementapp.util.DateUtils
 import com.example.subcriptionmanagementapp.ui.components.CompactTopBar
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.components.NoCategoriesEmptyState
-import com.example.subcriptionmanagementapp.ui.theme.EducationColor
-import com.example.subcriptionmanagementapp.ui.theme.FinanceColor
-import com.example.subcriptionmanagementapp.ui.theme.GamingColor
-import com.example.subcriptionmanagementapp.ui.theme.HealthColor
-import com.example.subcriptionmanagementapp.ui.theme.MusicColor
-import com.example.subcriptionmanagementapp.ui.theme.NewsColor
-import com.example.subcriptionmanagementapp.ui.theme.OtherColor
-import com.example.subcriptionmanagementapp.ui.theme.SoftwareColor
-import com.example.subcriptionmanagementapp.ui.theme.StreamingColor
 import com.example.subcriptionmanagementapp.ui.viewmodel.CategoryViewModel
 
 @Composable
@@ -53,6 +51,7 @@ fun CategoryListScreen(
 
     var showCreateDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf<Category?>(null) }
+    var selectedCategoryDetails by remember { mutableStateOf<Category?>(null) }
 
     LaunchedEffect(Unit) { viewModel.loadCategories() }
 
@@ -87,12 +86,15 @@ fun CategoryListScreen(
                 else ->
                         CategoryGridContent(
                                 categories = categories,
-                                onCategoryClick = { categoryId ->
-                                    // Navigate to category detail or filter subscriptions by
-                                    // category
+                                onCategoryClick = { category ->
+                                    selectedCategoryDetails = category
                                 },
-                                onCategoryEdit = { category -> showEditDialog = category },
+                                onCategoryEdit = { category ->
+                                    selectedCategoryDetails = null
+                                    showEditDialog = category
+                                },
                                 onCategoryDelete = { category ->
+                                    selectedCategoryDetails = null
                                     viewModel.deleteCategory(category)
                                 }
                         )
@@ -121,13 +123,37 @@ fun CategoryListScreen(
                     }
             )
         }
+
+        selectedCategoryDetails?.let { category ->
+            CategoryDetailsBottomSheet(
+                    category = category,
+                    onDismiss = { selectedCategoryDetails = null },
+                    onViewSubscriptions = { selected ->
+                        selectedCategoryDetails = null
+                        navController.navigate(
+                                Screen.CategorySubscriptions.createRoute(
+                                        selected.id,
+                                        selected.name
+                                )
+                        )
+                    },
+                    onEdit = { selected ->
+                        selectedCategoryDetails = null
+                        showEditDialog = selected
+                    },
+                    onDelete = { selected ->
+                        selectedCategoryDetails = null
+                        viewModel.deleteCategory(selected)
+                    }
+            )
+        }
     }
 }
 
 @Composable
 fun CategoryGridContent(
         categories: List<Category>,
-        onCategoryClick: (Long) -> Unit,
+        onCategoryClick: (Category) -> Unit,
         onCategoryEdit: (Category) -> Unit,
         onCategoryDelete: (Category) -> Unit
 ) {
@@ -141,7 +167,7 @@ fun CategoryGridContent(
         items(categories) { category ->
             CategoryCard(
                     category = category,
-                    onClick = { onCategoryClick(category.id) },
+                    onClick = { onCategoryClick(category) },
                     onEdit = { onCategoryEdit(category) },
                     onDelete = { onCategoryDelete(category) }
             )
@@ -156,31 +182,10 @@ fun CategoryCard(
         onEdit: () -> Unit,
         onDelete: () -> Unit
 ) {
-    val categoryColor =
-            when (category.name.lowercase()) {
-                "streaming" -> StreamingColor
-                "music" -> MusicColor
-                "software" -> SoftwareColor
-                "gaming" -> GamingColor
-                "news" -> NewsColor
-                "education" -> EducationColor
-                "health" -> HealthColor
-                "finance" -> FinanceColor
-                else -> OtherColor
-            }
-
-    val categoryIcon =
-            when (category.name.lowercase()) {
-                "streaming" -> Icons.Outlined.Category
-                "music" -> Icons.Outlined.Category
-                "software" -> Icons.Outlined.Category
-                "gaming" -> Icons.Outlined.Category
-                "news" -> Icons.Outlined.Category
-                "education" -> Icons.Outlined.Category
-                "health" -> Icons.Outlined.Category
-                "finance" -> Icons.Outlined.Category
-                else -> Icons.Outlined.Category
-            }
+    val categoryColor = remember(category.color, category.name) {
+        CategoryUtils.parseColor(category.color)
+    }
+    val iconTint = remember(categoryColor) { CategoryUtils.getContrastingTextColor(categoryColor) }
 
     var showMenu by remember { mutableStateOf(false) }
 
@@ -213,16 +218,16 @@ fun CategoryCard(
                                                                 colors =
                                                                         listOf(
                                                                                 categoryColor.copy(alpha = 0.9f),
-                                                                                categoryColor.copy(alpha = 0.4f)
+                                                                                categoryColor.copy(alpha = 0.45f)
                                                                         )
                                                         )
                                         ),
                         contentAlignment = Alignment.Center
                 ) {
                     Icon(
-                            imageVector = categoryIcon,
+                            imageVector = Icons.Outlined.Category,
                             contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onPrimary,
+                            tint = iconTint,
                             modifier = Modifier.size(22.dp)
                     )
                 }
@@ -314,6 +319,202 @@ fun CategoryCard(
                             color = categoryColor,
                             modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
                     )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
+@Composable
+fun CategoryDetailsBottomSheet(
+        category: Category,
+        onDismiss: () -> Unit,
+        onViewSubscriptions: (Category) -> Unit,
+        onEdit: (Category) -> Unit,
+        onDelete: (Category) -> Unit
+) {
+    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+    val categoryColor = remember(category.color, category.name) {
+        CategoryUtils.parseColor(category.color)
+    }
+    val iconTint = remember(categoryColor) { CategoryUtils.getContrastingTextColor(categoryColor) }
+    val keywords = remember(category.keywords) {
+        category.keywords
+                ?.split(',')
+                ?.map { it.trim() }
+                ?.filter { it.isNotEmpty() }
+                .orEmpty()
+    }
+    val createdOn = remember(category.createdAt) { DateUtils.formatDate(category.createdAt) }
+    val updatedOn = remember(category.updatedAt) { DateUtils.formatDate(category.updatedAt) }
+
+    ModalBottomSheet(
+            onDismissRequest = onDismiss,
+            sheetState = sheetState,
+            dragHandle = { BottomSheetDefaults.DragHandle() },
+            containerColor = MaterialTheme.colorScheme.surface,
+            tonalElevation = 8.dp
+    ) {
+        Column(
+                modifier =
+                        Modifier.fillMaxWidth().padding(horizontal = 24.dp, vertical = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(24.dp)
+        ) {
+            Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Box(
+                        modifier =
+                                Modifier.size(56.dp)
+                                        .clip(RoundedCornerShape(18.dp))
+                                        .background(
+                                                brush =
+                                                        Brush.verticalGradient(
+                                                                colors =
+                                                                        listOf(
+                                                                                categoryColor.copy(alpha = 0.95f),
+                                                                                categoryColor.copy(alpha = 0.55f)
+                                                                        )
+                                                        )
+                                        ),
+                        contentAlignment = Alignment.Center
+                ) {
+                    Icon(
+                            imageVector = Icons.Outlined.Category,
+                            contentDescription = null,
+                            tint = iconTint,
+                            modifier = Modifier.size(28.dp)
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                            text = category.name,
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onSurface
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Surface(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
+                            shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Text(
+                                text =
+                                        stringResource(
+                                                if (category.isPredefined) R.string.predefined
+                                                else R.string.custom
+                                        ),
+                                style = MaterialTheme.typography.labelMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                        )
+                    }
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                Text(
+                        text = stringResource(R.string.category_details_created_on, createdOn),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                Text(
+                        text = stringResource(R.string.category_details_last_updated, updatedOn),
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                        text = stringResource(R.string.category_details_keywords_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                )
+                if (keywords.isEmpty()) {
+                    Text(
+                            text = stringResource(R.string.category_details_keywords_empty),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    FlowRow(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        keywords.forEach { keyword ->
+                            Surface(
+                                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f),
+                                    shape = RoundedCornerShape(10.dp)
+                            ) {
+                                Text(
+                                        text = keyword,
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Text(
+                        text = stringResource(R.string.category_details_manage_title),
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface
+                )
+                Button(
+                        onClick = { onViewSubscriptions(category) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(16.dp)
+                ) {
+                    Icon(
+                            imageVector = Icons.Filled.Subscriptions,
+                            contentDescription = null,
+                            modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(text = stringResource(R.string.view_related_subscriptions))
+                }
+
+                if (!category.isPredefined) {
+                    OutlinedButton(
+                            onClick = { onEdit(category) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(16.dp)
+                    ) {
+                        Icon(
+                                imageVector = Icons.Outlined.Edit,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(R.string.edit))
+                    }
+
+                    TextButton(
+                            onClick = { onDelete(category) },
+                            modifier = Modifier.fillMaxWidth(),
+                            colors = ButtonDefaults.textButtonColors(
+                                    contentColor = MaterialTheme.colorScheme.error
+                            )
+                    ) {
+                        Icon(
+                                imageVector = Icons.Outlined.Delete,
+                                contentDescription = null,
+                                modifier = Modifier.size(20.dp)
+                        )
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(text = stringResource(R.string.delete))
+                    }
                 }
             }
         }

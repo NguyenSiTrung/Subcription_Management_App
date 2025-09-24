@@ -74,6 +74,13 @@
     <string name="category_keywords_label">Keywords (optional)</string>
     <string name="category_keywords_placeholder">Separate keywords with commas</string>
     <string name="predefined">Predefined</string>
+    <string name="custom">Custom</string>
+    <string name="category_details_manage_title">Quick actions</string>
+    <string name="category_details_keywords_title">Keywords</string>
+    <string name="category_details_keywords_empty">Add keywords to improve smart suggestions</string>
+    <string name="category_details_created_on">Created on %1$s</string>
+    <string name="category_details_last_updated">Last updated %1$s</string>
+    <string name="view_related_subscriptions">View linked subscriptions</string>
 
     <!-- Form fields -->
     <string name="name">Name</string>
