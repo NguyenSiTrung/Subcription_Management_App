@@ -43,8 +43,9 @@ fun FilteredSubscriptionListScreen(
     val coroutineScope = rememberCoroutineScope()
 
     val categoryTitle =
-            categoryName ?: categories.firstOrNull { it.id == categoryId }?.name
-                    ?: stringResource(R.string.category)
+            categoryName
+                    ?: categories.firstOrNull { it.id == categoryId }?.name
+                            ?: stringResource(R.string.category)
 
     // Calculate statistics for this category
     val totalSubscriptions = subscriptions.size
@@ -75,7 +76,8 @@ fun FilteredSubscriptionListScreen(
             topBar = {
                 CompactTopBar(
                         title = categoryTitle,
-                        navController = navController
+                        navController = navController,
+                        showBackButton = true
                 )
             },
             floatingActionButton = {
