@@ -1,12 +1,19 @@
 package com.example.subcriptionmanagementapp.ui.screens.subscriptions
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.Icon
+import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -19,6 +26,7 @@ import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -45,8 +53,10 @@ import com.example.subcriptionmanagementapp.ui.model.DeleteDialogState
 import com.example.subcriptionmanagementapp.ui.model.FilterState
 import com.example.subcriptionmanagementapp.ui.model.SubscriptionListTab
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
+import com.example.subcriptionmanagementapp.ui.theme.AccentBlue
 import com.example.subcriptionmanagementapp.ui.theme.ErrorColor
 import com.example.subcriptionmanagementapp.ui.theme.WarningColor
+import com.example.subcriptionmanagementapp.ui.theme.WarmBackgroundColor
 import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import com.example.subcriptionmanagementapp.util.formatCurrency
 import com.example.subcriptionmanagementapp.util.formatDate
@@ -90,20 +100,30 @@ fun SubscriptionListScreen(
         viewModel.loadCategories()
     }
 
+    val navigateToAdd: () -> Unit = {
+        navController.navigate(Screen.AddEditSubscription.createRoute(-1))
+    }
+
     Scaffold(
+            containerColor = WarmBackgroundColor,
+            floatingActionButtonPosition = FabPosition.Center,
             topBar = {
                 CompactSubscriptionTopBar(
-                        navController = navController,
                         onSearchClick = {
                             // Navigate to search screen when implemented
-                        },
-                        onAddClick = {
-                            navController.navigate(Screen.AddEditSubscription.createRoute(-1))
                         }
                 )
+            },
+            floatingActionButton = {
+                AddSubscriptionFab(onClick = navigateToAdd)
             }
     ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+        Box(
+                modifier =
+                        Modifier.fillMaxSize()
+                                .background(WarmBackgroundColor)
+                                .padding(paddingValues)
+        ) {
             when {
                 isLoading -> ModernLoadingState()
                 error != null ->
@@ -115,7 +135,9 @@ fun SubscriptionListScreen(
                                 }
                         )
                 allSubscriptions.isEmpty() ->
-                        Column(modifier = Modifier.fillMaxSize()) {
+                        Column(
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp)
+                        ) {
                             CategoryFilterRow(
                                     filters = categoryFilters,
                                     showActiveOnly = filterState.showActiveOnly,
@@ -138,9 +160,7 @@ fun SubscriptionListScreen(
                                     contentAlignment = Alignment.Center
                             ) {
                                 ModernNoSubscriptionsEmptyState {
-                                    navController.navigate(
-                                            Screen.AddEditSubscription.createRoute(-1)
-                                    )
+                                    navigateToAdd()
                                 }
                             }
                         }
@@ -157,11 +177,7 @@ fun SubscriptionListScreen(
                                 selectedTab = selectedTab,
                                 isFilterExpanded = isCategoryFilterExpanded,
                                 viewModel = viewModel,
-                                onAddSubscription = {
-                                    navController.navigate(
-                                            Screen.AddEditSubscription.createRoute(-1)
-                                    )
-                                },
+                                onAddSubscription = navigateToAdd,
                                 onSubscriptionClick = { subscriptionId ->
                                     navController.navigate(
                                             Screen.SubscriptionDetail.createRoute(subscriptionId)
@@ -261,16 +277,16 @@ fun CompactSubscriptionListContent(
         onActiveFilterToggle: () -> Unit,
         onFilterExpandToggle: () -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxSize()) {
+    Column(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 12.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
+    ) {
         CompactSubscriptionSummary(
                 totalMonthlyCost = totalMonthlyCost,
                 activeSubscriptions = activeSubscriptions,
                 subscriptionCount = totalSubscriptions,
-                selectedCurrency = selectedCurrency,
-                onAddSubscription = onAddSubscription
+                selectedCurrency = selectedCurrency
         )
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         CompactTabsAndFilter(
                 selectedTab = selectedTab,
@@ -284,8 +300,6 @@ fun CompactSubscriptionListContent(
                 onActiveFilterToggle = onActiveFilterToggle,
                 onFilterExpandToggle = onFilterExpandToggle
         )
-
-        Spacer(modifier = Modifier.height(8.dp))
 
         when (selectedTab) {
             SubscriptionListTab.UPCOMING -> {
@@ -321,8 +335,8 @@ fun CompactSubscriptionListContent(
                 } else {
                     LazyColumn(
                             modifier = Modifier.fillMaxWidth().weight(1f),
-                            contentPadding = PaddingValues(vertical = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                            contentPadding = PaddingValues(vertical = 12.dp),
+                            verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
                         items(items = filteredSubscriptions) { subscription ->
                             OptimizedSubscriptionCard(
@@ -349,7 +363,7 @@ private fun UpcomingRenewalsSection(
         modifier: Modifier = Modifier
 ) {
     Column(
-            modifier = modifier.fillMaxWidth().padding(horizontal = 16.dp),
+            modifier = modifier.fillMaxWidth(),
             verticalArrangement = Arrangement.spacedBy(12.dp)
     ) {
         Text(
@@ -480,5 +494,21 @@ private fun UpcomingSubscriptionCard(
                 )
             }
         }
+    }
+}
+
+@Composable
+private fun AddSubscriptionFab(onClick: () -> Unit) {
+    LargeFloatingActionButton(
+            onClick = onClick,
+            shape = CircleShape,
+            containerColor = AccentBlue,
+            contentColor = Color.White,
+            modifier = Modifier.navigationBarsPadding()
+    ) {
+        Icon(
+                imageVector = Icons.Filled.Add,
+                contentDescription = stringResource(R.string.add_subscription)
+        )
     }
 }

@@ -27,6 +27,9 @@ import androidx.compose.ui.unit.dp
 import com.example.subcriptionmanagementapp.R
 import com.example.subcriptionmanagementapp.ui.model.CategoryFilter
 import com.example.subcriptionmanagementapp.ui.model.SubscriptionListTab
+import com.example.subcriptionmanagementapp.ui.theme.AccentBlue
+import com.example.subcriptionmanagementapp.ui.theme.WarmCardColor
+import com.example.subcriptionmanagementapp.ui.theme.WarmIconBackgroundColor
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -156,9 +159,9 @@ private fun CompactTabChip(
             .clickable(onClick = onClick),
         shape = RoundedCornerShape(20.dp),
         color = if (isSelected) {
-            MaterialTheme.colorScheme.primaryContainer
+            WarmCardColor
         } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         }
     ) {
         Row(
@@ -169,19 +172,15 @@ private fun CompactTabChip(
                 text = text,
                 style = MaterialTheme.typography.bodySmall,
                 fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                color = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                }
+                color = MaterialTheme.colorScheme.onBackground
             )
             Spacer(modifier = Modifier.width(4.dp))
             Surface(
                 shape = CircleShape,
                 color = if (isSelected) {
-                    MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f)
+                    AccentBlue.copy(alpha = 0.15f)
                 } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.1f)
+                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.08f)
                 }
             ) {
                 Text(
@@ -189,7 +188,7 @@ private fun CompactTabChip(
                     style = MaterialTheme.typography.labelSmall,
                     fontWeight = FontWeight.Bold,
                     color = if (isSelected) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
+                        AccentBlue
                     } else {
                         MaterialTheme.colorScheme.onSurfaceVariant
                     },
@@ -208,44 +207,29 @@ private fun CompactFilterButton(
 ) {
     Surface(
         modifier = Modifier
-            .size(36.dp)
+            .size(40.dp)
             .clickable(onClick = onExpandToggle),
-        shape = RoundedCornerShape(8.dp),
+        shape = CircleShape,
         color = if (hasActiveFilters) {
-            MaterialTheme.colorScheme.primaryContainer
+            AccentBlue.copy(alpha = 0.15f)
         } else {
-            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.7f)
+            WarmIconBackgroundColor
         }
     ) {
         Box(
             modifier = Modifier.fillMaxSize(),
             contentAlignment = Alignment.Center
         ) {
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(
-                    imageVector = Icons.Default.FilterList,
-                    contentDescription = null,
-                    tint = if (hasActiveFilters) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    modifier = Modifier.size(16.dp)
-                )
-                Icon(
-                    imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = null,
-                    tint = if (hasActiveFilters) {
-                        MaterialTheme.colorScheme.onPrimaryContainer
-                    } else {
-                        MaterialTheme.colorScheme.onSurfaceVariant
-                    },
-                    modifier = Modifier.size(14.dp)
-                )
-            }
+            Icon(
+                imageVector = if (isExpanded) Icons.Default.ExpandLess else Icons.Default.FilterList,
+                contentDescription = null,
+                tint = if (hasActiveFilters) {
+                    AccentBlue
+                } else {
+                    MaterialTheme.colorScheme.onBackground
+                },
+                modifier = Modifier.size(18.dp)
+            )
         }
     }
 }

@@ -1,124 +1,76 @@
 package com.example.subcriptionmanagementapp.ui.components
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.statusBarsPadding
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Info
-import androidx.compose.material3.*
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
-import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
-import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.R
-import com.example.subcriptionmanagementapp.ui.navigation.Screen
+import com.example.subcriptionmanagementapp.ui.theme.WarmBackgroundColor
+import com.example.subcriptionmanagementapp.ui.theme.WarmIconBackgroundColor
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CompactSubscriptionTopBar(
-    navController: NavController,
-    onSearchClick: (() -> Unit)? = null,
-    onAddClick: (() -> Unit)? = null
+    modifier: Modifier = Modifier,
+    onSearchClick: (() -> Unit)? = null
 ) {
-    val colorScheme = MaterialTheme.colorScheme
-    val typography = MaterialTheme.typography
+    val backgroundColor = WarmBackgroundColor
+    val iconBackground = WarmIconBackgroundColor
 
-    val gradientColors = remember(colorScheme.primary, colorScheme.secondary) {
-        listOf(colorScheme.primary, colorScheme.secondary)
-    }
-    val topBarShape = RoundedCornerShape(bottomStart = 16.dp, bottomEnd = 16.dp)
-
-    Box(
-        modifier = Modifier
+    Row(
+        modifier = modifier
             .fillMaxWidth()
-            .shadow(elevation = 4.dp, shape = topBarShape, clip = false)
-            .clip(topBarShape)
-            .background(brush = Brush.horizontalGradient(colors = gradientColors))
+            .background(backgroundColor)
+            .statusBarsPadding()
+            .padding(horizontal = 24.dp, vertical = 20.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically
     ) {
-        CenterAlignedTopAppBar(
-            title = {
-                Text(
-                    text = stringResource(R.string.subscriptions),
-                    style = typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
-                    color = colorScheme.onPrimary,
-                    maxLines = 1,
-                    overflow = TextOverflow.Ellipsis
-                )
-            },
-            actions = {
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    onSearchClick?.let { action ->
-                        CompactTopBarButton(
-                            onClick = action,
-                            icon = Icons.Filled.Search,
-                            contentDescription = stringResource(R.string.search)
-                        )
-                    }
-                    onAddClick?.let { action ->
-                        CompactTopBarButton(
-                            onClick = action,
-                            icon = Icons.Default.Add,
-                            contentDescription = stringResource(R.string.add)
-                        )
-                    }
-                    
-                    CompactTopBarButton(
-                        onClick = { navController.navigate(Screen.About.route) },
-                        icon = Icons.Outlined.Info,
-                        contentDescription = stringResource(R.string.about)
+        ColumnText()
+
+        onSearchClick?.let { action ->
+            Surface(
+                shape = CircleShape,
+                color = iconBackground,
+                modifier = Modifier,
+                tonalElevation = 0.dp,
+                shadowElevation = 0.dp
+            ) {
+                IconButton(onClick = action) {
+                    Icon(
+                        imageVector = Icons.Filled.Search,
+                        contentDescription = stringResource(R.string.search),
+                        tint = MaterialTheme.colorScheme.onBackground
                     )
                 }
-            },
-            colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
-                containerColor = Color.Transparent,
-                scrolledContainerColor = Color.Transparent,
-                titleContentColor = colorScheme.onPrimary,
-                navigationIconContentColor = colorScheme.onPrimary,
-                actionIconContentColor = colorScheme.onPrimary
-            )
-        )
+            }
+        }
     }
 }
 
 @Composable
-private fun CompactTopBarButton(
-    onClick: () -> Unit,
-    icon: ImageVector,
-    contentDescription: String
-) {
-    val colorScheme = MaterialTheme.colorScheme
-    val buttonSize = 36.dp
-
-    Surface(
-        modifier = Modifier.size(buttonSize),
-        shape = RoundedCornerShape(8.dp),
-        color = colorScheme.onPrimary.copy(alpha = 0.15f),
-        contentColor = colorScheme.onPrimary
-    ) {
-        IconButton(
-            onClick = onClick,
-            modifier = Modifier.fillMaxSize()
-        ) {
-            Icon(
-                imageVector = icon,
-                contentDescription = contentDescription,
-                modifier = Modifier.size(20.dp)
-            )
-        }
+private fun ColumnText() {
+    Column {
+        Text(
+            text = stringResource(R.string.subscriptions),
+            style = MaterialTheme.typography.headlineLarge.copy(fontWeight = FontWeight.Bold),
+            color = MaterialTheme.colorScheme.onBackground
+        )
     }
 }

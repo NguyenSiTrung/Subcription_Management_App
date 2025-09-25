@@ -1,21 +1,26 @@
 package com.example.subcriptionmanagementapp.ui.components
 
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.*
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.subcriptionmanagementapp.R
+import com.example.subcriptionmanagementapp.ui.theme.WarmCardColor
 import com.example.subcriptionmanagementapp.util.formatCurrency
 
 @Composable
@@ -23,87 +28,75 @@ fun CompactSubscriptionSummary(
     totalMonthlyCost: Double,
     activeSubscriptions: Int,
     subscriptionCount: Int,
-    onAddSubscription: () -> Unit,
     selectedCurrency: String,
     modifier: Modifier = Modifier
 ) {
-    val containerColor = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.7f)
-    val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+    val containerColor = WarmCardColor
+    val labelColor = Color(0xFF8C8374)
+    val headlineColor = MaterialTheme.colorScheme.onBackground
 
     Surface(
         modifier = modifier
             .fillMaxWidth()
-            .height(64.dp),
-        shape = RoundedCornerShape(12.dp),
+            .heightIn(min = 120.dp),
+        shape = RoundedCornerShape(24.dp),
         color = containerColor,
-        tonalElevation = 2.dp
+        tonalElevation = 0.dp,
+        shadowElevation = 0.dp
     ) {
-        Row(
+        Column(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(horizontal = 16.dp, vertical = 8.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
-            verticalAlignment = Alignment.CenterVertically
+                .fillMaxWidth()
+                .padding(horizontal = 20.dp, vertical = 18.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Monthly spending section
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.Top
             ) {
-                Text(
-                    text = stringResource(R.string.monthly_spending),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = contentColor.copy(alpha = 0.8f)
+                SummaryMetric(
+                    title = stringResource(R.string.monthly_spending),
+                    value = totalMonthlyCost.formatCurrency(selectedCurrency),
+                    labelColor = labelColor,
+                    valueColor = headlineColor
                 )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = totalMonthlyCost.formatCurrency(selectedCurrency),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = contentColor,
-                    fontWeight = FontWeight.Bold
-                )
-            }
 
-            // Active subscriptions section
-            Column(
-                modifier = Modifier.weight(1f),
-                verticalArrangement = Arrangement.Center,
-                horizontalAlignment = Alignment.Start
-            ) {
-                Text(
-                    text = stringResource(R.string.active_subscriptions),
-                    style = MaterialTheme.typography.bodySmall,
-                    color = contentColor.copy(alpha = 0.8f)
+                SummaryMetric(
+                    title = stringResource(R.string.active_subscriptions),
+                    value = "$activeSubscriptions / $subscriptionCount",
+                    labelColor = labelColor,
+                    valueColor = headlineColor,
+                    alignment = Alignment.End
                 )
-                Spacer(modifier = Modifier.height(2.dp))
-                Text(
-                    text = "$activeSubscriptions / $subscriptionCount",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = contentColor,
-                    fontWeight = FontWeight.SemiBold
-                )
-            }
-
-            // Add button
-            Surface(
-                modifier = Modifier.size(40.dp),
-                shape = RoundedCornerShape(8.dp),
-                color = contentColor,
-                contentColor = containerColor
-            ) {
-                Box(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .clickable(onClick = onAddSubscription),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Add,
-                        contentDescription = stringResource(R.string.add_subscription),
-                        modifier = Modifier.size(20.dp)
-                    )
-                }
             }
         }
+    }
+}
+
+@Composable
+private fun SummaryMetric(
+    title: String,
+    value: String,
+    labelColor: Color,
+    valueColor: Color,
+    alignment: Alignment.Horizontal = Alignment.Start
+) {
+    Column(
+        modifier = Modifier,
+        horizontalAlignment = alignment
+    ) {
+        Text(
+            text = title,
+            style = MaterialTheme.typography.bodyMedium,
+            color = labelColor,
+            fontWeight = FontWeight.SemiBold
+        )
+        Spacer(modifier = Modifier.height(6.dp))
+        Text(
+            text = value,
+            style = MaterialTheme.typography.headlineSmall.copy(fontWeight = FontWeight.Bold),
+            color = valueColor
+        )
     }
 }
