@@ -5,6 +5,8 @@ import androidx.compose.animation.core.*
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -40,7 +42,6 @@ import com.example.subcriptionmanagementapp.util.getDaysUntil
  * - Lazy loading of expanded content
  * - Minimal recomposition triggers
  */
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun OptimizedSubscriptionCard(
         subscription: Subscription,
@@ -177,8 +178,9 @@ fun OptimizedSubscriptionCard(
             label = "cardElevation"
     )
 
+    val cardInteractionSource = remember { MutableInteractionSource() }
+
     Card(
-            onClick = { transitionState.targetState = !transitionState.targetState },
             modifier = modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp, vertical = 6.dp)
@@ -187,7 +189,11 @@ fun OptimizedSubscriptionCard(
                             shape = cardShape,
                             clip = false
                     )
-                    .clip(cardShape),
+                    .clip(cardShape)
+                    .clickable(
+                            interactionSource = cardInteractionSource,
+                            indication = null
+                    ) { transitionState.targetState = !transitionState.targetState },
             shape = cardShape,
             colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
             elevation = CardDefaults.cardElevation(defaultElevation = 1.dp, pressedElevation = 4.dp)
