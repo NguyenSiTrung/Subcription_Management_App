@@ -66,7 +66,7 @@ fun CompactSubscriptionSummary(
 
             // Active subscriptions section
             Column(
-                modifier = Modifier.weight(0.8f),
+                modifier = Modifier.weight(1f),
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.Start
             ) {
@@ -78,7 +78,7 @@ fun CompactSubscriptionSummary(
                 Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = "$activeSubscriptions / $subscriptionCount",
-                    style = MaterialTheme.typography.titleSmall,
+                    style = MaterialTheme.typography.titleMedium,
                     color = contentColor,
                     fontWeight = FontWeight.SemiBold
                 )
