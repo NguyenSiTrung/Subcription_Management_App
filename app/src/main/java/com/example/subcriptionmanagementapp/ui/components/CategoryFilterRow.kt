@@ -74,7 +74,7 @@ fun CategoryFilterRow(
     Card(
             modifier = modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp, vertical = 8.dp)
+                    .padding(vertical = 8.dp)
                     .clickable(enabled = onExpandToggle != null) {
                         onExpandToggle?.invoke()
                     },

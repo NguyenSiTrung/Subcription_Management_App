@@ -131,7 +131,7 @@ fun SubscriptionListScreen(
                         )
                 allSubscriptions.isEmpty() ->
                         Column(
-                                modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp)
+                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
                         ) {
                             CategoryFilterRow(
                                     filters = categoryFilters,
@@ -273,7 +273,7 @@ fun CompactSubscriptionListContent(
         onFilterExpandToggle: () -> Unit
 ) {
     Column(
-            modifier = Modifier.fillMaxSize().padding(horizontal = 24.dp, vertical = 12.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
     ) {
         CompactSubscriptionSummary(

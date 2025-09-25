@@ -52,8 +52,7 @@ fun CompactTabsAndFilter(
         // Main row with tabs and compact filter
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp),
+                .fillMaxWidth(),
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically
         ) {
@@ -95,7 +94,6 @@ fun CompactTabsAndFilter(
             Column(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(horizontal = 16.dp)
             ) {
                 // Active filter chip
                 FilterChip(
