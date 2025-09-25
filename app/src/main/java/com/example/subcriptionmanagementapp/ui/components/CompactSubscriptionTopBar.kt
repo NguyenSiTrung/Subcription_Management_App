@@ -30,7 +30,7 @@ fun CompactSubscriptionTopBar(
     modifier: Modifier = Modifier,
     onSearchClick: (() -> Unit)? = null
 ) {
-    val backgroundColor = Color.White
+    val backgroundColor = MaterialTheme.colorScheme.background
     val iconBackground = WarmIconBackgroundColor
 
     Row(

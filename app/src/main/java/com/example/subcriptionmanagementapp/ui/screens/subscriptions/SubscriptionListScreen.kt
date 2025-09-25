@@ -103,7 +103,7 @@ fun SubscriptionListScreen(
     }
 
     Scaffold(
-            containerColor = Color.White,
+            containerColor = MaterialTheme.colorScheme.background,
             floatingActionButtonPosition = FabPosition.Center,
             topBar = {
                 CompactSubscriptionTopBar(

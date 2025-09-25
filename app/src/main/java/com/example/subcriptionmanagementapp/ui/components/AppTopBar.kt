@@ -72,9 +72,6 @@ fun AppTopBar(
         else -> null
     }
 
-    val gradientColors = remember(colorScheme.primary, colorScheme.secondary) {
-        listOf(colorScheme.primary, colorScheme.secondary)
-    }
     val topBarShape = RoundedCornerShape(bottomStart = 28.dp, bottomEnd = 28.dp)
 
     Box(
@@ -82,7 +79,7 @@ fun AppTopBar(
             .fillMaxWidth()
             .shadow(elevation = 8.dp, shape = topBarShape, clip = false)
             .clip(topBarShape)
-            .background(brush = Brush.horizontalGradient(colors = gradientColors))
+            .background(color = Color.White)
     ) {
         CenterAlignedTopAppBar(
             title = {
