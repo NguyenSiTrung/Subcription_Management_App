@@ -22,7 +22,6 @@ val ErrorColor = Color(0xFFEF4444)
 val SuccessColor = Color(0xFF10B981)
 val WarningColor = Color(0xFFF59E0B)
 val InfoColor = Color(0xFF3B82F6)
-val WarmBackgroundColor = Color(0xFFFAF4ED)
 val WarmCardColor = Color(0xFFFFF4E6)
 val WarmIconBackgroundColor = Color(0xFFEDE4D6)
 

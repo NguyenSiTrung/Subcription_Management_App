@@ -1,7 +1,6 @@
 package com.example.subcriptionmanagementapp.ui.screens.subscriptions
 
 import androidx.compose.foundation.BorderStroke
-import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -53,10 +52,9 @@ import com.example.subcriptionmanagementapp.ui.model.DeleteDialogState
 import com.example.subcriptionmanagementapp.ui.model.FilterState
 import com.example.subcriptionmanagementapp.ui.model.SubscriptionListTab
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
-import com.example.subcriptionmanagementapp.ui.theme.AccentBlue
 import com.example.subcriptionmanagementapp.ui.theme.ErrorColor
 import com.example.subcriptionmanagementapp.ui.theme.WarningColor
-import com.example.subcriptionmanagementapp.ui.theme.WarmBackgroundColor
+import com.example.subcriptionmanagementapp.ui.theme.AccentBlue
 import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import com.example.subcriptionmanagementapp.util.formatCurrency
 import com.example.subcriptionmanagementapp.util.formatDate
@@ -105,7 +103,7 @@ fun SubscriptionListScreen(
     }
 
     Scaffold(
-            containerColor = WarmBackgroundColor,
+            containerColor = Color.White,
             floatingActionButtonPosition = FabPosition.Center,
             topBar = {
                 CompactSubscriptionTopBar(
@@ -119,10 +117,7 @@ fun SubscriptionListScreen(
             }
     ) { paddingValues ->
         Box(
-                modifier =
-                        Modifier.fillMaxSize()
-                                .background(WarmBackgroundColor)
-                                .padding(paddingValues)
+                modifier = Modifier.fillMaxSize().padding(paddingValues)
         ) {
             when {
                 isLoading -> ModernLoadingState()

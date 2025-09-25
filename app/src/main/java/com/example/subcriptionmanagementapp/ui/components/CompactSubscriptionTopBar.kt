@@ -18,11 +18,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import com.example.subcriptionmanagementapp.R
-import com.example.subcriptionmanagementapp.ui.theme.WarmBackgroundColor
 import com.example.subcriptionmanagementapp.ui.theme.WarmIconBackgroundColor
 
 @Composable
@@ -30,7 +30,7 @@ fun CompactSubscriptionTopBar(
     modifier: Modifier = Modifier,
     onSearchClick: (() -> Unit)? = null
 ) {
-    val backgroundColor = WarmBackgroundColor
+    val backgroundColor = Color.White
     val iconBackground = WarmIconBackgroundColor
 
     Row(
