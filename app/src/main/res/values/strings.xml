@@ -12,6 +12,7 @@
     <string name="menu_quick_actions">Quick actions</string>
     <string name="settings_menu_subtitle">Tune preferences, sync, and data</string>
     <string name="about_menu_subtitle">Version info, policies, and credits</string>
+    <string name="settings_about_app_title">About this app</string>
 
     <!-- Top bar subtitles -->
     <string name="subscriptions_top_bar_subtitle">All your plans at a glance</string>
