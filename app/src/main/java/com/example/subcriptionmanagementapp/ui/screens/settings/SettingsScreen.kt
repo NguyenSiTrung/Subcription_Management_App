@@ -22,8 +22,7 @@ import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import com.example.subcriptionmanagementapp.R
-import com.example.subcriptionmanagementapp.ui.components.AppTopBar
-import com.example.subcriptionmanagementapp.ui.components.CompactTopBar
+import com.example.subcriptionmanagementapp.ui.components.CompactScreenTopBar
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
 import com.example.subcriptionmanagementapp.ui.viewmodel.BackupUiEvent
 import com.example.subcriptionmanagementapp.ui.viewmodel.BackupViewModel
@@ -110,9 +109,8 @@ fun SettingsScreen(
 
     Scaffold(
             topBar = {
-                CompactTopBar(
-                        title = stringResource(R.string.settings),
-                        navController = navController
+                CompactScreenTopBar(
+                        title = stringResource(R.string.settings)
                 )
             },
             snackbarHost = { SnackbarHost(hostState = snackbarHostState) }

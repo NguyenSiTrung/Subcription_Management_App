@@ -25,7 +25,6 @@ import androidx.compose.material3.Divider
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
@@ -50,7 +49,8 @@ import com.example.subcriptionmanagementapp.R
 import com.example.subcriptionmanagementapp.data.local.entity.PaymentHistory
 import com.example.subcriptionmanagementapp.domain.usecase.statistics.CategorySpending
 import com.example.subcriptionmanagementapp.domain.usecase.statistics.MonthlySpending
-import com.example.subcriptionmanagementapp.ui.components.CompactTopBar
+import com.example.subcriptionmanagementapp.ui.components.CompactScreenTopBar
+import com.example.subcriptionmanagementapp.ui.components.CompactTopBarAction
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.components.charts.LineChart
@@ -91,17 +91,16 @@ fun StatisticsScreen(
 
     Scaffold(
         topBar = {
-            CompactTopBar(
+            CompactScreenTopBar(
                 title = stringResource(R.string.statistics),
-                navController = navController
-            ) {
-                IconButton(onClick = { viewModel.refresh() }) {
-                    Icon(
-                        imageVector = Icons.Outlined.Cached,
-                        contentDescription = stringResource(R.string.refresh)
+                actions = listOf(
+                    CompactTopBarAction(
+                        icon = Icons.Outlined.Cached,
+                        contentDescription = stringResource(R.string.refresh),
+                        onClick = { viewModel.refresh() }
                     )
-                }
-            }
+                )
+            )
         },
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { paddingValues ->

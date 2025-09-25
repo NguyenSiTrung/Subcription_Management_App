@@ -34,7 +34,7 @@ import com.example.subcriptionmanagementapp.data.local.entity.Category
 import com.example.subcriptionmanagementapp.ui.navigation.Screen
 import com.example.subcriptionmanagementapp.util.CategoryUtils
 import com.example.subcriptionmanagementapp.util.DateUtils
-import com.example.subcriptionmanagementapp.ui.components.CompactTopBar
+import com.example.subcriptionmanagementapp.ui.components.CompactScreenTopBar
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.components.NoCategoriesEmptyState
@@ -57,9 +57,8 @@ fun CategoryListScreen(
 
     Scaffold(
             topBar = {
-                CompactTopBar(
-                        title = stringResource(R.string.categories),
-                        navController = navController
+                CompactScreenTopBar(
+                        title = stringResource(R.string.categories)
                 )
             },
             floatingActionButton = {
