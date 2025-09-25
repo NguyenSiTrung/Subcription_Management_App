@@ -47,43 +47,7 @@ private fun BottomBarDarkPreview() {
     }
 }
 
-@Preview(name = "Bottom Bar - Subscriptions Selected Light", showBackground = true)
-@Composable
-private fun BottomBarSubscriptionsLightPreview() {
-    SubscriptionManagementAppTheme(darkTheme = false) {
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Box(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    contentAlignment = Alignment.BottomCenter
-            ) {
-                val navController = rememberNavController()
-                AppBottomBar(
-                        navController = navController,
-                        currentRoute = Screen.SubscriptionList.route
-                )
-            }
-        }
-    }
-}
 
-@Preview(name = "Bottom Bar - Subscriptions Selected Dark", showBackground = true)
-@Composable
-private fun BottomBarSubscriptionsDarkPreview() {
-    SubscriptionManagementAppTheme(darkTheme = true) {
-        Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-            Box(
-                    modifier = Modifier.fillMaxSize().padding(16.dp),
-                    contentAlignment = Alignment.BottomCenter
-            ) {
-                val navController = rememberNavController()
-                AppBottomBar(
-                        navController = navController,
-                        currentRoute = Screen.SubscriptionList.route
-                )
-            }
-        }
-    }
-}
 
 @Preview(name = "Bottom Bar - Full Scaffold Light", showBackground = true, showSystemUi = true)
 @Composable

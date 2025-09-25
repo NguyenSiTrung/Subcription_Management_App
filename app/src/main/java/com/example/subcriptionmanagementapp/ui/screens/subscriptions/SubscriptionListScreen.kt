@@ -213,11 +213,6 @@ fun SubscriptionListScreen(
                 onConfirm = { subscription ->
                     deleteDialogState = DeleteDialogState.Deleting(subscription)
                     viewModel.deleteSubscription(subscription.id)
-                    // Add a minimal delay to show loading state before closing
-                    kotlinx.coroutines.MainScope().launch {
-                        kotlinx.coroutines.delay(200)
-                        deleteDialogState = DeleteDialogState.Hidden
-                    }
                 },
                 onDismiss = {
                     if (state !is DeleteDialogState.Deleting) {
@@ -232,11 +227,6 @@ fun SubscriptionListScreen(
                 subscription = state.subscription,
                 onConfirm = { subscription ->
                     viewModel.deleteSubscription(subscription.id)
-                    // Add a minimal delay to show loading state before closing
-                    kotlinx.coroutines.MainScope().launch {
-                        kotlinx.coroutines.delay(200)
-                        deleteDialogState = DeleteDialogState.Hidden
-                    }
                 },
                 onDismiss = {
                     // Can't dismiss while deleting

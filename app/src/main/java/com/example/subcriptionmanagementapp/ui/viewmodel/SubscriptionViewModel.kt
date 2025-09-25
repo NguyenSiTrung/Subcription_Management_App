@@ -41,6 +41,7 @@ constructor(
         private val getSelectedCurrencyUseCase: GetSelectedCurrencyUseCase,
         private val currencyRateManager: CurrencyRateManager,
         private val getMonthlySpendingUseCase: GetMonthlySpendingUseCase
+    
 ) : ViewModel() {
 
     private val _subscriptions = MutableStateFlow<List<Subscription>>(emptyList())
@@ -76,6 +77,8 @@ constructor(
 
     private val _monthlySpending = MutableStateFlow(0.0)
     val monthlySpending: StateFlow<Double> = _monthlySpending.asStateFlow()
+
+
 
     private val _convertedSubscriptions = MutableStateFlow<List<Subscription>>(emptyList())
     val convertedSubscriptions: StateFlow<List<Subscription>> =
@@ -123,6 +126,12 @@ constructor(
                 .launchIn(viewModelScope)
     }
 
+    private fun observeMonthlySpending() {
+        getMonthlySpendingUseCase()
+                .onEach { spending -> _monthlySpending.value = spending }
+                .launchIn(viewModelScope)
+    }
+
     private fun observeConvertedSubscriptions() {
         combine(getActiveSubscriptionsUseCase(), getSelectedCurrencyUseCase()) {
                         subscriptions,
@@ -158,11 +167,7 @@ constructor(
         }
     }
 
-    private fun observeMonthlySpending() {
-        getMonthlySpendingUseCase()
-                .onEach { spending -> _monthlySpending.value = spending }
-                .launchIn(viewModelScope)
-    }
+
 
     private fun observeFilteredSubscriptions() {
         filterJob?.cancel()
@@ -236,18 +241,22 @@ constructor(
         _categoryFilters.value = filters
     }
 
-    fun loadAllSubscriptions() {
-        allSubscriptionsJob?.cancel()
-        allSubscriptionsJob =
+    fun loadSubscription(id: Long) {
+        subscriptionJob?.cancel()
+        subscriptionJob =
                 viewModelScope.launch {
-                    getAllSubscriptionsUseCase()
+                    getSubscriptionUseCase(id)
                             .onStart { _isLoading.value = true }
                             .catch { e ->
-                                _error.value = e.message ?: "Failed to load subscriptions"
+                                _error.value = e.message ?: "Failed to load subscription"
                                 _isLoading.value = false
                             }
-                            .collectLatest { subscriptionList ->
-                                _subscriptions.value = subscriptionList
+                            .collectLatest { subscription ->
+                                _selectedSubscription.value = subscription
+                                val categoryId = subscription?.categoryId
+                                _isSelectedSubscriptionUncategorized.value =
+                                        subscription != null && categoryId == null
+                                loadCategory(categoryId)
                                 _isLoading.value = false
                             }
                 }
@@ -270,22 +279,18 @@ constructor(
                 }
     }
 
-    fun loadSubscription(id: Long) {
-        subscriptionJob?.cancel()
-        subscriptionJob =
+    fun loadAllSubscriptions() {
+        allSubscriptionsJob?.cancel()
+        allSubscriptionsJob =
                 viewModelScope.launch {
-                    getSubscriptionUseCase(id)
+                    getAllSubscriptionsUseCase()
                             .onStart { _isLoading.value = true }
                             .catch { e ->
-                                _error.value = e.message ?: "Failed to load subscription"
+                                _error.value = e.message ?: "Failed to load subscriptions"
                                 _isLoading.value = false
                             }
-                            .collectLatest { subscription ->
-                                _selectedSubscription.value = subscription
-                                val categoryId = subscription?.categoryId
-                                _isSelectedSubscriptionUncategorized.value =
-                                        subscription != null && categoryId == null
-                                loadCategory(categoryId)
+                            .collectLatest { subscriptionList ->
+                                _subscriptions.value = subscriptionList
                                 _isLoading.value = false
                             }
                 }
@@ -379,19 +384,7 @@ constructor(
                 }
     }
 
-    fun searchSubscriptions(query: String) {
-        viewModelScope.launch {
-            _isLoading.value = true
-            try {
-                val results = searchSubscriptionsUseCase(query)
-                _subscriptions.value = results
-            } catch (e: Exception) {
-                _error.value = e.message ?: "Failed to search subscriptions"
-            } finally {
-                _isLoading.value = false
-            }
-        }
-    }
+
 
     fun loadCategories() {
         categoriesJob?.cancel()
