@@ -302,6 +302,7 @@ fun CompactSubscriptionListContent(
                         subscriptions = upcomingSubscriptions,
                         selectedCurrency = selectedCurrency,
                         onSubscriptionClick = onSubscriptionClick,
+                        viewModel = viewModel,
                         modifier = Modifier.fillMaxWidth().weight(1f)
                 )
             }
@@ -329,7 +330,7 @@ fun CompactSubscriptionListContent(
                     }
                 } else {
                     LazyColumn(
-                            modifier = Modifier.fillMaxWidth().weight(1f),
+                            modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(vertical = 12.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
@@ -355,19 +356,13 @@ private fun UpcomingRenewalsSection(
         subscriptions: List<Subscription>,
         selectedCurrency: String,
         onSubscriptionClick: (Long) -> Unit,
+        viewModel: SubscriptionViewModel,
         modifier: Modifier = Modifier
 ) {
-    Column(
+    Box(
             modifier = modifier.fillMaxWidth(),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
+            contentAlignment = Alignment.TopStart
     ) {
-        Text(
-                text = stringResource(R.string.upcoming_renewals),
-                style = MaterialTheme.typography.titleMedium,
-                fontWeight = FontWeight.Bold
-        )
-
-        Box(modifier = Modifier.fillMaxWidth().weight(1f)) {
             if (subscriptions.isEmpty()) {
                 Card(modifier = Modifier.fillMaxWidth().align(Alignment.Center)) {
                     Box(
@@ -384,110 +379,26 @@ private fun UpcomingRenewalsSection(
             } else {
                 LazyColumn(
                         modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(bottom = 16.dp),
+                        contentPadding = PaddingValues(vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
                 ) {
                     items(subscriptions) { subscription ->
-                        UpcomingSubscriptionCard(
+                        OptimizedSubscriptionCard(
                                 subscription = subscription,
                                 selectedCurrency = selectedCurrency,
-                                onClick = { onSubscriptionClick(subscription.id) }
+                                viewModel = viewModel,
+                                onClick = { onSubscriptionClick(subscription.id) },
+                                onEdit = { 
+                                    // Navigate to edit screen through the callback
+                                    // The actual navigation will be handled by the parent
+                                },
+                                onDelete = { 
+                                    // Handle delete through the callback
+                                    // The actual delete will be handled by the parent
+                                }
                         )
                     }
                 }
-            }
-        }
-    }
-}
-
-@Composable
-private fun UpcomingSubscriptionCard(
-        subscription: Subscription,
-        selectedCurrency: String,
-        onClick: () -> Unit
-) {
-    val daysUntil = subscription.nextBillingDate.getDaysUntil()
-    val isUrgent = daysUntil <= 3
-
-    Card(
-            modifier = Modifier.fillMaxWidth().clickable(onClick = onClick),
-            colors =
-                    CardDefaults.cardColors(
-                            containerColor =
-                                    if (isUrgent) {
-                                        WarningColor.copy(alpha = 0.2f)
-                                    } else {
-                                        MaterialTheme.colorScheme.surface
-                                    }
-                    ),
-            border = if (isUrgent) BorderStroke(1.dp, WarningColor) else null
-    ) {
-        Row(
-                modifier = Modifier.fillMaxWidth().padding(16.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                Text(
-                        text = subscription.name,
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                )
-                Text(
-                        text =
-                                buildString {
-                                    append(subscription.price.formatCurrency(selectedCurrency))
-                                    append("/")
-                                    append(
-                                            when (subscription.billingCycle) {
-                                                BillingCycle.DAILY -> stringResource(R.string.daily)
-                                                BillingCycle.WEEKLY ->
-                                                        stringResource(R.string.weekly)
-                                                BillingCycle.MONTHLY ->
-                                                        stringResource(R.string.monthly)
-                                                BillingCycle.YEARLY ->
-                                                        stringResource(R.string.yearly)
-                                            }
-                                    )
-                                },
-                        style = MaterialTheme.typography.bodyMedium,
-                        color =
-                                when {
-                                    !isUrgent -> MaterialTheme.colorScheme.onSurfaceVariant
-                                    daysUntil <= 0L -> ErrorColor
-                                    daysUntil <= 3L -> ErrorColor
-                                    daysUntil <= 7L -> WarningColor
-                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                }
-                )
-            }
-
-            Column(
-                    horizontalAlignment = Alignment.End,
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                Text(
-                        text = subscription.nextBillingDate.formatDate(),
-                        style = MaterialTheme.typography.bodyMedium
-                )
-                Text(
-                        text =
-                                when {
-                                    daysUntil < 0L -> stringResource(R.string.overdue)
-                                    daysUntil == 0L -> stringResource(R.string.due_today)
-                                    daysUntil == 1L -> stringResource(R.string.due_tomorrow)
-                                    else -> stringResource(R.string.due_in_days, daysUntil)
-                                },
-                        style = MaterialTheme.typography.bodySmall,
-                        color =
-                                when {
-                                    daysUntil < 0L -> ErrorColor
-                                    daysUntil <= 3L -> WarningColor
-                                    else -> MaterialTheme.colorScheme.onSurfaceVariant
-                                },
-                        fontWeight = if (isUrgent) FontWeight.Bold else FontWeight.Normal
-                )
-            }
         }
     }
 }
