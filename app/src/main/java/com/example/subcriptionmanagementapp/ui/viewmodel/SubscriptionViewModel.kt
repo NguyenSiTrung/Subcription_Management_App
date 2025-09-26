@@ -19,6 +19,7 @@ import com.example.subcriptionmanagementapp.ui.model.SubscriptionListTab
 import dagger.hilt.android.lifecycle.HiltViewModel
 import javax.inject.Inject
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 
@@ -103,6 +104,18 @@ constructor(
     private val _selectedTab = MutableStateFlow(SubscriptionListTab.UPCOMING)
     val selectedTab: StateFlow<SubscriptionListTab> = _selectedTab.asStateFlow()
 
+    private val _searchQuery = MutableStateFlow("")
+    val searchQuery: StateFlow<String> = _searchQuery.asStateFlow()
+
+    private val _searchResults = MutableStateFlow<List<Subscription>>(emptyList())
+    val searchResults: StateFlow<List<Subscription>> = _searchResults.asStateFlow()
+
+    private val _isSearchLoading = MutableStateFlow(false)
+    val isSearchLoading: StateFlow<Boolean> = _isSearchLoading.asStateFlow()
+
+    private val _isSearchActive = MutableStateFlow(false)
+    val isSearchActive: StateFlow<Boolean> = _isSearchActive.asStateFlow()
+
     private var allSubscriptionsJob: Job? = null
     private var activeSubscriptionsJob: Job? = null
     private var subscriptionJob: Job? = null
@@ -117,6 +130,7 @@ constructor(
         observeConvertedSubscriptions()
         observeFilteredSubscriptions()
         observeUpcomingSubscriptions()
+        observeSearch()
         loadCategories()
     }
 
@@ -193,6 +207,32 @@ constructor(
                                 .filter { it.nextBillingDate >= now }
                                 .sortedBy { it.nextBillingDate }
             }
+        }
+    }
+
+    @OptIn(FlowPreview::class)
+    private fun observeSearch() {
+        viewModelScope.launch {
+            _searchQuery
+                    .debounce(SEARCH_DEBOUNCE_MS)
+                    .distinctUntilChanged()
+                    .collectLatest { query ->
+                        if (query.isBlank()) {
+                            _searchResults.value = emptyList()
+                            _isSearchLoading.value = false
+                            return@collectLatest
+                        }
+
+                        _isSearchLoading.value = true
+                        try {
+                            val results = searchSubscriptionsUseCase(query.trim())
+                            _searchResults.value = results
+                        } catch (e: Exception) {
+                            _searchResults.value = emptyList()
+                        } finally {
+                            _isSearchLoading.value = false
+                        }
+                    }
         }
     }
 
@@ -451,6 +491,23 @@ constructor(
         _selectedTab.value = tab
     }
 
+    fun setSearchActive(isActive: Boolean) {
+        _isSearchActive.value = isActive
+        if (!isActive) {
+            clearSearch()
+        }
+    }
+
+    fun updateSearchQuery(query: String) {
+        _searchQuery.value = query
+    }
+
+    fun clearSearch() {
+        _searchQuery.value = ""
+        _searchResults.value = emptyList()
+        _isSearchLoading.value = false
+    }
+
     // Filter methods
     fun filterByCategory(categoryId: Long?) {
         val currentState = _filterState.value
@@ -495,5 +552,9 @@ constructor(
         } else {
             _categories.value.find { it.id == categoryId }
         }
+    }
+
+    companion object {
+        private const val SEARCH_DEBOUNCE_MS = 300L
     }
 }

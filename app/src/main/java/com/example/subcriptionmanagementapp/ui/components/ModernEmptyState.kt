@@ -218,8 +218,8 @@ fun ModernNoCategoriesEmptyState(onAddCategory: () -> Unit) {
 @Composable
 fun ModernSearchEmptyState(searchQuery: String) {
     ModernEmptyState(
-        title = "No results found",
-        description = "No subscriptions matching \"$searchQuery\" were found.",
+        title = stringResource(R.string.search_empty_title),
+        description = stringResource(R.string.search_empty_description, searchQuery),
         icon = Icons.Default.Search,
         showAnimation = false
     )

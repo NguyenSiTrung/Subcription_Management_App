@@ -63,6 +63,27 @@
     <string name="open_website">Open Website</string>
     <string name="open_app">Open App</string>
 
+    <!-- Search -->
+    <string name="close_search">Close search</string>
+    <string name="search_subscriptions_title">Search subscriptions</string>
+    <string name="search_subscriptions_placeholder">Search by name, description, or notes</string>
+    <string name="search_start_typing_hint">Type at least two characters to explore your subscriptions.</string>
+    <string name="search_quick_suggestions">Quick suggestions</string>
+    <string name="search_recent_subscriptions">Recently added</string>
+    <string name="search_no_recent_subscriptions">Recent subscriptions will appear here as you add services.</string>
+    <string name="search_next_billing_label">Next billing • %1$s</string>
+    <string name="search_billing_frequency">Billed %1$s</string>
+    <string name="search_status_overdue">Overdue</string>
+    <string name="search_status_due_today">Due today</string>
+    <string name="search_status_due_tomorrow">Due tomorrow</string>
+    <string name="search_status_due_in_days">Due in %1$d days</string>
+    <string name="search_empty_title">No results found</string>
+    <string name="search_empty_description">No subscriptions matching &quot;%1$s&quot; were found.</string>
+    <plurals name="search_result_count">
+        <item quantity="one">%d match</item>
+        <item quantity="other">%d matches</item>
+    </plurals>
+
     <!-- Categories -->
     <string name="add_category">Add Category</string>
     <string name="no_categories">No Categories</string>

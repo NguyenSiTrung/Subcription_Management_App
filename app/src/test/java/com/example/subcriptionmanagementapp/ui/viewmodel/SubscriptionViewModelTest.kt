@@ -24,6 +24,8 @@ import com.example.subcriptionmanagementapp.util.MainDispatcherRule
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.test.advanceTimeBy
+import kotlinx.coroutines.test.advanceUntilIdle
 import kotlinx.coroutines.test.runTest
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
@@ -132,6 +134,44 @@ class SubscriptionViewModelTest {
                 currencyRateManager,
                 getMonthlySpendingUseCase
         )
+    }
+
+    @Test
+    fun `updateSearchQuery should emit debounced results`() = runTest {
+        val searchResult = listOf(sampleSubscription(id = 42, name = "Netflix"))
+        whenever(searchSubscriptionsUseCase.invoke(any())).thenReturn(searchResult)
+
+        viewModel.setSearchActive(true)
+        viewModel.updateSearchQuery("netflix")
+
+        advanceTimeBy(350)
+        advanceUntilIdle()
+
+        viewModel.searchResults.test {
+            skipItems(1)
+            assertEquals(searchResult, awaitItem())
+            cancelAndIgnoreRemainingEvents()
+        }
+    }
+
+    @Test
+    fun `setSearchActive false should clear query and results`() = runTest {
+        val searchResult = listOf(sampleSubscription(id = 99, name = "Spotify"))
+        whenever(searchSubscriptionsUseCase.invoke(any())).thenReturn(searchResult)
+
+        viewModel.setSearchActive(true)
+        viewModel.updateSearchQuery("spotify")
+
+        advanceTimeBy(350)
+        advanceUntilIdle()
+
+        assertEquals(searchResult, viewModel.searchResults.value)
+
+        viewModel.setSearchActive(false)
+
+        assertFalse(viewModel.isSearchActive.value)
+        assertTrue(viewModel.searchResults.value.isEmpty())
+        assertEquals("", viewModel.searchQuery.value)
     }
 
     @Test
