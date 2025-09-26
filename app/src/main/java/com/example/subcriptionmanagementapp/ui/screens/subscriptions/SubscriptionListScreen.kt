@@ -4,20 +4,24 @@ import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.derivedStateOf
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -78,6 +82,12 @@ fun SubscriptionListScreen(
 
     var isCategoryFilterExpanded by rememberSaveable { mutableStateOf(false) }
     var deleteDialogState by remember { mutableStateOf<DeleteDialogState>(DeleteDialogState.Hidden) }
+    val listState = rememberLazyListState()
+    val isFabVisible by remember {
+        derivedStateOf {
+            listState.firstVisibleItemIndex == 0 || listState.firstVisibleItemScrollOffset < 100
+        }
+    }
 
     val totalSubscriptions = allSubscriptions.size
     val activeSubscriptions = allSubscriptions.count { it.isActive }
@@ -104,7 +114,7 @@ fun SubscriptionListScreen(
 
     Scaffold(
             containerColor = MaterialTheme.colorScheme.background,
-            floatingActionButtonPosition = FabPosition.Center,
+            floatingActionButtonPosition = FabPosition.End,
             topBar = {
                 CompactSubscriptionTopBar(
                         onSearchClick = {
@@ -113,7 +123,7 @@ fun SubscriptionListScreen(
                 )
             },
             floatingActionButton = {
-                if (allSubscriptions.isNotEmpty()) {
+                if (allSubscriptions.isNotEmpty() && isFabVisible) {
                     AddSubscriptionFab(onClick = navigateToAdd)
                 }
             }
@@ -180,7 +190,9 @@ fun SubscriptionListScreen(
                                 onActiveFilterToggle = { viewModel.toggleActiveFilter() },
                                 onFilterExpandToggle = {
                                     isCategoryFilterExpanded = !isCategoryFilterExpanded
-                                }
+                                },
+                                listState = listState,
+                                isFabVisible = isFabVisible
                         )
             }
         }
@@ -241,7 +253,9 @@ fun CompactSubscriptionListContent(
         onTabSelected: (SubscriptionListTab) -> Unit,
         onFilterClick: (CategoryFilter) -> Unit,
         onActiveFilterToggle: () -> Unit,
-        onFilterExpandToggle: () -> Unit
+        onFilterExpandToggle: () -> Unit,
+        listState: LazyListState,
+        isFabVisible: Boolean
 ) {
     Column(
             modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp, vertical = 12.dp),
@@ -274,6 +288,7 @@ fun CompactSubscriptionListContent(
                         selectedCurrency = selectedCurrency,
                         onSubscriptionClick = onSubscriptionClick,
                         viewModel = viewModel,
+                        listState = listState,
                         modifier = Modifier.fillMaxWidth().weight(1f)
                 )
             }
@@ -301,6 +316,7 @@ fun CompactSubscriptionListContent(
                     }
                 } else {
                     LazyColumn(
+                            state = listState,
                             modifier = Modifier.fillMaxSize(),
                             contentPadding = PaddingValues(vertical = 12.dp),
                             verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -328,6 +344,7 @@ private fun UpcomingRenewalsSection(
         selectedCurrency: String,
         onSubscriptionClick: (Long) -> Unit,
         viewModel: SubscriptionViewModel,
+        listState: LazyListState,
         modifier: Modifier = Modifier
 ) {
     Box(
@@ -349,6 +366,7 @@ private fun UpcomingRenewalsSection(
                 }
             } else {
                 LazyColumn(
+                        state = listState,
                         modifier = Modifier.fillMaxSize(),
                         contentPadding = PaddingValues(vertical = 12.dp),
                         verticalArrangement = Arrangement.spacedBy(12.dp)
@@ -376,16 +394,24 @@ private fun UpcomingRenewalsSection(
 
 @Composable
 private fun AddSubscriptionFab(onClick: () -> Unit) {
-    LargeFloatingActionButton(
+    FloatingActionButton(
             onClick = onClick,
             shape = CircleShape,
-            containerColor = AccentBlue,
-            contentColor = Color.White,
-            modifier = Modifier.navigationBarsPadding()
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier
+                .navigationBarsPadding()
+                .size(56.dp),
+            elevation = FloatingActionButtonDefaults.elevation(
+                defaultElevation = 6.dp,
+                pressedElevation = 12.dp,
+                focusedElevation = 8.dp
+            )
     ) {
         Icon(
                 imageVector = Icons.Filled.Add,
-                contentDescription = stringResource(R.string.add_subscription)
+                contentDescription = stringResource(R.string.add_subscription),
+                modifier = Modifier.size(24.dp)
         )
     }
 }
