@@ -113,7 +113,9 @@ fun SubscriptionListScreen(
                 )
             },
             floatingActionButton = {
-                AddSubscriptionFab(onClick = navigateToAdd)
+                if (allSubscriptions.isNotEmpty()) {
+                    AddSubscriptionFab(onClick = navigateToAdd)
+                }
             }
     ) { paddingValues ->
         Box(
@@ -130,33 +132,12 @@ fun SubscriptionListScreen(
                                 }
                         )
                 allSubscriptions.isEmpty() ->
-                        Column(
-                                modifier = Modifier.fillMaxSize().padding(horizontal = 16.dp)
+                        Box(
+                                modifier = Modifier.fillMaxSize(),
+                                contentAlignment = Alignment.Center
                         ) {
-                            CategoryFilterRow(
-                                    filters = categoryFilters,
-                                    showActiveOnly = filterState.showActiveOnly,
-                                    onFilterClick = { filter ->
-                                        val categoryId =
-                                                if (filter.id == CategoryFilter.ALL_CATEGORIES.id)
-                                                        null
-                                                else filter.id
-                                        viewModel.filterByCategory(categoryId)
-                                    },
-                                    onActiveFilterToggle = { viewModel.toggleActiveFilter() },
-                                    isExpanded = isCategoryFilterExpanded,
-                                    onExpandToggle = {
-                                        isCategoryFilterExpanded = !isCategoryFilterExpanded
-                                    }
-                            )
-
-                            Box(
-                                    modifier = Modifier.weight(1f),
-                                    contentAlignment = Alignment.Center
-                            ) {
-                                ModernNoSubscriptionsEmptyState {
-                                    navigateToAdd()
-                                }
+                            ModernNoSubscriptionsEmptyState {
+                                navigateToAdd()
                             }
                         }
                 else ->
