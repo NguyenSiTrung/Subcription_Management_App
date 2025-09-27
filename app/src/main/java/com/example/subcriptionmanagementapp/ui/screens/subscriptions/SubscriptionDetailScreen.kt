@@ -41,8 +41,6 @@ import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import com.example.subcriptionmanagementapp.util.formatCurrency
 import com.example.subcriptionmanagementapp.util.formatDate
 import com.example.subcriptionmanagementapp.util.getDaysUntil
-import kotlinx.coroutines.MainScope
-import kotlinx.coroutines.launch
 
 
 @Composable
@@ -110,6 +108,15 @@ fun SubscriptionDetailScreen(
         }
     }
 
+    // Auto-close delete dialog when deletion completes
+    LaunchedEffect(isLoading, deleteDialogState) {
+        if (!isLoading && deleteDialogState is DeleteDialogState.Deleting) {
+            kotlinx.coroutines.delay(150)
+            deleteDialogState = DeleteDialogState.Hidden
+            navController.popBackStack()
+        }
+    }
+
     // Delete confirmation dialog
     when (val state = deleteDialogState) {
         is DeleteDialogState.Visible -> {
@@ -118,12 +125,6 @@ fun SubscriptionDetailScreen(
                 onConfirm = { subscription ->
                     deleteDialogState = DeleteDialogState.Deleting(subscription)
                     viewModel.deleteSubscription(subscription.id)
-                    // Add a minimal delay to show loading state before closing
-                    MainScope().launch {
-                        kotlinx.coroutines.delay(200)
-                        deleteDialogState = DeleteDialogState.Hidden
-                        navController.popBackStack()
-                    }
                 },
                 onDismiss = {
                     if (state !is DeleteDialogState.Deleting) {
@@ -138,12 +139,6 @@ fun SubscriptionDetailScreen(
                 subscription = state.subscription,
                 onConfirm = { subscription ->
                     viewModel.deleteSubscription(subscription.id)
-                    // Add a minimal delay to show loading state before closing
-                    MainScope().launch {
-                        kotlinx.coroutines.delay(200)
-                        deleteDialogState = DeleteDialogState.Hidden
-                        navController.popBackStack()
-                    }
                 },
                 onDismiss = {
                     // Can't dismiss while deleting

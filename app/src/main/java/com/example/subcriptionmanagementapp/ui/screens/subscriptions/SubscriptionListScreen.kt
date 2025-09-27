@@ -268,6 +268,15 @@ fun SubscriptionListScreen(
         }
     }
 
+    // Auto-close delete dialog when deletion completes
+    LaunchedEffect(isLoading, deleteDialogState) {
+        if (!isLoading && deleteDialogState is DeleteDialogState.Deleting) {
+            // Small delay to allow list to refresh smoothly
+            kotlinx.coroutines.delay(150)
+            deleteDialogState = DeleteDialogState.Hidden
+        }
+    }
+
     // Delete confirmation dialog
     when (val state = deleteDialogState) {
         is DeleteDialogState.Visible -> {

@@ -38,6 +38,7 @@ import com.example.subcriptionmanagementapp.ui.components.CompactScreenTopBar
 import com.example.subcriptionmanagementapp.ui.components.ErrorMessage
 import com.example.subcriptionmanagementapp.ui.components.LoadingIndicator
 import com.example.subcriptionmanagementapp.ui.components.NoCategoriesEmptyState
+import com.example.subcriptionmanagementapp.ui.components.DeleteCategoryConfirmationDialog
 import com.example.subcriptionmanagementapp.ui.viewmodel.CategoryViewModel
 
 @Composable
@@ -52,8 +53,18 @@ fun CategoryListScreen(
     var showCreateDialog by remember { mutableStateOf(false) }
     var showEditDialog by remember { mutableStateOf<Category?>(null) }
     var selectedCategoryDetails by remember { mutableStateOf<Category?>(null) }
+    var deleteDialogCategory by remember { mutableStateOf<Category?>(null) }
+    var isDeletingCategory by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) { viewModel.loadCategories() }
+
+    // Auto-close delete dialog after deletion completes
+    LaunchedEffect(isLoading, isDeletingCategory) {
+        if (!isLoading && isDeletingCategory) {
+            isDeletingCategory = false
+            deleteDialogCategory = null
+        }
+    }
 
     Scaffold(
             topBar = {
@@ -94,7 +105,7 @@ fun CategoryListScreen(
                                 },
                                 onCategoryDelete = { category ->
                                     selectedCategoryDetails = null
-                                    viewModel.deleteCategory(category)
+                                    deleteDialogCategory = category
                                 }
                         )
             }
@@ -142,8 +153,25 @@ fun CategoryListScreen(
                     },
                     onDelete = { selected ->
                         selectedCategoryDetails = null
-                        viewModel.deleteCategory(selected)
+                        deleteDialogCategory = selected
                     }
+            )
+        }
+
+        // Delete Category Confirmation Dialog
+        deleteDialogCategory?.let { category ->
+            DeleteCategoryConfirmationDialog(
+                category = category,
+                onConfirm = { toDelete ->
+                    isDeletingCategory = true
+                    viewModel.deleteCategory(toDelete)
+                },
+                onDismiss = {
+                    if (!isDeletingCategory) {
+                        deleteDialogCategory = null
+                    }
+                },
+                isDeleting = isDeletingCategory
             )
         }
     }

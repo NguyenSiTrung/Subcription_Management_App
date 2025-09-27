@@ -27,152 +27,198 @@ import com.example.subcriptionmanagementapp.ui.theme.*
 import com.example.subcriptionmanagementapp.ui.viewmodel.SubscriptionViewModel
 import com.example.subcriptionmanagementapp.util.formatCurrency
 import kotlinx.coroutines.launch
+import com.example.subcriptionmanagementapp.ui.model.DeleteDialogState
 
-@Composable
-fun FilteredSubscriptionListScreen(
-        navController: NavController,
-        categoryId: Long,
-        categoryName: String?,
-        viewModel: SubscriptionViewModel = hiltViewModel()
-) {
-    val subscriptions by viewModel.filteredSubscriptions.collectAsStateWithLifecycle()
-    val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
-    val error by viewModel.error.collectAsStateWithLifecycle()
-    val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
-    val categories by viewModel.categories.collectAsStateWithLifecycle()
-    val coroutineScope = rememberCoroutineScope()
+ @Composable
+ fun FilteredSubscriptionListScreen(
+         navController: NavController,
+         categoryId: Long,
+         categoryName: String?,
+         viewModel: SubscriptionViewModel = hiltViewModel()
+ ) {
+     val subscriptions by viewModel.filteredSubscriptions.collectAsStateWithLifecycle()
+     val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+     val error by viewModel.error.collectAsStateWithLifecycle()
+     val selectedCurrency by viewModel.selectedCurrency.collectAsStateWithLifecycle()
+     val categories by viewModel.categories.collectAsStateWithLifecycle()
+     val coroutineScope = rememberCoroutineScope()
+     var deleteDialogState by remember { mutableStateOf<DeleteDialogState>(DeleteDialogState.Hidden) }
 
-    val categoryTitle =
-            categoryName
-                    ?: categories.firstOrNull { it.id == categoryId }?.name
-                            ?: stringResource(R.string.category)
+     val categoryTitle =
+             categoryName
+                     ?: categories.firstOrNull { it.id == categoryId }?.name
+                             ?: stringResource(R.string.category)
 
-    // Calculate statistics for this category
-    val totalSubscriptions = subscriptions.size
-    val activeSubscriptions = subscriptions.count { it.isActive }
-    val totalMonthlyCost =
-            remember(subscriptions) {
-                subscriptions.filter { it.isActive }.sumOf { subscription ->
-                    when (subscription.billingCycle) {
-                        com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
-                                .MONTHLY -> subscription.price
-                        com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
-                                .YEARLY -> subscription.price / 12
-                        com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
-                                .WEEKLY -> subscription.price * 4.33
-                        com.example.subcriptionmanagementapp.data.local.entity.BillingCycle.DAILY ->
-                                subscription.price * 30
-                    }
-                }
-            }
+     // Calculate statistics for this category
+     val totalSubscriptions = subscriptions.size
+     val activeSubscriptions = subscriptions.count { it.isActive }
+     val totalMonthlyCost =
+             remember(subscriptions) {
+                 subscriptions.filter { it.isActive }.sumOf { subscription ->
+                     when (subscription.billingCycle) {
+                         com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
+                                 .MONTHLY -> subscription.price
+                         com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
+                                 .YEARLY -> subscription.price / 12
+                         com.example.subcriptionmanagementapp.data.local.entity.BillingCycle
+                                 .WEEKLY -> subscription.price * 4.33
+                         com.example.subcriptionmanagementapp.data.local.entity.BillingCycle.DAILY ->
+                                 subscription.price * 30
+                     }
+                 }
+             }
 
-    LaunchedEffect(categoryId) {
-        viewModel.loadAllSubscriptions()
-        viewModel.loadCategories()
-        viewModel.filterByCategory(categoryId)
-    }
+     LaunchedEffect(categoryId) {
+         viewModel.loadAllSubscriptions()
+         viewModel.loadCategories()
+         viewModel.filterByCategory(categoryId)
+     }
 
-    Scaffold(
-            topBar = {
-                CompactTopBar(
-                        title = categoryTitle,
-                        navController = navController,
-                        showBackButton = true
-                )
-            },
-            floatingActionButton = {
-                AnimatedVisibility(
-                        visible = !isLoading && error == null,
-                        enter = fadeIn() + scaleIn(),
-                        exit = fadeOut() + scaleOut()
-                ) {
-                    FloatingActionButton(
-                            onClick = {
-                                navController.navigate(Screen.AddEditSubscription.createRoute(-1))
-                            },
-                            containerColor = MaterialTheme.colorScheme.primary,
-                            contentColor = MaterialTheme.colorScheme.onPrimary,
-                            modifier = Modifier.padding(16.dp)
-                    ) {
-                        Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = stringResource(R.string.add_subscription)
-                        )
-                    }
-                }
-            }
-    ) { paddingValues ->
-        Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
-            when {
-                isLoading -> ModernLoadingState()
-                error != null ->
-                        ModernErrorState(
-                                message = error!!,
-                                onRetry = {
-                                    coroutineScope.launch {
-                                        viewModel.clearError()
-                                        viewModel.filterByCategory(categoryId)
-                                    }
-                                }
-                        )
-                subscriptions.isEmpty() ->
-                        ModernEmptyState(
-                                title = stringResource(R.string.no_subscriptions_in_category),
-                                description =
-                                        stringResource(
-                                                R.string.no_subscriptions_in_category_subtitle,
-                                                categoryTitle
-                                        ),
-                                icon = Icons.Default.Category,
-                                actionText = stringResource(R.string.add_subscription),
-                                onAction = {
-                                    navController.navigate(
-                                            Screen.AddEditSubscription.createRoute(-1)
-                                    )
-                                }
-                        )
-                else ->
-                        ModernFilteredSubscriptionListContent(
-                                subscriptions = subscriptions,
-                                selectedCurrency = selectedCurrency,
-                                categoryName = categoryTitle,
-                                totalSubscriptions = totalSubscriptions,
-                                activeSubscriptions = activeSubscriptions,
-                                totalMonthlyCost = totalMonthlyCost,
-                                viewModel = viewModel,
-                                onSubscriptionClick = { subscriptionId ->
-                                    navController.navigate(
-                                            Screen.SubscriptionDetail.createRoute(subscriptionId)
-                                    )
-                                },
-                                onEditClick = { subscriptionId ->
-                                    navController.navigate(
-                                            Screen.AddEditSubscription.createRoute(subscriptionId)
-                                    )
-                                },
-                                onDeleteClick = { subscriptionId ->
-                                    // Handle delete - you might want to show a confirmation dialog
-                                    viewModel.deleteSubscription(subscriptionId)
-                                }
-                        )
-            }
-        }
-    }
-}
+     Scaffold(
+             topBar = {
+                 CompactTopBar(
+                         title = categoryTitle,
+                         navController = navController,
+                         showBackButton = true
+                 )
+             },
+             floatingActionButton = {
+                 AnimatedVisibility(
+                         visible = !isLoading && error == null,
+                         enter = fadeIn() + scaleIn(),
+                         exit = fadeOut() + scaleOut()
+                 ) {
+                     FloatingActionButton(
+                             onClick = {
+                                 navController.navigate(Screen.AddEditSubscription.createRoute(-1))
+                             },
+                             containerColor = MaterialTheme.colorScheme.primary,
+                             contentColor = MaterialTheme.colorScheme.onPrimary,
+                             modifier = Modifier.padding(16.dp)
+                     ) {
+                         Icon(
+                                 imageVector = Icons.Default.Add,
+                                 contentDescription = stringResource(R.string.add_subscription)
+                         )
+                     }
+                 }
+             }
+     ) { paddingValues ->
+         Box(modifier = Modifier.fillMaxSize().padding(paddingValues)) {
+             when {
+                 isLoading -> ModernLoadingState()
+                 error != null ->
+                         ModernErrorState(
+                                 message = error!!,
+                                 onRetry = {
+                                     coroutineScope.launch {
+                                         viewModel.clearError()
+                                         viewModel.filterByCategory(categoryId)
+                                     }
+                                 }
+                         )
+                 subscriptions.isEmpty() ->
+                         ModernEmptyState(
+                                 title = stringResource(R.string.no_subscriptions_in_category),
+                                 description =
+                                         stringResource(
+                                                 R.string.no_subscriptions_in_category_subtitle,
+                                                 categoryTitle
+                                         ),
+                                 icon = Icons.Default.Category,
+                                 actionText = stringResource(R.string.add_subscription),
+                                 onAction = {
+                                     navController.navigate(
+                                             Screen.AddEditSubscription.createRoute(-1)
+                                     )
+                                 }
+                         )
+                 else ->
+                         ModernFilteredSubscriptionListContent(
+                                 subscriptions = subscriptions,
+                                 selectedCurrency = selectedCurrency,
+                                 categoryName = categoryTitle,
+                                 totalSubscriptions = totalSubscriptions,
+                                 activeSubscriptions = activeSubscriptions,
+                                 totalMonthlyCost = totalMonthlyCost,
+                                 viewModel = viewModel,
+                                 onSubscriptionClick = { subscriptionId ->
+                                     navController.navigate(
+                                             Screen.SubscriptionDetail.createRoute(subscriptionId)
+                                     )
+                                 },
+                                 onEditClick = { subscriptionId ->
+                                     navController.navigate(
+                                             Screen.AddEditSubscription.createRoute(subscriptionId)
+                                     )
+                                 },
+                                 onDeleteClick = { subscriptionId ->
+                                     val subscription = subscriptions.find { it.id == subscriptionId }
+                                     if (subscription != null) {
+                                         deleteDialogState = DeleteDialogState.Visible(subscription)
+                                     }
+                                 }
+                         )
+             }
+         }
+     }
 
-@Composable
-fun ModernFilteredSubscriptionListContent(
-        subscriptions: List<Subscription>,
-        selectedCurrency: String,
-        categoryName: String,
-        totalSubscriptions: Int,
-        activeSubscriptions: Int,
-        totalMonthlyCost: Double,
-        viewModel: SubscriptionViewModel,
-        onSubscriptionClick: (Long) -> Unit,
-        onEditClick: (Long) -> Unit,
-        onDeleteClick: (Long) -> Unit
-) {
+     // Auto-close delete dialog when deletion completes
+     LaunchedEffect(isLoading, deleteDialogState) {
+         if (!isLoading && deleteDialogState is DeleteDialogState.Deleting) {
+             kotlinx.coroutines.delay(150)
+             deleteDialogState = DeleteDialogState.Hidden
+         }
+     }
+
+     // Delete confirmation dialog
+     when (val state = deleteDialogState) {
+         is DeleteDialogState.Visible -> {
+             DeleteSubscriptionConfirmationDialog(
+                 subscription = state.subscription,
+                 onConfirm = { subscription ->
+                     deleteDialogState = DeleteDialogState.Deleting(subscription)
+                     viewModel.deleteSubscription(subscription.id)
+                 },
+                 onDismiss = {
+                     if (state !is DeleteDialogState.Deleting) {
+                         deleteDialogState = DeleteDialogState.Hidden
+                     }
+                 },
+                 isDeleting = state is DeleteDialogState.Deleting
+             )
+         }
+         is DeleteDialogState.Deleting -> {
+             DeleteSubscriptionConfirmationDialog(
+                 subscription = state.subscription,
+                 onConfirm = { subscription ->
+                     viewModel.deleteSubscription(subscription.id)
+                 },
+                 onDismiss = {
+                     // Can't dismiss while deleting
+                 },
+                 isDeleting = true
+             )
+         }
+         DeleteDialogState.Hidden -> {
+             // No dialog shown
+         }
+     }
+ }
+
+ @Composable
+ fun ModernFilteredSubscriptionListContent(
+         subscriptions: List<Subscription>,
+         selectedCurrency: String,
+         categoryName: String,
+         totalSubscriptions: Int,
+         activeSubscriptions: Int,
+         totalMonthlyCost: Double,
+         viewModel: SubscriptionViewModel,
+         onSubscriptionClick: (Long) -> Unit,
+         onEditClick: (Long) -> Unit,
+         onDeleteClick: (Long) -> Unit
+ ) {
     Column(modifier = Modifier.fillMaxSize()) {
         // Enhanced Category header with statistics
         Card(

@@ -317,4 +317,9 @@
     <string name="delete_subscription_confirmation_title">Delete Subscription?</string>
     <string name="delete_subscription_confirmation_message">Are you sure you want to delete \"%1$s\"? This will permanently remove the subscription and all associated data.</string>
     <string name="delete_subscription_warning">This action cannot be undone. All reminders and payment history will be lost.</string>
+
+    <!-- Delete Category Confirmation -->
+    <string name="delete_category_confirmation_title">Delete Category?</string>
+    <string name="delete_category_confirmation_message">Are you sure you want to delete \"%1$s\"? This will permanently remove the category and all subscriptions within it, including their reminders and payment history.</string>
+    <string name="delete_category_warning">This action cannot be undone. All subscriptions in this category, along with their reminders and payment history, will be permanently deleted.</string>
 </resources>
