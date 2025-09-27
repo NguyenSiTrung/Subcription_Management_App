@@ -87,7 +87,7 @@ fun CategoryFilterRow(
                     pressedElevation = if (isExpanded) 8.dp else 4.dp
             )
     ) {
-        Column(modifier = Modifier.fillMaxWidth().padding(if (isExpanded) 20.dp else 16.dp)) {
+        Column(modifier = Modifier.fillMaxWidth().padding(if (isExpanded) 16.dp else 12.dp)) {
             Row(
                     modifier = Modifier.fillMaxWidth(),
                     verticalAlignment = Alignment.CenterVertically
@@ -297,8 +297,8 @@ fun CategoryFilterRow(
                     Spacer(modifier = Modifier.height(16.dp))
 
                     FlowRow(
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalArrangement = Arrangement.spacedBy(12.dp)
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         filters.forEach { filter ->
                             val displayFilter =

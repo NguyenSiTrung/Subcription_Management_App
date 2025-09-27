@@ -199,13 +199,14 @@ constructor(
 
     private fun observeUpcomingSubscriptions() {
         viewModelScope.launch {
-            _subscriptions.collectLatest { subscriptionList ->
+            combine(_subscriptions, _filterState) { subscriptionList, filterState ->
                 val now = System.currentTimeMillis()
-                _upcomingSubscriptions.value =
-                        subscriptionList
-                                .filter { it.isActive }
-                                .filter { it.nextBillingDate >= now }
-                                .sortedBy { it.nextBillingDate }
+                val filteredByUser = applyFilters(subscriptionList, filterState)
+                filteredByUser
+                    .filter { it.nextBillingDate >= now }
+                    .sortedBy { it.nextBillingDate }
+            }.collectLatest { filteredUpcoming ->
+                _upcomingSubscriptions.value = filteredUpcoming
             }
         }
     }

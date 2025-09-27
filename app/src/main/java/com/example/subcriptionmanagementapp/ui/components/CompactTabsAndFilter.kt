@@ -87,7 +87,7 @@ fun CompactTabsAndFilter(
 
         // Expanded filter section
         AnimatedVisibility(
-            visible = isFilterExpanded && selectedTab == SubscriptionListTab.ALL,
+            visible = isFilterExpanded,
             enter = fadeIn() + expandIn(),
             exit = fadeOut() + shrinkOut()
         ) {
@@ -124,7 +124,7 @@ fun CompactTabsAndFilter(
                 // Category filters
                 LazyRow(
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    contentPadding = PaddingValues(horizontal = 4.dp)
+                    contentPadding = PaddingValues(horizontal = 0.dp)
                 ) {
                     items(categoryFilters) { filter ->
                         val displayFilter = if (filter.id == CategoryFilter.ALL_CATEGORIES.id) {
